@@ -21,7 +21,7 @@ export const Route = createFileRoute("/contact")({
       },
     ],
   }),
-  component: Contact;
+  component: Contact,
 });
 
 const schema = z.object({
