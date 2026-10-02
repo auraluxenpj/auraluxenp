@@ -39,7 +39,7 @@ function Row({ p }: { p: Product }) {
     setSaving(true);
     const { error } = await supabase.from("products").update({ stock: Math.max(0, value) }).eq("id", p.id);
     setSaving(false);
-    if (error) return toast.error(error.message);
+    if (error) { toast.error(error.message); return; }
     toast.success(`${p.name} stock updated`);
     qc.invalidateQueries();
   }

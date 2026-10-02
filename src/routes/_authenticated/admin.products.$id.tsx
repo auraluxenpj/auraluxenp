@@ -77,7 +77,7 @@ function ProductEditor() {
       name: f.name, slug: f.slug, price: Number(f.price),
       sale_price: f.sale_price === "" ? null : Number(f.sale_price), stock: Number(f.stock),
     });
-    if (!parsed.success) return toast.error(parsed.error.issues[0]?.message ?? "Check the form");
+    if (!parsed.success) { toast.error(parsed.error.issues[0]?.message ?? "Check the form"); return; }
     const row = {
       ...parsed.data,
       sku: f.sku.trim() || null, description: f.description.trim() || null, fabric: f.fabric.trim() || null,
@@ -92,7 +92,7 @@ function ProductEditor() {
       ? await supabase.from("products").insert(row)
       : await supabase.from("products").update(row).eq("id", id);
     setSaving(false);
-    if (error) return toast.error(error.code === "23505" ? "That link or SKU is already used" : error.message);
+    if (error) { toast.error(error.code === "23505" ? "That link or SKU is already used" : error.message); return; }
     toast.success(isNew ? "Product created — it's on the shop now" : "Product saved");
     qc.invalidateQueries();
     navigate({ to: "/admin/products" });
