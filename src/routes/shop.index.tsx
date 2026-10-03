@@ -7,14 +7,14 @@ import { effectivePrice, fetchCategories, fetchProducts } from "@/lib/data";
 import { useMoney } from "@/lib/store";
 
 type ShopSearch = {
-  category?: string;
-  q?: string;
-  sort?: string;
-  size?: string;
-  color?: string;
-  max?: number;
-  stock?: string;
-  page?: number;
+  category?: string | undefined;
+  q?: string | undefined;
+  sort?: string | undefined;
+  size?: string | undefined;
+  color?: string | undefined;
+  max?: number | undefined;
+  stock?: string | undefined;
+  page?: number | undefined;
 };
 
 export const Route = createFileRoute("/shop/")({
@@ -50,7 +50,7 @@ const PER_PAGE = 9;
 
 function Shop() {
   const search = Route.useSearch();
-  const navigate = useNavigate({ from: "/shop" });
+  const navigate = useNavigate({ from: "/shop/" });
   const money = useMoney();
   const [query, setQuery] = useState(search.q ?? "");
 
