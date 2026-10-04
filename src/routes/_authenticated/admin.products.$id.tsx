@@ -147,11 +147,11 @@ function ProductEditor() {
                   {i === 0 ? <span className="absolute left-1 top-1 rounded bg-background/90 px-1 text-[10px]">Main</span> : null}
                   <div className="absolute inset-x-0 bottom-0 flex justify-between p-0.5">
                     <button type="button" aria-label="Move left" disabled={i === 0} className="rounded bg-background/90 px-1 text-xs disabled:opacity-30"
-                      onClick={() => { const a = [...arr]; [a[i - 1], a[i]] = [a[i], a[i - 1]]; set("images", a.join("\n")); }}>‹</button>
+                      onClick={() => { set("images", move(arr, i, i - 1)); }}>‹</button>
                     <button type="button" aria-label="Remove" className="rounded bg-background/90 px-1 text-xs text-destructive"
                       onClick={() => set("images", arr.filter((_, j) => j !== i).join("\n"))}>✕</button>
                     <button type="button" aria-label="Move right" disabled={i === arr.length - 1} className="rounded bg-background/90 px-1 text-xs disabled:opacity-30"
-                      onClick={() => { const a = [...arr]; [a[i + 1], a[i]] = [a[i], a[i + 1]]; set("images", a.join("\n")); }}>›</button>
+                      onClick={() => { set("images", move(arr, i, i + 1)); }}>›</button>
                   </div>
                 </div>
               ))}
@@ -185,4 +185,11 @@ function ProductEditor() {
       </div>
     </form>
   );
+}
+
+function move(arr: string[], from: number, to: number) {
+  const a = [...arr];
+  const [x] = a.splice(from, 1);
+  a.splice(to, 0, x as string);
+  return a.join("\n");
 }
