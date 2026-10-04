@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { fetchCategories, slugify } from "@/lib/data";
+import { ImageUploader } from "@/components/admin/ImageUploader";
 
 export const Route = createFileRoute("/_authenticated/admin/products/$id")({
   component: ProductEditor,
@@ -133,12 +134,33 @@ function ProductEditor() {
             <label className={label}>Sizes (comma separated)<input className={input} value={f.sizes} onChange={(e) => set("sizes", e.target.value)} /></label>
             <label className={label}>Colours (comma separated)<input className={input} value={f.colors} onChange={(e) => set("colors", e.target.value)} /></label>
           </div>
-          <label className={label + " block"}>Photo links (one per line)
-            <textarea rows={3} className={input} value={f.images} onChange={(e) => set("images", e.target.value)} placeholder="https://…/photo.jpg" />
-          </label>
+          <div className={label + " block"}>Photos
+            <div className="mt-1">
+              <ImageUploader onUploaded={(url) => setF((p) => ({ ...p, images: [...list(p.images), url].join("\n") }))} />
+            </div>
+          </div>
           {list(f.images).length ? (
-            <div className="flex flex-wrap gap-2">{list(f.images).map((src) => <img key={src} src={src} alt="" className="h-20 w-16 rounded-lg object-cover" />)}</div>
+            <div className="flex flex-wrap gap-2">
+              {list(f.images).map((src, i, arr) => (
+                <div key={src} className="relative">
+                  <img src={src} alt="" className="h-24 w-20 rounded-lg object-cover" />
+                  {i === 0 ? <span className="absolute left-1 top-1 rounded bg-background/90 px-1 text-[10px]">Main</span> : null}
+                  <div className="absolute inset-x-0 bottom-0 flex justify-between p-0.5">
+                    <button type="button" aria-label="Move left" disabled={i === 0} className="rounded bg-background/90 px-1 text-xs disabled:opacity-30"
+                      onClick={() => { set("images", move(arr, i, i - 1)); }}>‹</button>
+                    <button type="button" aria-label="Remove" className="rounded bg-background/90 px-1 text-xs text-destructive"
+                      onClick={() => set("images", arr.filter((_, j) => j !== i).join("\n"))}>✕</button>
+                    <button type="button" aria-label="Move right" disabled={i === arr.length - 1} className="rounded bg-background/90 px-1 text-xs disabled:opacity-30"
+                      onClick={() => { set("images", move(arr, i, i + 1)); }}>›</button>
+                  </div>
+                </div>
+              ))}
+            </div>
           ) : null}
+          <details className="text-xs text-muted-foreground">
+            <summary className="cursor-pointer">Or paste photo links</summary>
+            <textarea rows={3} className={input} value={f.images} onChange={(e) => set("images", e.target.value)} placeholder="https://…/photo.jpg" />
+          </details>
           <label className={label + " block"}>Size chart<textarea rows={3} className={input} value={f.size_chart} onChange={(e) => set("size_chart", e.target.value)} /></label>
         </div>
 
@@ -163,4 +185,11 @@ function ProductEditor() {
       </div>
     </form>
   );
+}
+
+function move(arr: string[], from: number, to: number) {
+  const a = [...arr];
+  const [x] = a.splice(from, 1);
+  a.splice(to, 0, x as string);
+  return a.join("\n");
 }
