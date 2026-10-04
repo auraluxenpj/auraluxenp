@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { fetchCategories, slugify } from "@/lib/data";
+import { ImageUploader } from "@/components/admin/ImageUploader";
 
 export const Route = createFileRoute("/_authenticated/admin/products/$id")({
   component: ProductEditor,
