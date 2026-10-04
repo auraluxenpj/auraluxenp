@@ -331,10 +331,10 @@ Yes, within 7 days of delivery if the piece is unworn with tags attached.','Answ
 insert into public.site_settings (key, value) values
  ('brand_name','AURALUXE'),
  ('tagline','Ladies'' fashion atelier · Nepalgunj'),
- ('phone','+977 981-0000000'),
- ('whatsapp','9779810000000'),
- ('email','hello@auraluxe.com.np'),
- ('address','Main Road, Nepalgunj, Banke, Nepal'),
+ ('phone','+977 9709039488'),
+ ('whatsapp','9779709039488'),
+ ('email','auraluxe26@gmail.com'),
+ ('address','Rani talab road purb line Tribhuwan chowk opposite of Vaybarsangh Nepalgunj Nepal'),
  ('map_embed','https://www.google.com/maps?q=Nepalgunj,Nepal&output=embed'),
  ('instagram','https://instagram.com/auraluxe'),
  ('tiktok','https://tiktok.com/@auraluxe'),
@@ -344,5 +344,5 @@ insert into public.site_settings (key, value) values
  ('free_shipping_threshold','3500'),
  ('tax_percent','0'),
  ('payment_methods','cod,bank_transfer'),
- ('store_hours','Sun–Fri 10:00–19:00 · Sat 11:00–17:00'),
+ ('store_hours','Daily 10:00–21:00'),
  ('announcement','Complimentary shipping over Rs. 3,500 · Nepalgunj');
