@@ -135,6 +135,15 @@ function ProductsList() {
           </Link>
         </div>
       </div>
+      <p className="text-xs text-muted-foreground">
+        Import tip: export first, edit in Excel, then import. Rows matching an existing SKU (or slug) are updated; others become new products (need Name and Price). Separate sizes/colours/image links with "|". Category can be a name like "Kurtis".
+      </p>
+      {report ? (
+        <div className="rounded-2xl border border-border bg-card p-4 text-sm">
+          <p>{report.created} added · {report.updated} updated · {report.errors.length} skipped</p>
+          {report.errors.length ? <ul className="mt-2 list-disc pl-5 text-xs text-destructive">{report.errors.map((e) => <li key={e}>{e}</li>)}</ul> : null}
+        </div>
+      ) : null}
       <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search by name or SKU" className="w-full rounded-xl border border-border bg-card px-4 py-3 text-sm" />
       {isLoading ? <p className="text-sm text-muted-foreground">Loading…</p> : null}
       <div className="space-y-3">
