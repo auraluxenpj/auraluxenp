@@ -95,10 +95,10 @@ function ProductsList() {
       const errors: string[] = [];
       for (const r of rows) {
         if (r.error) { errors.push(`Row ${r.line}: ${r.error}`); continue; }
-        const d = r.data as Record<string, any>;
+        const d: any = r.data;
         const match = products.find((p) => (d.sku && p.sku === d.sku) || (d.slug && p.slug === d.slug));
         if (match) {
-          const { slug: _s, ...upd } = d;
+          const { slug: _s, ...upd }: any = d;
           const { error } = await supabase.from("products").update(upd).eq("id", match.id);
           if (error) errors.push(`Row ${r.line}: ${error.message}`); else updated++;
         } else {
