@@ -33,7 +33,7 @@ const ALIASES: Record<string, string> = {
   images: "images", published: "is_published", newarrival: "is_new", bestseller: "is_bestseller", featured: "is_featured",
 };
 
-export type ImportRow = { line: number; data: Record<string, unknown>; error?: string };
+export type ImportRow = { line: number; data: any; error?: string };
 
 const slugify = (s: string) => s.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 const bool = (v: string) => /^(yes|y|true|1)$/i.test(v.trim());
@@ -41,10 +41,10 @@ const list = (v: string) => v.split(/[|;]/).map((x) => x.trim()).filter(Boolean)
 
 export function mapRows(rows: string[][], categories: { id: string; name: string; slug: string }[]): ImportRow[] {
   if (rows.length < 2) return [];
-  const keys = rows[0].map((h) => ALIASES[norm(h)]);
+  const keys = rows[0]!.map((h) => ALIASES[norm(h)]);
   return rows.slice(1).map((r, idx) => {
     const line = idx + 2;
-    const data: Record<string, unknown> = {};
+    const data: any = {};
     keys.forEach((k, i) => {
       if (!k) return;
       const v = (r[i] ?? "").trim();
