@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useRef, useState } from "react";
+import { mapRows, parseCsv } from "@/lib/csv-import";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { fetchAllProducts, productImage, type Product } from "@/lib/data";
@@ -79,11 +80,53 @@ function ProductsList() {
     toast.success(`Exported ${products.length} products`);
   };
 
+  const fileRef = useRef<HTMLInputElement>(null);
+  const [importing, setImporting] = useState(false);
+  const [report, setReport] = useState<{ created: number; updated: number; errors: string[] } | null>(null);
+
+  const importCsv = async (file: File) => {
+    setImporting(true);
+    setReport(null);
+    try {
+      const { data: cats } = await supabase.from("categories").select("id,name,slug");
+      const rows = mapRows(parseCsv(await file.text()), cats ?? []);
+      if (rows.length === 0) throw new Error("No product rows found in the file");
+      let created = 0, updated = 0;
+      const errors: string[] = [];
+      for (const r of rows) {
+        if (r.error) { errors.push(`Row ${r.line}: ${r.error}`); continue; }
+        const d: any = r.data;
+        const match = products.find((p) => (d.sku && p.sku === d.sku) || (d.slug && p.slug === d.slug));
+        if (match) {
+          const { slug: _s, ...upd }: any = d;
+          const { error } = await supabase.from("products").update(upd).eq("id", match.id);
+          if (error) errors.push(`Row ${r.line}: ${error.message}`); else updated++;
+        } else {
+          if (!d.name || d.price == null) { errors.push(`Row ${r.line}: new products need Name and Price`); continue; }
+          const { error } = await supabase.from("products").insert(d as any);
+          if (error) errors.push(`Row ${r.line}: ${error.message}`); else created++;
+        }
+      }
+      setReport({ created, updated, errors });
+      toast.success(`Import done: ${created} added, ${updated} updated`);
+      refresh();
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setImporting(false);
+      if (fileRef.current) fileRef.current.value = "";
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="font-display text-3xl">Products</h1>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
+          <input ref={fileRef} type="file" accept=".csv,text/csv" className="hidden" onChange={(e) => e.target.files?.[0] && importCsv(e.target.files[0])} />
+          <button onClick={() => fileRef.current?.click()} disabled={importing} className="rounded-full border border-border px-5 py-2.5 text-[12px] uppercase tracking-[0.15em] disabled:opacity-50">
+            {importing ? "Importing…" : "Import CSV"}
+          </button>
           <button onClick={exportCsv} disabled={products.length === 0} className="rounded-full border border-border px-5 py-2.5 text-[12px] uppercase tracking-[0.15em] disabled:opacity-50">
             Export CSV
           </button>
@@ -92,6 +135,15 @@ function ProductsList() {
           </Link>
         </div>
       </div>
+      <p className="text-xs text-muted-foreground">
+        Import tip: export first, edit in Excel, then import. Rows matching an existing SKU (or slug) are updated; others become new products (need Name and Price). Separate sizes/colours/image links with "|". Category can be a name like "Kurtis".
+      </p>
+      {report ? (
+        <div className="rounded-2xl border border-border bg-card p-4 text-sm">
+          <p>{report.created} added · {report.updated} updated · {report.errors.length} skipped</p>
+          {report.errors.length ? <ul className="mt-2 list-disc pl-5 text-xs text-destructive">{report.errors.map((e) => <li key={e}>{e}</li>)}</ul> : null}
+        </div>
+      ) : null}
       <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search by name or SKU" className="w-full rounded-xl border border-border bg-card px-4 py-3 text-sm" />
       {isLoading ? <p className="text-sm text-muted-foreground">Loading…</p> : null}
       <div className="space-y-3">
