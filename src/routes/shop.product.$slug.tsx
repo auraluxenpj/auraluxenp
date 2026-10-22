@@ -15,12 +15,12 @@ export const Route = createFileRoute("/shop/product/$slug")({
         { title: `${pretty} — Auraluxe` },
         {
           name: "description",
-          content: `${pretty} from Auraluxe, Nepalgunj. Sizes, colours, fabric details and cash on delivery across Nepal.`,
+          content: `${pretty} from Auraluxe, Nepalgunj. Sizes, colours, fabric details and secure QR or bank transfer payment across Nepal.`,
         },
         { property: "og:title", content: `${pretty} — Auraluxe` },
         {
           property: "og:description",
-          content: `${pretty} from Auraluxe, Nepalgunj. Cash on delivery across Nepal.`,
+          content: `${pretty} from Auraluxe, Nepalgunj. Secure QR or bank transfer payment across Nepal.`,
         },
       ],
     };
