@@ -19,4 +19,6 @@ Catalogue: 10 products, 8 categories, 0 variant records. Accounts: 1 confirmed a
 
 Backup inventory timestamp: unverified. Supported full database export: not started or downloaded. Storage backup: not downloaded. No live mutations made.
 
-Owner approved the Phase 1 plan. Existing CSV automated tests: 3 passed on 2026-10-22. Latest inspected automatic build at 11:35:44 UTC: build OK. New checkout/payment/security tests have not run; no Phase 1 application or database implementation has been activated. Implementation remains blocked by required backup/export/storage confirmation.
+Owner approved the Phase 1 plan. Existing CSV automated tests: 3 passed on 2026-10-22. Latest inspected automatic build at 11:35:44 UTC: build OK. New checkout/payment/security tests have not run; no Phase 1 application or database implementation has been activated.
+
+Owner reports both database export and storage downloads completed. Backup timestamp supplied verbatim: "Aura Data3:04:14 pm utc". Date is absent, so latest snapshot timestamp is not fully verified. No independent inventory/export/download verification is available from this chat. Require dated backup evidence before production activation. Merchant QR and bank instructions remain unavailable. Create the isolated implementation draft on the next turn so it starts from the saved baseline and approved plan; verify isolation before any database changes.
