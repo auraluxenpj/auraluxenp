@@ -3,7 +3,7 @@
 ## Current request: Editable Payment Settings
 
 - [x] Review existing schema and storage policies; current live settings still cod,bank_transfer.
-- [ ] Implement Settings → Payment Settings with admin-only access, validated QR upload, bank fields and audit trail in isolated draft.
+- [ ] Implement Settings → Payment Settings with admin-only access, validated QR upload, bank fields and audit trail — delegated to Secure Payment Settings review draft; its own chat will report results/blockers.
 - [ ] Integrate configured/enabled methods with checkout and enforce no new COD without changing legacy orders.
 - [ ] Test save/refresh, customer instructions, disabled methods, unauthorized edits, direct COD rejection and data preservation.
 - [ ] Present test results and configuration blockers; do not publish or activate Live restrictions without approval.
@@ -13,7 +13,8 @@
 - [x] Owner confirms supported full database export downloaded (not independently inspected).
 - [x] Owner confirms required storage files downloaded (not independently inspected).
 - [x] Review planned schema/security changes and isolated draft approach with owner.
-- [ ] Create isolated implementation draft from saved plan/baseline on next turn; verify backend isolation before mutations.
+- [x] Create Secure Payment Settings review draft with explicit isolation, preservation and no-publish instructions.
+- [ ] Verify backend isolation before mutations — delegated to draft; not yet confirmed here.
 - [ ] Implement trusted atomic checkout, validation, idempotency and COD rejection in isolated draft.
 - [ ] Add genuine merchant payment settings, proof review and authorized verification.
 - [ ] Add recorded product WhatsApp enquiries without order/payment/stock effects.
