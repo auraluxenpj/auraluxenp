@@ -1,10 +1,11 @@
 # Phase 1: Secure checkout and remove COD
 
 - [x] Audit existing backend, checkout paths, payment settings and legacy order baseline.
-- [ ] Verify newest available backup timestamp — requires owner evidence from Cloud Backups.
-- [ ] Obtain supported full database export — requires owner to start and download Cloud export.
-- [ ] Preserve required storage files — requires owner downloads from Cloud Storage.
+- [ ] Verify newest available backup timestamp — owner supplied "Aura Data3:04:14 pm utc" without a date; dated evidence still needed.
+- [x] Owner confirms supported full database export downloaded (not independently inspected).
+- [x] Owner confirms required storage files downloaded (not independently inspected).
 - [x] Review planned schema/security changes and isolated draft approach with owner.
+- [ ] Create isolated implementation draft from saved plan/baseline on next turn; verify backend isolation before mutations.
 - [ ] Implement trusted atomic checkout, validation, idempotency and COD rejection in isolated draft.
 - [ ] Add genuine merchant payment settings, proof review and authorized verification.
 - [ ] Add recorded product WhatsApp enquiries without order/payment/stock effects.
