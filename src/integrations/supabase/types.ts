@@ -215,6 +215,7 @@ export type Database = {
       orders: {
         Row: {
           address: string
+          checkout_key: string | null
           city: string | null
           country: string | null
           coupon_code: string | null
@@ -229,6 +230,7 @@ export type Database = {
           payment_method: string
           payment_status: Database["public"]["Enums"]["payment_status"]
           postal_code: string | null
+          request_fingerprint: string | null
           shipping: number
           state: string | null
           status: Database["public"]["Enums"]["order_status"]
@@ -240,6 +242,7 @@ export type Database = {
         }
         Insert: {
           address: string
+          checkout_key?: string | null
           city?: string | null
           country?: string | null
           coupon_code?: string | null
@@ -254,6 +257,7 @@ export type Database = {
           payment_method?: string
           payment_status?: Database["public"]["Enums"]["payment_status"]
           postal_code?: string | null
+          request_fingerprint?: string | null
           shipping?: number
           state?: string | null
           status?: Database["public"]["Enums"]["order_status"]
@@ -265,6 +269,7 @@ export type Database = {
         }
         Update: {
           address?: string
+          checkout_key?: string | null
           city?: string | null
           country?: string | null
           coupon_code?: string | null
@@ -279,6 +284,7 @@ export type Database = {
           payment_method?: string
           payment_status?: Database["public"]["Enums"]["payment_status"]
           postal_code?: string | null
+          request_fingerprint?: string | null
           shipping?: number
           state?: string | null
           status?: Database["public"]["Enums"]["order_status"]
@@ -317,6 +323,81 @@ export type Database = {
           slug?: string
           title?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      payment_settings: {
+        Row: {
+          bank_account_name: string | null
+          bank_account_number: string | null
+          bank_account_type: string | null
+          bank_branch: string | null
+          bank_enabled: boolean
+          bank_instructions: string | null
+          bank_name: string | null
+          id: string
+          qr_enabled: boolean
+          qr_image_path: string | null
+          qr_instructions: string | null
+          qr_merchant_name: string | null
+          qr_provider: string | null
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          bank_account_name?: string | null
+          bank_account_number?: string | null
+          bank_account_type?: string | null
+          bank_branch?: string | null
+          bank_enabled?: boolean
+          bank_instructions?: string | null
+          bank_name?: string | null
+          id?: string
+          qr_enabled?: boolean
+          qr_image_path?: string | null
+          qr_instructions?: string | null
+          qr_merchant_name?: string | null
+          qr_provider?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          bank_account_name?: string | null
+          bank_account_number?: string | null
+          bank_account_type?: string | null
+          bank_branch?: string | null
+          bank_enabled?: boolean
+          bank_instructions?: string | null
+          bank_name?: string | null
+          id?: string
+          qr_enabled?: boolean
+          qr_image_path?: string | null
+          qr_instructions?: string | null
+          qr_merchant_name?: string | null
+          qr_provider?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
+      payment_settings_audit: {
+        Row: {
+          changed_at: string
+          changed_by: string | null
+          id: string
+          snapshot: Json
+        }
+        Insert: {
+          changed_at?: string
+          changed_by?: string | null
+          id?: string
+          snapshot: Json
+        }
+        Update: {
+          changed_at?: string
+          changed_by?: string | null
+          id?: string
+          snapshot?: Json
         }
         Relationships: []
       }
@@ -562,6 +643,16 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      place_order: {
+        Args: {
+          p_checkout_key: string
+          p_coupon?: string
+          p_customer: Json
+          p_items: Json
+          p_payment_method: string
+        }
+        Returns: Json
       }
     }
     Enums: {
