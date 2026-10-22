@@ -1,5 +1,13 @@
 # Phase 1: Secure checkout and remove COD
 
+## Current request: Editable Payment Settings
+
+- [x] Review existing schema and storage policies; current live settings still cod,bank_transfer.
+- [ ] Implement Settings → Payment Settings with admin-only access, validated QR upload, bank fields and audit trail in isolated draft.
+- [ ] Integrate configured/enabled methods with checkout and enforce no new COD without changing legacy orders.
+- [ ] Test save/refresh, customer instructions, disabled methods, unauthorized edits, direct COD rejection and data preservation.
+- [ ] Present test results and configuration blockers; do not publish or activate Live restrictions without approval.
+
 - [x] Audit existing backend, checkout paths, payment settings and legacy order baseline.
 - [ ] Verify newest available backup timestamp — owner supplied "Aura Data3:04:14 pm utc" without a date; dated evidence still needed.
 - [x] Owner confirms supported full database export downloaded (not independently inspected).
