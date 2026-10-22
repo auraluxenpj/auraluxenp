@@ -17,8 +17,8 @@ Both are pending, unpaid and cod. Fingerprints are comparison evidence, not back
 
 Catalogue: 10 products, 8 categories, 0 variant records. Accounts: 1 confirmed account and 1 admin role. Storage: product-images private bucket, 293 objects, 10 MB limit; public read policy, admin-only writes. Product references: 8 signed links and 6 bundled images.
 
-Backup inventory timestamp: unverified. Supported full database export: not started or downloaded. Storage backup: not downloaded. No live mutations made.
+Owner-confirmed newest backup timestamp: October 21, 2026, 3:04:14 PM UTC (2026-10-21T15:04:14Z). Owner confirms supported full database export and required storage downloads completed. These are owner-reported, not independently inspected. No live mutations made in this thread.
 
 Owner approved the Phase 1 plan. Existing CSV automated tests: 3 passed on 2026-10-22. Latest inspected automatic build at 11:35:44 UTC: build OK. New checkout/payment/security tests have not run; no Phase 1 application or database implementation has been activated.
 
-Owner reports both database export and storage downloads completed. Backup timestamp supplied verbatim: "Aura Data3:04:14 pm utc". Date is absent, so latest snapshot timestamp is not fully verified. No independent inventory/export/download verification is available from this chat. Require dated backup evidence before production activation. Merchant QR and bank instructions remain unavailable. Create the isolated implementation draft on the next turn so it starts from the saved baseline and approved plan; verify isolation before any database changes.
+Owner clarified the earlier incomplete timestamp as "Oct 21, 2026, 3:04:14 PM UTC". The dated owner confirmation is now recorded in the implementation plan. No independent inventory/export/download verification is available from this chat. Merchant QR and bank instructions remain unavailable. The isolated Payment Settings review draft was created; verify isolation before database changes and retain testing/owner-review requirements before production activation.
