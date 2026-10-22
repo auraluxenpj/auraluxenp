@@ -8,9 +8,9 @@ Current baseline is recorded: `cod,bank_transfer`, a `cod` database default, 10 
 
 ### Owner actions required before implementation
 
-1. Open **More → Database → Manage → Backups** and provide the newest available snapshot timestamp in UTC. This chat cannot read the backup inventory.
-2. Open **More → Database → Manage → Settings → Export data → Database → Export → Start export**. Download the resulting full export and retain it securely. Confirm completion; do not upload account/password data into chat. The export includes schema, records and accounts. It is limited to one export per 24 hours, database size 15 GB and export size 5 GB.
-3. Download required storage files separately from **More → Storage**, including the existing product-images bucket. Confirm the downloads are complete. Neither snapshots nor the database export includes storage files.
+1. **Owner-confirmed newest backup timestamp: October 21, 2026, 3:04:14 PM UTC (2026-10-21T15:04:14Z).** Recorded from the owner's report; this chat cannot independently read the backup inventory.
+2. **Owner confirms the full database export was downloaded.** Retain it securely; do not upload account/password data into chat. The supported process is **More → Database → Manage → Settings → Export data → Database → Export → Start export**. The export includes schema, records and accounts. It is limited to one export per 24 hours, database size 15 GB and export size 5 GB.
+3. **Owner confirms required storage files were downloaded separately**, including product images. Neither snapshots nor the database export includes storage files.
 4. Supply the genuine merchant QR image and bank transfer instructions. Do not enable an incomplete payment method.
 
 If a backup cannot be verified, stop before production-affecting changes. Restores roll back schema and data, lose later writes, and cause temporary unavailability; they are not a routine undo mechanism.
@@ -97,4 +97,4 @@ Before release, report exact schema/app changes, passed/failed tests, any checks
 
 ## Current status
 
-Only read-only inspection and planning/baseline documents have been completed. No application behavior or production records were changed. Backup timestamp, full export, storage downloads and merchant payment details remain unverified/unavailable. Phase 1 tests have not yet run because implementation is gated by these prerequisites.
+The owner confirmed the newest backup timestamp as **October 21, 2026, 3:04:14 PM UTC (2026-10-21T15:04:14Z)** and confirmed database export and storage downloads are complete; these are owner-reported, not independently inspected. The isolated Payment Settings review draft has been started. Genuine merchant payment details remain unavailable. Production activation still requires isolation verification, passing tests and owner review; recording this timestamp does not authorize deployment.
