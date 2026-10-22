@@ -1,23 +1,18 @@
 # Phase 1: Secure checkout and remove COD
 
-## Current request: Editable Payment Settings
-
-- [x] Review existing schema and storage policies; current live settings still cod,bank_transfer.
-- [ ] Implement Settings → Payment Settings with admin-only access, validated QR upload, bank fields and audit trail — delegated to Secure Payment Settings review draft; its own chat will report results/blockers.
-- [ ] Integrate configured/enabled methods with checkout and enforce no new COD without changing legacy orders.
-- [ ] Test save/refresh, customer instructions, disabled methods, unauthorized edits, direct COD rejection and data preservation.
-- [ ] Present test results and configuration blockers; do not publish or activate Live restrictions without approval.
-
 - [x] Audit existing backend, checkout paths, payment settings and legacy order baseline.
 - [x] Record owner-confirmed newest backup timestamp: October 21, 2026, 15:04:14 UTC (2026-10-21T15:04:14Z); not independently inspected.
 - [x] Owner confirms supported full database export downloaded (not independently inspected).
 - [x] Owner confirms required storage files downloaded (not independently inspected).
 - [x] Review planned schema/security changes and isolated draft approach with owner.
-- [x] Create Secure Payment Settings review draft with explicit isolation, preservation and no-publish instructions.
-- [ ] Verify backend isolation before mutations — delegated to draft; not yet confirmed here.
-- [ ] Implement trusted atomic checkout, validation, idempotency and COD rejection in isolated draft.
-- [ ] Add genuine merchant payment settings, proof review and authorized verification.
-- [ ] Add recorded product WhatsApp enquiries without order/payment/stock effects.
-- [x] Run existing CSV tests (3 passed) and inspect automatic build (OK).
-- [ ] Run Phase 1 automated and end-to-end tests; compare legacy order fingerprints and catalogue/auth/image preservation — blocked by backup gate and implementation.
-- [ ] Present results and required configuration; wait for owner release approval.
+- [x] Create isolated implementation draft; isolation verified — draft code is on its own branch, but the database is the shared live one, so all schema changes are staged (never applied) under the draft's migrations folder.
+- [x] Stage payment settings schema: private `payment_settings` singleton, `payment_settings_audit` (real changer + timestamp via trigger), admin-only RLS/grants, disabled unconfigured defaults.
+- [x] Stage trusted atomic checkout: `place_order` database function (server-computed prices/stock/coupon/shipping/tax, idempotency key + fingerprint, guest checkout preserved via auth.uid()), orders.checkout_key/request_fingerprint columns, INSERT-only rejection of COD and any non-QR/bank method, retirement of direct anon/auth order insert policies and grants.
+- [x] Stage private `payment-qr` storage policies (admin-only; customers get short-lived signed links). Blocker: the bucket itself must be created with the storage tool at activation time — SQL cannot create buckets and creating it now would mutate the live backend.
+- [x] Build admin Payment Settings page (QR upload/preview/replace/remove with magic-byte validation, no SVG, no cropping; bank fields; enable toggles; audit history) under the existing protected admin layout.
+- [x] Rewrite checkout: only enabled+configured QR/bank methods shown, blocks with WhatsApp fallback when none configured, COD selector/default/copy removed, totals recomputed server-side, payment instructions shown after order placement.
+- [x] Add payment rules tests (9) and run existing CSV tests (3) — all 12 pass.
+- [ ] Activate at draft accept: create `payment-qr` bucket (private, 5MB limit) via storage tool, then owner enters genuine QR image + bank details in admin. Blocked: no genuine merchant details supplied yet.
+- [ ] After activation, test with a real admin session: settings save/refresh, QR upload, checkout with genuine QR/bank, disabled methods, unauthorized reads/writes, direct COD API rejection, atomic insert rollback, legacy COD fingerprints unchanged, auth/admin/products/images. Blocked: staged tables/functions do not exist in the draft until accept.
+- [ ] Run full Phase 1 automated and end-to-end tests; compare legacy order fingerprints and catalogue/auth/image preservation — blocked by backup gate and activation.
+- [ ] Present results and required configuration; wait for owner release approval. Do not publish or accept the draft without owner review.

@@ -23,6 +23,7 @@ const NAV = [
   { to: "/admin", label: "Dashboard" },
   { to: "/admin/products", label: "Products" },
   { to: "/admin/inventory", label: "Inventory" },
+  { to: "/admin/settings", label: "Settings" },
 ] as const;
 
 function AdminLayout() {

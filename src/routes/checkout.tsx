@@ -1,17 +1,20 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
+import { useQuery } from "@tanstack/react-query";
+import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { z } from "zod";
 import { SiteLayout } from "@/components/site/SiteLayout";
-import { supabase } from "@/integrations/supabase/client";
-import { useCart, useMoney, useSettings } from "@/lib/store";
-import type { Coupon } from "@/lib/data";
+import { getCheckoutPaymentMethods } from "@/lib/payment-settings.functions";
+import { placeOrder } from "@/lib/checkout.functions";
+import type { CheckoutMethod } from "@/lib/payment-settings";
+import { useCart, useMoney, useSettings, whatsappLink } from "@/lib/store";
 
 export const Route = createFileRoute("/checkout")({
   head: () => ({
     meta: [
       { title: "Checkout — Auraluxe" },
-      { name: "description", content: "Complete your Auraluxe order with Cash on Delivery or bank transfer." },
+      { name: "description", content: "Complete your Auraluxe order with secure QR payment or bank transfer." },
       { property: "og:title", content: "Checkout — Auraluxe" },
       { property: "og:description", content: "Complete your Auraluxe order." },
       { name: "robots", content: "noindex" },
@@ -19,13 +22,6 @@ export const Route = createFileRoute("/checkout")({
   }),
   component: CheckoutPage,
 });
-
-const PAYMENT_LABELS: Record<string, string> = {
-  cod: "Cash on Delivery",
-  bank_transfer: "Bank transfer",
-  esewa: "eSewa",
-  khalti: "Khalti",
-};
 
 const schema = z.object({
   customer_name: z.string().trim().min(2, "Please enter your name").max(100),
@@ -41,88 +37,111 @@ const schema = z.object({
 
 type Form = z.infer<typeof schema>;
 
+function PaymentInstructions({ method, orderNumber, total }: { method: CheckoutMethod; orderNumber: string; total: string }) {
+  const s = useSettings();
+  const wa = whatsappLink(s["whatsapp"] ?? "", `Namaste! I've placed order ${orderNumber} (${total}) and I'm sending my payment screenshot.`);
+  return (
+    <div className="mt-6 rounded-2xl border border-border bg-background/70 p-5 text-left">
+      <h2 className="font-display text-xl">How to pay</h2>
+      {method.id === "qr" ? (
+        <div className="mt-3 space-y-3 text-sm">
+          <p>
+            Scan this QR code{method.provider ? ` with ${method.provider}` : ""} and pay <strong>{total}</strong> to{" "}
+            <strong>{method.merchantName}</strong>.
+          </p>
+          {method.qrImageUrl ? (
+            <img src={method.qrImageUrl} alt="Payment QR code" className="mx-auto h-48 w-48 rounded-xl border border-border object-contain" />
+          ) : null}
+          {method.instructions ? <p className="text-muted-foreground">{method.instructions}</p> : null}
+        </div>
+      ) : (
+        <dl className="mt-3 space-y-1.5 text-sm">
+          <div className="flex justify-between gap-4"><dt className="text-muted-foreground">Bank</dt><dd>{method.bankName}</dd></div>
+          <div className="flex justify-between gap-4"><dt className="text-muted-foreground">Account name</dt><dd>{method.accountName}</dd></div>
+          <div className="flex justify-between gap-4"><dt className="text-muted-foreground">Account number</dt><dd className="font-mono">{method.accountNumber}</dd></div>
+          {method.branch ? <div className="flex justify-between gap-4"><dt className="text-muted-foreground">Branch</dt><dd>{method.branch}</dd></div> : null}
+          {method.accountType ? <div className="flex justify-between gap-4"><dt className="text-muted-foreground">Account type</dt><dd>{method.accountType}</dd></div> : null}
+          <div className="flex justify-between gap-4"><dt className="text-muted-foreground">Amount</dt><dd className="font-medium">{total}</dd></div>
+          {method.instructions ? <p className="pt-2 text-muted-foreground">{method.instructions}</p> : null}
+        </dl>
+      )}
+      <p className="mt-4 text-xs text-muted-foreground">
+        Your order is reserved but unpaid. After paying, send your payment screenshot on WhatsApp so we can verify and confirm it.
+      </p>
+      <a href={wa} target="_blank" rel="noreferrer" className="mt-3 inline-block rounded-full bg-secondary px-6 py-3 text-[12px] uppercase tracking-[0.15em]">
+        Send payment proof on WhatsApp
+      </a>
+    </div>
+  );
+}
+
 function CheckoutPage() {
   const { items, subtotal, clear } = useCart();
   const money = useMoney();
   const s = useSettings();
-  const methods = (s["payment_methods"] || "cod").split(",").map((m) => m.trim()).filter(Boolean);
-  const [payment, setPayment] = useState(methods[0] ?? "cod");
+  const placeOrderFn = useServerFn(placeOrder);
+  const { data: methodsData, isLoading: methodsLoading } = useQuery({
+    queryKey: ["checkout", "payment-methods"],
+    queryFn: () => getCheckoutPaymentMethods(),
+    staleTime: 60_000,
+    retry: 1,
+  });
+  const methods = useMemo(() => methodsData?.methods ?? [], [methodsData]);
+  const [payment, setPayment] = useState<string | null>(null);
+  const selected = methods.find((m) => m.id === payment) ?? methods[0];
   const [form, setForm] = useState<Form>({
     customer_name: "", customer_phone: "", customer_email: "", address: "", city: "Nepalgunj",
     state: "", country: "Nepal", postal_code: "", delivery_notes: "",
   });
   const [code, setCode] = useState("");
-  const [coupon, setCoupon] = useState<Coupon | null>(null);
+  const [coupon, setCoupon] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-  const [placed, setPlaced] = useState<string | null>(null);
+  const [placed, setPlaced] = useState<{ orderNumber: string; total: number; method: CheckoutMethod } | null>(null);
+  // One key per checkout attempt set, so a retried submit returns the same
+  // order instead of duplicating it.
+  const [checkoutKey] = useState(() => crypto.randomUUID());
 
-  const discount = coupon
-    ? Math.min(subtotal, coupon.type === "fixed" ? Number(coupon.value) : (subtotal * Number(coupon.value)) / 100)
-    : 0;
+  // Display estimates only — the server recomputes everything from trusted
+  // records and its totals are authoritative.
   const shippingCharge = Number(s["shipping_charge"] ?? 0);
   const threshold = Number(s["free_shipping_threshold"] ?? 0);
-  const shipping = threshold > 0 && subtotal >= threshold ? 0 : shippingCharge;
-  const taxPct = Number(s["tax_percent"] ?? 0);
-  const tax = ((subtotal - discount) * taxPct) / 100;
-  const total = Math.max(0, subtotal - discount + shipping + tax);
+  const estShipping = threshold > 0 && subtotal >= threshold ? 0 : shippingCharge;
 
-  async function applyCoupon() {
-    const c = code.trim().toUpperCase();
-    if (!c) return;
-    const { data } = await supabase.from("coupons").select("*").ilike("code", c).eq("is_active", true).maybeSingle();
-    const now = Date.now();
-    if (!data) { toast.error("That code isn't valid"); return; }
-    if ((data.starts_at && new Date(data.starts_at).getTime() > now) || (data.ends_at && new Date(data.ends_at).getTime() < now)) {
-      toast.error("That code has expired"); return;
-    }
-    if (data.usage_limit != null && data.used_count >= data.usage_limit) { toast.error("That code has been fully used"); return; }
-    if (subtotal < Number(data.min_order)) { toast.error(`Spend ${money(Number(data.min_order))} or more to use this code`); return; }
-    setCoupon(data);
-    toast.success(`${data.code} applied`);
-  }
-
-  async function placeOrder(e: React.FormEvent) {
+  async function submitOrder(e: React.FormEvent) {
     e.preventDefault();
+    if (!selected) return;
     const parsed = schema.safeParse(form);
     if (!parsed.success) { toast.error(parsed.error.issues[0]?.message ?? "Please check the form"); return; }
     setBusy(true);
-    const { data: auth } = await supabase.auth.getUser();
-    const id = crypto.randomUUID();
-    const d = new Date();
-    const orderNumber = `AL-${String(d.getFullYear()).slice(2)}${String(d.getMonth() + 1).padStart(2, "0")}${String(d.getDate()).padStart(2, "0")}-${Math.random().toString(36).slice(2, 7).toUpperCase()}`;
-    const v = parsed.data;
-    const { error } = await supabase.from("orders").insert({
-      id,
-      order_number: orderNumber,
-      user_id: auth.user?.id ?? null,
-      customer_name: v.customer_name,
-      customer_phone: v.customer_phone,
-      customer_email: v.customer_email || null,
-      address: v.address,
-      city: v.city,
-      state: v.state || null,
-      country: v.country,
-      postal_code: v.postal_code || null,
-      delivery_notes: v.delivery_notes || null,
-      payment_method: payment,
-      subtotal,
-      discount,
-      shipping,
-      total,
-      coupon_code: coupon?.code ?? null,
-    });
-    if (error) { setBusy(false); toast.error("We couldn't place your order. Please try again."); return; }
-    const { error: itemsError } = await supabase.from("order_items").insert(
-      items.map((i) => ({
-        order_id: id, product_id: i.productId, product_name: i.name, image_url: i.image,
-        size: i.size, color: i.color, unit_price: i.price, quantity: i.quantity,
-      })),
-    );
-    setBusy(false);
-    if (itemsError) { toast.error("Your order was received but some items failed to save. We'll contact you."); }
-    clear();
-    setPlaced(orderNumber);
-    window.scrollTo({ top: 0 });
+    try {
+      const v = parsed.data;
+      const result = await placeOrderFn({
+        data: {
+          checkoutKey,
+          paymentMethod: selected.id,
+          coupon,
+          customer: {
+            customer_name: v.customer_name,
+            customer_phone: v.customer_phone,
+            customer_email: v.customer_email || null,
+            address: v.address,
+            city: v.city,
+            state: v.state || null,
+            country: v.country,
+            postal_code: v.postal_code || null,
+            delivery_notes: v.delivery_notes || null,
+          },
+          items: items.map((i) => ({ productId: i.productId, size: i.size, color: i.color, quantity: i.quantity })),
+        },
+      });
+      clear();
+      setPlaced({ orderNumber: result.order_number, total: Number(result.total), method: selected });
+      window.scrollTo({ top: 0 });
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "We couldn't place your order. Please try again.");
+    } finally {
+      setBusy(false);
+    }
   }
 
   const field = "w-full rounded-2xl border border-border bg-background/70 px-4 py-3 text-sm";
@@ -136,8 +155,8 @@ function CheckoutPage() {
           <p className="eyebrow">Thank you</p>
           <h1 className="mt-2 font-display text-4xl">Order placed</h1>
           <p className="mt-3 text-sm text-muted-foreground">Your order number is</p>
-          <p className="mt-1 font-display text-2xl text-primary">{placed}</p>
-          <p className="mt-4 text-sm text-muted-foreground">We'll call you shortly to confirm delivery.</p>
+          <p className="mt-1 font-display text-2xl text-primary">{placed.orderNumber}</p>
+          <PaymentInstructions method={placed.method} orderNumber={placed.orderNumber} total={money(placed.total)} />
           <Link to="/shop" className="mt-6 inline-block rounded-full bg-primary px-7 py-3.5 text-[12px] uppercase tracking-[0.18em] text-primary-foreground">
             Continue shopping
           </Link>
@@ -160,13 +179,30 @@ function CheckoutPage() {
     );
   }
 
+  if (!methodsLoading && methods.length === 0) {
+    const wa = whatsappLink(s["whatsapp"] ?? "", "Namaste! I'd like to place an order, but online payment seems unavailable.");
+    return (
+      <SiteLayout>
+        <div className="glass mt-10 rounded-3xl p-8 text-center">
+          <h1 className="font-display text-4xl">Checkout</h1>
+          <p className="mx-auto mt-3 max-w-md text-sm text-muted-foreground">
+            Online payment isn't available right now. Please message us on WhatsApp and we'll complete your order personally.
+          </p>
+          <a href={wa} target="_blank" rel="noreferrer" className="mt-6 inline-block rounded-full bg-primary px-7 py-3.5 text-[12px] uppercase tracking-[0.18em] text-primary-foreground">
+            Message us on WhatsApp
+          </a>
+        </div>
+      </SiteLayout>
+    );
+  }
+
   return (
     <SiteLayout>
       <div className="mt-10">
         <p className="eyebrow">Almost yours</p>
         <h1 className="mt-2 font-display text-5xl">Checkout</h1>
       </div>
-      <form onSubmit={placeOrder} className="mt-6 grid gap-6 lg:grid-cols-12">
+      <form onSubmit={submitOrder} className="mt-6 grid gap-6 lg:grid-cols-12">
         <div className="glass space-y-4 rounded-3xl p-6 lg:col-span-7">
           <h2 className="font-display text-2xl">Delivery details</h2>
           <input className={field} placeholder="Full name *" value={form.customer_name} onChange={set("customer_name")} autoComplete="name" />
@@ -186,12 +222,15 @@ function CheckoutPage() {
           <h2 className="pt-2 font-display text-2xl">Payment</h2>
           <div className="grid gap-3 sm:grid-cols-2">
             {methods.map((m) => (
-              <label key={m} className={`flex cursor-pointer items-center gap-3 rounded-2xl border px-4 py-3 text-sm ${payment === m ? "border-primary bg-secondary" : "border-border"}`}>
-                <input type="radio" name="payment" checked={payment === m} onChange={() => setPayment(m)} className="accent-primary" />
-                {PAYMENT_LABELS[m] ?? m}
+              <label key={m.id} className={`flex cursor-pointer items-center gap-3 rounded-2xl border px-4 py-3 text-sm ${selected?.id === m.id ? "border-primary bg-secondary" : "border-border"}`}>
+                <input type="radio" name="payment" checked={selected?.id === m.id} onChange={() => setPayment(m.id)} className="accent-primary" />
+                {m.label}
               </label>
             ))}
           </div>
+          <p className="text-xs text-muted-foreground">
+            Payment instructions appear after you place the order. Your order stays unpaid until we verify your payment.
+          </p>
         </div>
 
         <aside className="glass-strong h-fit space-y-4 rounded-3xl p-6 lg:col-span-5">
@@ -213,17 +252,17 @@ function CheckoutPage() {
             {coupon ? (
               <button type="button" onClick={() => { setCoupon(null); setCode(""); }} className="rounded-full border border-border px-4 text-xs">Remove</button>
             ) : (
-              <button type="button" onClick={applyCoupon} className="rounded-full bg-secondary px-5 text-xs uppercase tracking-[0.15em]">Apply</button>
+              <button type="button" onClick={() => { const c = code.trim(); if (c) { setCoupon(c); } }} className="rounded-full bg-secondary px-5 text-xs uppercase tracking-[0.15em]">Apply</button>
             )}
           </div>
+          <p className="text-xs text-muted-foreground">Coupons are checked when the order is placed.</p>
           <dl className="space-y-2 text-sm">
             <div className="flex justify-between"><dt className="text-muted-foreground">Subtotal</dt><dd>{money(subtotal)}</dd></div>
-            {discount > 0 ? <div className="flex justify-between text-brand"><dt>Discount ({coupon?.code})</dt><dd>− {money(discount)}</dd></div> : null}
-            <div className="flex justify-between"><dt className="text-muted-foreground">Shipping</dt><dd>{shipping === 0 ? "Free" : money(shipping)}</dd></div>
-            {tax > 0 ? <div className="flex justify-between"><dt className="text-muted-foreground">Tax</dt><dd>{money(tax)}</dd></div> : null}
-            <div className="flex justify-between border-t border-border pt-3 font-display text-xl"><dt>Total</dt><dd className="text-primary">{money(total)}</dd></div>
+            <div className="flex justify-between"><dt className="text-muted-foreground">Shipping (estimated)</dt><dd>{estShipping === 0 ? "Free" : money(estShipping)}</dd></div>
+            <div className="flex justify-between border-t border-border pt-3 font-display text-xl"><dt>Estimated total</dt><dd className="text-primary">{money(subtotal + estShipping)}</dd></div>
           </dl>
-          <button disabled={busy} className="w-full rounded-full bg-primary py-3.5 text-[12px] uppercase tracking-[0.18em] text-primary-foreground disabled:opacity-60">
+          <p className="text-xs text-muted-foreground">The final total is confirmed securely when you place the order.</p>
+          <button disabled={busy || !selected} className="w-full rounded-full bg-primary py-3.5 text-[12px] uppercase tracking-[0.18em] text-primary-foreground disabled:opacity-60">
             {busy ? "Placing order…" : "Place order"}
           </button>
         </aside>
