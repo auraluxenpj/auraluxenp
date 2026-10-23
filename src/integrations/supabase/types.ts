@@ -231,6 +231,7 @@ export type Database = {
           payment_status: Database["public"]["Enums"]["payment_status"]
           postal_code: string | null
           request_fingerprint: string | null
+          restocked_at: string | null
           shipping: number
           state: string | null
           status: Database["public"]["Enums"]["order_status"]
@@ -258,6 +259,7 @@ export type Database = {
           payment_status?: Database["public"]["Enums"]["payment_status"]
           postal_code?: string | null
           request_fingerprint?: string | null
+          restocked_at?: string | null
           shipping?: number
           state?: string | null
           status?: Database["public"]["Enums"]["order_status"]
@@ -285,6 +287,7 @@ export type Database = {
           payment_status?: Database["public"]["Enums"]["payment_status"]
           postal_code?: string | null
           request_fingerprint?: string | null
+          restocked_at?: string | null
           shipping?: number
           state?: string | null
           status?: Database["public"]["Enums"]["order_status"]
@@ -653,6 +656,10 @@ export type Database = {
           p_payment_method: string
         }
         Returns: Json
+      }
+      restock_order: {
+        Args: { p_items: Json; p_order_id: string }
+        Returns: undefined
       }
     }
     Enums: {
