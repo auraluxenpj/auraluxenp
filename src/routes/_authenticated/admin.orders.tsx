@@ -76,7 +76,10 @@ function OrderCard({ o }: { o: Order }) {
     setBusy(true);
     const { error } = await supabase.from("orders").update(patch).eq("id", o.id);
     setBusy(false);
-    if (error) return toast.error(error.message);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
     toast.success(msg);
     qc.invalidateQueries({ queryKey: ["admin", "orders"] });
   }
