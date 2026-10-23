@@ -26,7 +26,7 @@ const PAYMENT_LABEL: Record<string, string> = { cod: "Cash on Delivery (old)", q
 async function fetchOrders() {
   const { data, error } = await supabase
     .from("orders")
-    .select("*, order_items(id, product_name, size, color, quantity, unit_price)")
+    .select("*, order_items(id, product_id, product_name, size, color, quantity, unit_price, products(stock))")
     .order("created_at", { ascending: false });
   if (error) throw error;
   return data;
@@ -148,6 +148,8 @@ function OrderCard({ o }: { o: Order }) {
             {o.tracking_number ? <p className="text-muted-foreground">Tracking: {o.tracking_number}</p> : null}
           </div>
 
+          {(status === "cancelled" || status === "returned") ? <Restock o={o} /> : null}
+
           <div className="space-y-2">
             <p className="label-caps text-muted-foreground">Payment</p>
             <p className="text-xs text-muted-foreground">Only mark paid after you've checked the money has arrived in your account — a screenshot is not proof.</p>
@@ -162,5 +164,71 @@ function OrderCard({ o }: { o: Order }) {
         </div>
       ) : null}
     </li>
+  );
+}
+
+function Restock({ o }: { o: Order }) {
+  const qc = useQueryClient();
+  const [reviewing, setReviewing] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [qty, setQty] = useState<Record<string, number>>(() => Object.fromEntries(o.order_items.map((i) => [i.id, i.quantity])));
+
+  if (o.restocked_at) {
+    return <p className="text-sm text-muted-foreground">Items restored to stock on {new Date(o.restocked_at).toLocaleString()}.</p>;
+  }
+
+  async function save() {
+    setBusy(true);
+    const items = o.order_items.map((i) => ({ order_item_id: i.id, quantity: qty[i.id] ?? 0 }));
+    const { error } = await supabase.rpc("restock_order", { p_order_id: o.id, p_items: items });
+    setBusy(false);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    toast.success("Stock updated");
+    setReviewing(false);
+    qc.invalidateQueries({ queryKey: ["admin"] });
+  }
+
+  return (
+    <div className="space-y-2">
+      <p className="label-caps text-muted-foreground">Inventory</p>
+      {!reviewing ? (
+        <button onClick={() => setReviewing(true)} className="rounded-full border border-border px-4 py-2 text-sm">Restore items to stock</button>
+      ) : (
+        <div className="space-y-3 rounded-xl border border-border p-3">
+          <p className="text-xs text-muted-foreground">Check how many of each item came back in sellable condition. This can only be done once per order.</p>
+          <table className="w-full text-sm">
+            <thead className="text-left text-xs text-muted-foreground">
+              <tr><th className="py-1">Item</th><th>Return</th><th>Stock now</th><th>After</th></tr>
+            </thead>
+            <tbody>
+              {o.order_items.map((i) => {
+                const now = i.products?.stock;
+                const n = qty[i.id] ?? 0;
+                return (
+                  <tr key={i.id} className="border-t border-border">
+                    <td className="py-2 pr-2">{i.product_name}{i.size ? ` · ${i.size}` : ""}{i.color ? ` · ${i.color}` : ""}</td>
+                    <td>
+                      <input type="number" min={0} max={i.quantity} value={n} disabled={!i.product_id}
+                        onChange={(e) => setQty({ ...qty, [i.id]: Math.max(0, Math.min(i.quantity, Number(e.target.value) || 0)) })}
+                        className="w-16 rounded-lg border border-border bg-background px-2 py-1" />
+                      <span className="ml-1 text-xs text-muted-foreground">of {i.quantity}</span>
+                    </td>
+                    <td>{now ?? "—"}</td>
+                    <td className="font-medium">{now == null ? "Product deleted" : now + n}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+          <div className="flex gap-2">
+            <button disabled={busy} onClick={save} className="rounded-full bg-primary px-4 py-2 text-sm text-primary-foreground disabled:opacity-50">Confirm & update stock</button>
+            <button disabled={busy} onClick={() => setReviewing(false)} className="rounded-full border border-border px-4 py-2 text-sm">Back</button>
+          </div>
+        </div>
+      )}
+    </div>
   );
 }
