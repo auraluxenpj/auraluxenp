@@ -1,5 +1,15 @@
 # Phase 1: Secure checkout and remove COD
 
+## BIBA-inspired redesign (Oct 24)
+- [x] Sticky header with category dropdown + mobile drawer; announcement bar with admin on/off toggle.
+- [x] Hero carousel (autoplay, pause-on-hover, arrows, dots, reduced-motion, desktop/mobile image via `<picture>`) driven by live hero banners, default fallback hero.
+- [x] Shop-by-category tiles (category image or first product photo fallback), empty sections hidden on homepage, editorial tiles, testimonials/social kept.
+- [x] Admin → Banners page: create/edit/duplicate/delete (confirm), publish/unpublish (drafts), drag reorder, campaign dates, hero/promo placement, desktop+mobile uploads to existing product-images storage with type/size checks and dimension/file info, link validation, announcement bar editor.
+- [x] Schema: additive `banners.mobile_image_url` column only. No data, auth, checkout, or payment changes. 19 tests pass; build OK; homepage screenshot-checked desktop + mobile.
+- [ ] Not yet done: homepage section ordering controls, wishlist, quick view. Owner to test banner upload/reorder signed in, then publish.
+- [ ] Catalogue contains test-named products (e.g. "hnfg", "dfrdg", "dsgbsf" at Rs. 0) from earlier testing — owner may want to remove them in admin.
+
+
 ## October 24 release review
 - [x] Check both draft statuses: Payment Settings draft accepted; current review draft matches main and has no additional code changes.
 - [x] Run payment rules and CSV tests: 12 passed.
