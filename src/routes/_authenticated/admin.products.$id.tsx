@@ -221,9 +221,8 @@ function ProductEditor() {
             <label className={label + " block"}>Stock<input type="number" min={0} className={input} value={f.stock} onChange={(e) => set("stock", e.target.value)} /></label>
             <label className={label + " block"}>Low-stock warning at<input type="number" min={0} className={input} value={f.low_stock_threshold} onChange={(e) => set("low_stock_threshold", e.target.value)} /></label>
           </div>
-          {(
-            <div className="space-y-3 rounded-2xl border border-border bg-card p-5">
-              <label className="flex items-center gap-3 text-sm">
+          <div className="space-y-3 rounded-2xl border border-border bg-card p-5">
+            <label className="flex items-center gap-3 text-sm">
                 <input
                   type="checkbox"
                   checked={trackBySize}
