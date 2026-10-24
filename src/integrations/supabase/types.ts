@@ -664,6 +664,10 @@ export type Database = {
         Args: { p_items: Json; p_order_id: string }
         Returns: undefined
       }
+      track_order: {
+        Args: { p_contact: string; p_order_number: string }
+        Returns: Json
+      }
     }
     Enums: {
       app_role: "admin" | "staff" | "customer"

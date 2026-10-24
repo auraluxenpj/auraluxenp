@@ -43,6 +43,13 @@
       "when": 1792809251638,
       "tag": "0005_banner_mobile_image",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1792810942130,
+      "tag": "0006_public_order_tracking",
+      "breakpoints": true
     }
   ]
 }

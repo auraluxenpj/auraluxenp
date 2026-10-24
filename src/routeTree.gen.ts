@@ -16,6 +16,8 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as CartRouteImport } from './routes/cart'
 import { Route as CheckoutRouteImport } from './routes/checkout'
 import { Route as ContactRouteImport } from './routes/contact'
+import { Route as StylistRouteImport } from './routes/stylist'
+import { Route as TrackRouteImport } from './routes/track'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as PagesSlugRouteImport } from './routes/pages.$slug'
 import { Route as ShopIndexRouteImport } from './routes/shop.index'
@@ -61,6 +63,16 @@ const CheckoutRoute = CheckoutRouteImport.update({
 const ContactRoute = ContactRouteImport.update({
   id: '/contact',
   path: '/contact',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const StylistRoute = StylistRouteImport.update({
+  id: '/stylist',
+  path: '/stylist',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TrackRoute = TrackRouteImport.update({
+  id: '/track',
+  path: '/track',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
@@ -138,6 +150,8 @@ export interface FileRoutesByFullPath {
   '/cart': typeof CartRoute
   '/checkout': typeof CheckoutRoute
   '/contact': typeof ContactRoute
+  '/stylist': typeof StylistRoute
+  '/track': typeof TrackRoute
   '/admin': typeof AuthenticatedAdminRouteWithChildren
   '/pages/$slug': typeof PagesSlugRoute
   '/shop/': typeof ShopIndexRoute
@@ -158,6 +172,8 @@ export interface FileRoutesByTo {
   '/cart': typeof CartRoute
   '/checkout': typeof CheckoutRoute
   '/contact': typeof ContactRoute
+  '/stylist': typeof StylistRoute
+  '/track': typeof TrackRoute
   '/pages/$slug': typeof PagesSlugRoute
   '/shop': typeof ShopIndexRoute
   '/admin/banners': typeof AuthenticatedAdminBannersRoute
@@ -179,6 +195,8 @@ export interface FileRoutesById {
   '/cart': typeof CartRoute
   '/checkout': typeof CheckoutRoute
   '/contact': typeof ContactRoute
+  '/stylist': typeof StylistRoute
+  '/track': typeof TrackRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRouteWithChildren
   '/pages/$slug': typeof PagesSlugRoute
   '/shop/': typeof ShopIndexRoute
@@ -201,6 +219,8 @@ export interface FileRouteTypes {
     | '/cart'
     | '/checkout'
     | '/contact'
+    | '/stylist'
+    | '/track'
     | '/admin'
     | '/pages/$slug'
     | '/shop/'
@@ -221,6 +241,8 @@ export interface FileRouteTypes {
     | '/cart'
     | '/checkout'
     | '/contact'
+    | '/stylist'
+    | '/track'
     | '/pages/$slug'
     | '/shop'
     | '/admin/banners'
@@ -241,6 +263,8 @@ export interface FileRouteTypes {
     | '/cart'
     | '/checkout'
     | '/contact'
+    | '/stylist'
+    | '/track'
     | '/_authenticated/admin'
     | '/pages/$slug'
     | '/shop/'
@@ -263,6 +287,8 @@ export interface RootRouteChildren {
   CartRoute: typeof CartRoute
   CheckoutRoute: typeof CheckoutRoute
   ContactRoute: typeof ContactRoute
+  StylistRoute: typeof StylistRoute
+  TrackRoute: typeof TrackRoute
   PagesSlugRoute: typeof PagesSlugRoute
   ShopIndexRoute: typeof ShopIndexRoute
   ShopProductSlugRoute: typeof ShopProductSlugRoute
@@ -317,6 +343,20 @@ declare module '@tanstack/react-router' {
       path: '/contact'
       fullPath: '/contact'
       preLoaderRoute: typeof ContactRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/stylist': {
+      id: '/stylist'
+      path: '/stylist'
+      fullPath: '/stylist'
+      preLoaderRoute: typeof StylistRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/track': {
+      id: '/track'
+      path: '/track'
+      fullPath: '/track'
+      preLoaderRoute: typeof TrackRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated/admin': {
@@ -450,6 +490,8 @@ const rootRouteChildren: RootRouteChildren = {
   CartRoute: CartRoute,
   CheckoutRoute: CheckoutRoute,
   ContactRoute: ContactRoute,
+  StylistRoute: StylistRoute,
+  TrackRoute: TrackRoute,
   PagesSlugRoute: PagesSlugRoute,
   ShopIndexRoute: ShopIndexRoute,
   ShopProductSlugRoute: ShopProductSlugRoute,
