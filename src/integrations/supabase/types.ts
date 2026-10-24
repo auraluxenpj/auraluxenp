@@ -62,6 +62,51 @@ export type Database = {
         }
         Relationships: []
       }
+      business_expenses: {
+        Row: {
+          amount: number
+          category: string
+          created_at: string
+          created_by: string
+          expense_date: string
+          id: string
+          notes: string
+          payee: string
+          payment_source: string
+          receipt_reference: string
+          request_fingerprint: string
+          request_key: string
+        }
+        Insert: {
+          amount: number
+          category: string
+          created_at?: string
+          created_by: string
+          expense_date: string
+          id?: string
+          notes?: string
+          payee: string
+          payment_source: string
+          receipt_reference?: string
+          request_fingerprint: string
+          request_key: string
+        }
+        Update: {
+          amount?: number
+          category?: string
+          created_at?: string
+          created_by?: string
+          expense_date?: string
+          id?: string
+          notes?: string
+          payee?: string
+          payment_source?: string
+          receipt_reference?: string
+          request_fingerprint?: string
+          request_key?: string
+        }
+        Relationships: []
+      }
       categories: {
         Row: {
           created_at: string
@@ -473,6 +518,56 @@ export type Database = {
         }
         Relationships: []
       }
+      pos_repayments: {
+        Row: {
+          amount: number
+          balance_after: number
+          created_at: string
+          created_by: string
+          customer_id: string
+          id: string
+          payment_method: string
+          request_fingerprint: string
+          request_key: string
+          voucher: Json
+          voucher_number: string
+        }
+        Insert: {
+          amount: number
+          balance_after: number
+          created_at?: string
+          created_by: string
+          customer_id: string
+          id?: string
+          payment_method: string
+          request_fingerprint: string
+          request_key: string
+          voucher: Json
+          voucher_number: string
+        }
+        Update: {
+          amount?: number
+          balance_after?: number
+          created_at?: string
+          created_by?: string
+          customer_id?: string
+          id?: string
+          payment_method?: string
+          request_fingerprint?: string
+          request_key?: string
+          voucher?: Json
+          voucher_number?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pos_repayments_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "pos_customers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       pos_sale_items: {
         Row: {
           color: string | null
@@ -829,7 +924,9 @@ export type Database = {
     Functions: {
       can_use_pos: { Args: never; Returns: boolean }
       complete_pos_sale: { Args: { p_request: Json }; Returns: string }
+      get_business_day_summary: { Args: { p_date: string }; Returns: Json }
       get_pos_catalog: { Args: never; Returns: Json }
+      get_pos_customer_balances: { Args: never; Returns: Json }
       get_pos_qr: { Args: never; Returns: Json }
       has_role: {
         Args: {
@@ -848,6 +945,8 @@ export type Database = {
         }
         Returns: Json
       }
+      record_business_expense: { Args: { p_request: Json }; Returns: string }
+      record_pos_repayment: { Args: { p_request: Json }; Returns: Json }
       restock_order: {
         Args: { p_items: Json; p_order_id: string }
         Returns: undefined

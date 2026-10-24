@@ -85,6 +85,13 @@
       "when": 1792819364531,
       "tag": "0011_pos_least_privilege_grants",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1792819640576,
+      "tag": "0012_khata_settlements_expenses",
+      "breakpoints": true
     }
   ]
 }
