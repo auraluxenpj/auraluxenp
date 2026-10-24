@@ -260,7 +260,6 @@ function ProductEditor() {
                 </p>
               )}
             </div>
-          ) : null}
           <div className="space-y-3 rounded-2xl border border-border bg-card p-5 text-sm">
             {([["is_published", "Visible on shop"], ["is_new", "New arrival"], ["is_bestseller", "Best seller"], ["is_featured", "Featured / trending"]] as const).map(([k, l]) => (
               <label key={k} className="flex items-center gap-3"><input type="checkbox" checked={f[k]} onChange={(e) => set(k, e.target.checked)} className="size-4 accent-primary" />{l}</label>
