@@ -60,6 +60,36 @@ function ProductDetail() {
   const [quantity, setQuantity] = useState(1);
   const [active, setActive] = useState(0);
   const [zoomed, setZoomed] = useState(false);
+
+  // Per-size stock comes from tracked variants; pieces without any fall back
+  // to the single product-level stock figure.
+  const derived = useMemo(() => {
+    if (!product) return null;
+    const sizeStocksList = sizeStocks(product, variants);
+    const effectiveSize = size ?? (product.sizes?.length === 1 ? product.sizes[0] ?? null : null);
+    const effectiveColor = color ?? (product.colors?.length === 1 ? product.colors[0] ?? null : null);
+    const comboStock = effectiveSize ? stockForSize(variants, effectiveSize, effectiveColor) : null;
+    const sizeTotalStock = effectiveSize ? stockForSize(variants, effectiveSize) : null;
+    const maxQty = comboStock ?? sizeTotalStock;
+    const qty = Math.max(1, Math.min(quantity, maxQty ?? quantity));
+    const allSizesSoldOut =
+      !!sizeStocksList &&
+      sizeStocksList.length > 0 &&
+      sizeStocksList.every((e) => e.stock != null && e.stock <= 0);
+    const sizeSoldOut = (sizeTotalStock ?? 1) <= 0;
+    return {
+      sizeStocksList,
+      effectiveSize,
+      effectiveColor,
+      comboStock,
+      sizeTotalStock,
+      maxQty,
+      qty,
+      allSizesSoldOut,
+      sizeSoldOut,
+    };
+  }, [product, variants, size, color, quantity]);
+
   const sliderRef = useRef<HTMLDivElement>(null);
   const goTo = (i: number) => {
     const el = sliderRef.current;
@@ -75,7 +105,7 @@ function ProductDetail() {
     );
   }
 
-  if (!product) {
+  if (!product || !derived) {
     return (
       <SiteLayout>
         <div className="glass mt-10 rounded-3xl p-8">
