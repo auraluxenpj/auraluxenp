@@ -6,6 +6,7 @@ import { SiteLayout } from "@/components/site/SiteLayout";
 import { ProductCard } from "@/components/site/ProductCard";
 import { effectivePrice, fetchProductBySlug, fetchProducts, productImage } from "@/lib/data";
 import { useCart, useMoney, useSettings, whatsappLink } from "@/lib/store";
+import { requiredOptionLabels } from "@/lib/product-options";
 import { PhotoZoom } from "@/components/site/PhotoZoom";
 
 export const Route = createFileRoute("/shop/product/$slug")({
@@ -78,6 +79,11 @@ function ProductDetail() {
   const hasDiscount = product.sale_price != null && Number(product.sale_price) > 0;
   const images = product.images?.length ? product.images : [productImage(product)];
   const outOfStock = product.stock <= 0;
+  // A single size or colour is applied automatically; anything else must be
+  // chosen by the shopper before it can go into the bag.
+  const effectiveSize = size ?? (product.sizes?.length === 1 ? product.sizes[0] : null);
+  const effectiveColor = color ?? (product.colors?.length === 1 ? product.colors[0] : null);
+  const missingOptions = requiredOptionLabels(product, effectiveSize, effectiveColor);
   const related = all.filter((p) => p.category_id === product.category_id && p.id !== product.id).slice(0, 3);
 
   const chosen = {
@@ -86,8 +92,8 @@ function ProductDetail() {
     name: product.name,
     image: images[0] ?? null,
     price,
-    size: size ?? product.sizes?.[0] ?? null,
-    color: color ?? product.colors?.[0] ?? null,
+    size: effectiveSize,
+    color: effectiveColor,
     quantity: qty,
   };
 
@@ -212,7 +218,7 @@ function ProductDetail() {
                     type="button"
                     onClick={() => setSize(s)}
                     className={`rounded-full px-5 py-2.5 text-[12px] uppercase tracking-[0.15em] ${
-                      (size ?? product.sizes[0]) === s
+                      size === s
                         ? "bg-primary text-primary-foreground"
                         : "glass text-foreground/70"
                     }`}
@@ -221,6 +227,9 @@ function ProductDetail() {
                   </button>
                 ))}
               </div>
+              {(product.sizes?.length ?? 0) > 1 && !size ? (
+                <p className="mt-2 text-xs text-destructive">Please select a size</p>
+              ) : null}
             </div>
           ) : null}
 
@@ -234,7 +243,7 @@ function ProductDetail() {
                     type="button"
                     onClick={() => setColor(c)}
                     className={`rounded-full px-5 py-2.5 text-[12px] uppercase tracking-[0.15em] ${
-                      (color ?? product.colors[0]) === c
+                      color === c
                         ? "bg-primary text-primary-foreground"
                         : "glass text-foreground/70"
                     }`}
@@ -243,6 +252,9 @@ function ProductDetail() {
                   </button>
                 ))}
               </div>
+              {(product.colors?.length ?? 0) > 1 && !color ? (
+                <p className="mt-2 text-xs text-destructive">Please select a colour</p>
+              ) : null}
             </div>
           ) : null}
 
@@ -262,7 +274,7 @@ function ProductDetail() {
           <div className="mt-7 flex flex-col gap-3 sm:flex-row">
             <button
               type="button"
-              disabled={outOfStock}
+              disabled={outOfStock || missingOptions.length > 0}
               onClick={() => {
                 add(chosen);
                 toast.success("Added to your bag");
@@ -274,7 +286,14 @@ function ProductDetail() {
             <Link
               to="/checkout"
               disabled={outOfStock}
-              onClick={() => add(chosen)}
+              onClick={(e) => {
+                if (missingOptions.length) {
+                  e.preventDefault();
+                  toast.error(`Please select a ${missingOptions.join(" and ")}`);
+                  return;
+                }
+                add(chosen);
+              }}
               className="flex-1 rounded-full bg-primary py-3.5 text-center text-[12px] uppercase tracking-[0.18em] text-primary-foreground"
             >
               Buy now
