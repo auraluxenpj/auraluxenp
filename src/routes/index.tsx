@@ -73,7 +73,7 @@ function SectionHeading({ eyebrow, title }: { eyebrow: string; title: string }) 
 function Rail({ products }: { products: Product[] }) {
   if (products.length === 0) return null;
   return (
-    <section className="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+    <section className="mt-6 grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-3">
       {products.map((p) => (
         <ProductCard key={p.id} product={p} />
       ))}

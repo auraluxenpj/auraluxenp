@@ -263,7 +263,7 @@ function Shop() {
         {isLoading ? "Loading…" : `${filtered.length} pieces`}
       </p>
 
-      <section className="mt-4 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+      <section className="mt-4 grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-3">
         {visible.map((p) => (
           <ProductCard key={p.id} product={p} />
         ))}
