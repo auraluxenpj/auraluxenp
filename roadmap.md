@@ -15,8 +15,9 @@
 - [x] Verified in preview: real AI picks in ~10s within budget, real legacy order lookup works, wrong contact shows "not found", 19 tests pass, build OK. Not published.
 
 ## Stylist add-to-bag + publish (Oct 24, 03:09 UTC)
-- [ ] Give each AI Stylist recommendation a clear direct add-to-bag action (and a way to add the whole set), verified by clicking through to the bag in the browser.
-- [ ] Publish /stylist and /track to the live site once the add-to-bag buttons are in.
+- [x] Each AI Stylist recommendation now has its own "Add to bag" button plus a "View" link, and an "Add all N to bag" button above the grid; sold-out picks are refused. Rules live in `src/lib/stylist-cart.ts` with 6 tests (25 total pass). Browser check: 6 picks → per-card add then add-all left 7 items in the bag at correct sale prices.
+- [x] Published /stylist and /track (with the add-to-bag buttons) to https://www.auraluxe.com.np; fresh security scan cleared the old checkout-price warning, remaining findings are the user-ignored product-images rule and intentional public storefront reads.
+
 
 
 
