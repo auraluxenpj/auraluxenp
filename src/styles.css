@@ -146,3 +146,16 @@
   text-transform: uppercase;
   letter-spacing: 0.18em;
 }
+
+/* Counter documents are separate from storefront styling. */
+.pos-workspace { letter-spacing: 0; }
+@media print {
+ body[data-pos-print] * { visibility: hidden; }
+ body[data-pos-print] #pos-print-receipt, body[data-pos-print] #pos-print-receipt * { visibility: visible; }
+ body[data-pos-print] #pos-print-receipt { position: fixed; inset: 0 auto auto 0; width: 100%; border: 0; background: var(--background); color: var(--foreground); }
+ body[data-pos-print="thermal"] #pos-print-receipt { width: 76mm; padding: 3mm; font-size: 10pt; }
+ body[data-pos-print="a4"] #pos-print-receipt { width: 190mm; padding: 10mm; }
+ body[data-pos-print] .pos-receipt-dialog { position: static; transform: none; max-height: none; overflow: visible; border: none; box-shadow: none; }
+ body[data-pos-print] .pos-no-print { display: none; }
+ @page { margin: 5mm; }
+}
