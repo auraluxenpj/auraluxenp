@@ -1,5 +1,12 @@
 # Phase 1: Secure checkout and remove COD
 
+## POS & in-store counter billing
+- [x] Inspect shared stock, protected admin access, payment boundaries and current records; resolve admins-and-staff access and ordinary receipts.
+- [ ] Owner review of additive POS schema/security plan before applying changes; no online checkout changes or automatic publication.
+- [ ] Build counter search/filter/SKU and variant picking, live stock, cart discounts and tax, saved customer/credit, cash/confirmed QR/credit payments.
+- [ ] Add atomic POS completion, immutable receipts, private credit ledger and sales ledger with daily totals and reprint.
+- [ ] Verify permissions, concurrent inventory/size enforcement, duplicate retry safety, totals, credit and signed-in end-to-end counter flow.
+
 ## Product information standards
 - [x] Add AL garment-type admin-suffix SKU editing; legacy SKUs remain until admin review/save, and new imports/copy publication require the format.
 - [x] Add BIBA-sourced S–XXL women's body-size guidance without replacing custom garment charts or inventing larger measurements.
