@@ -321,7 +321,7 @@ function ProductDetail() {
           </section>
         </>
       ) : null}
-      {zoomed ? <PhotoZoom src={images[active] ?? images[0]} alt={`${product.name} view ${active + 1}`} onClose={() => setZoomed(false)} /> : null}
+      {zoomed ? <PhotoZoom src={images[active] ?? images[0] ?? ""} alt={`${product.name} view ${active + 1}`} onClose={() => setZoomed(false)} /> : null}
     </SiteLayout>
   );
 }

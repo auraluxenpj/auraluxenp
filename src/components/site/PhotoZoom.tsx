@@ -19,12 +19,13 @@ export function PhotoZoom({ src, alt, onClose }: { src: string; alt: string; onC
         {({ zoomIn, resetTransform }) => (
           <>
             <TransformComponent wrapperClass="!h-full !w-full" contentClass="!h-full !w-full grid place-items-center">
+              <div onClick={() => zoomIn(1)} className="grid h-screen w-screen cursor-zoom-in place-items-center">
               <img
                 src={src}
                 alt={alt}
-                onClick={() => zoomIn(1)}
-                className="max-h-screen max-w-full cursor-zoom-in object-contain"
+                className="max-h-screen max-w-full object-contain"
               />
+              </div>
             </TransformComponent>
             <div className="absolute right-4 top-4 flex gap-2">
               <button type="button" onClick={() => resetTransform()} className="rounded-full bg-muted px-4 py-2 text-sm text-foreground shadow">
