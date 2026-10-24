@@ -2,10 +2,11 @@
 
 ## POS & in-store counter billing
 - [x] Inspect shared stock, protected admin access, payment boundaries and current records; resolve admins-and-staff access and ordinary receipts.
-- [ ] Owner review of additive POS schema/security plan before applying changes; no online checkout changes or automatic publication.
-- [ ] Build counter search/filter/SKU and variant picking, live stock, cart discounts and tax, saved customer/credit, cash/confirmed QR/credit payments.
-- [ ] Add atomic POS completion, immutable receipts, private credit ledger and sales ledger with daily totals and reprint.
-- [ ] Verify permissions, concurrent inventory/size enforcement, duplicate retry safety, totals, credit and signed-in end-to-end counter flow.
+- [x] Owner approved additive POS schema/security plan. Added private POS tables and authorized transaction/read RPCs (0010), tightened inherited grants explicitly (0011); online checkout unchanged. Not published.
+- [x] Built counter search/filter/SKU and size/colour picking, 10-second stock refresh, cart discounts/tax, saved customer/credit balance and cash/merchant-confirmed QR/Udharo payments. Staff navigation is limited to POS.
+- [x] Atomic completion and shared overall/size stock deduction; immutable receipt snapshots, private credit ledger and Nepal-day sales totals/reprints. A4 and 80mm print output visually verified after fixing an initially blank print.
+- [x] 36 focused tests pass; signed-in cash (1000 − 100 − 50 = 850, tender 1000/change 150) and Udharo (1000 balance) verified through UI/ledger; sold-out size, duplicate-line overdraw, changed retry, guest credit and unconfirmed QR rejected; same retry returns original sale. Two concurrent requests for one size unit yielded exactly one success. Signed-out reads/writes blocked, latest build OK.
+- [x] Disposable test sales/customer/products removed; final baseline 69 products, 0 variant rows and 2 original orders retained. Real QR settlement and physical printer are not independently verified; no staff accounts currently exist for a staff-session test. Staff account provisioning and provider auto-verification are outside this module.
 
 ## Product information standards
 - [x] Add AL garment-type admin-suffix SKU editing; legacy SKUs remain until admin review/save, and new imports/copy publication require the format.
