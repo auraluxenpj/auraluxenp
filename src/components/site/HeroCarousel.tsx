@@ -52,11 +52,11 @@ export function HeroCarousel({ banners }: { banners: Banner[] }) {
     <section
       aria-roledescription="carousel"
       aria-label="Featured campaigns"
-      className="relative mt-8 overflow-hidden rounded-3xl"
+      className="relative -mx-5 -mt-2 overflow-hidden sm:-mx-8"
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
     >
-      <div className="relative aspect-[4/5] w-full sm:aspect-[16/9] lg:aspect-[21/9]">
+      <div className="relative aspect-[3/4] w-full sm:aspect-[16/9] lg:aspect-[2/1]">
         {banners.map((b, i) => (
           <div
             key={b.id}
