@@ -16,7 +16,6 @@ const PLAIN_LINKS = [
 
 export function Header() {
   const { count } = useCart();
-  const settings = useSettings();
   const [open, setOpen] = useState(false);
   const [shopOpen, setShopOpen] = useState(false);
   const { data: categories = [] } = useQuery({ queryKey: ["categories"], queryFn: fetchCategories });

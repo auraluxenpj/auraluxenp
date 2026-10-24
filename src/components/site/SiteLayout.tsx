@@ -23,39 +23,33 @@ export function SiteLayout({ children }: { children: ReactNode }) {
         <Footer />
       </div>
 
-      <div className="fixed inset-x-4 bottom-4 z-20 flex items-center justify-between gap-3 rounded-full glass-strong px-5 py-3 md:hidden">
-        {count > 0 ? (
-          <>
-            <div className="min-w-0">
-              <p className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground">Bag</p>
-              <p className="truncate font-display text-base">
-                {count} item{count > 1 ? "s" : ""} · {money(subtotal)}
-              </p>
-            </div>
-            <Link
-              to="/cart"
-              className="shrink-0 rounded-full bg-primary px-5 py-2.5 text-[12px] uppercase tracking-[0.15em] text-primary-foreground"
-            >
-              Checkout
-            </Link>
-          </>
-        ) : (
-          <>
-            <div className="min-w-0">
-              <p className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground">Need help?</p>
-              <p className="truncate font-display text-base">Order or ask on WhatsApp</p>
-            </div>
-            <a
-              href={whatsappLink(s["whatsapp"] ?? "", "Hello Auraluxe! I'd like to ask about a piece.")}
-              target="_blank"
-              rel="noreferrer"
-              className="flex shrink-0 items-center gap-2 rounded-full bg-primary px-5 py-2.5 text-[12px] uppercase tracking-[0.15em] text-primary-foreground"
-            >
-              <MessageCircle className="size-4" /> Chat
-            </a>
-          </>
-        )}
-      </div>
+      {/* Small WhatsApp button, bottom-right (mobile) */}
+      <a
+        href={whatsappLink(s["whatsapp"] ?? "", "Hello Auraluxe! I'd like to ask about a piece.")}
+        target="_blank"
+        rel="noreferrer"
+        aria-label="Chat on WhatsApp"
+        className="fixed bottom-4 right-4 z-20 grid size-12 place-items-center rounded-full bg-primary text-primary-foreground shadow-lg transition hover:bg-brand md:hidden"
+      >
+        <MessageCircle className="size-5" />
+      </a>
+
+      {count > 0 ? (
+        <div className="fixed inset-x-4 bottom-4 z-10 flex items-center justify-between gap-3 rounded-full glass-strong py-3 pl-5 pr-24 md:hidden">
+          <div className="min-w-0">
+            <p className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground">Bag</p>
+            <p className="truncate font-display text-base">
+              {count} item{count > 1 ? "s" : ""} · {money(subtotal)}
+            </p>
+          </div>
+          <Link
+            to="/cart"
+            className="shrink-0 rounded-full bg-primary px-5 py-2.5 text-[12px] uppercase tracking-[0.15em] text-primary-foreground"
+          >
+            Checkout
+          </Link>
+        </div>
+      ) : null}
     </>
   );
 }
