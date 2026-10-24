@@ -66,5 +66,5 @@
 - [x] Server-side per-size stock enforcement (migration 0008 `per_size_stock_checkout`): `place_order` now aggregates duplicate lines per product (fixes the duplicate-line overdraw), validates overall stock per product and the chosen size's variant stock (locked rows), and deducts both; migration 0009 `restock_size_variants` returns stock to the size's variant row on admin restock. Owner approved. DB-tested: sold-out size refused, duplicate-line overdraw refused, real order deducted S 2→0 and product 5→3 (total 1150 correct), admin restock restored both. Test order/product removed; 69 products + 2 legacy orders unchanged.
 
 ## Low stock warning removal (Oct 24, 04:30 UTC)
-- [ ] Remove the low stock warning shown to shoppers/admin (owner request); confirm build and preview after.
-- [ ] Review every existing product SKU and help the owner fill in the admin identifier (AL-TYPE-XXX) before publishing.
+- [x] Low stock warnings removed: the shopper-facing "Only N left" line on product pages, and the dashboard's "Low stock" stat card and list. Build clean; dashboard and product page checked signed in.
+- [x] SKU review: admin now builds codes with the shop's own garment letters (`PW` `CO` `S` + `K` `SU` `D` `G` `PZ` `SH` `T` `OTH`), so the 35 codes already in the catalogue stay exactly as they are. "AL- CO-665" typo fixed to `AL-CO-665`; the four real products that had no code filled as `AL-PW-702`, `AL-CO-703`, `AL-PW-704`, `AL-PW-705`. Left for the owner: 33 Rs 0 test entries and `AL-S-693/694`.

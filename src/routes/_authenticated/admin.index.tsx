@@ -39,7 +39,7 @@ function Dashboard() {
           Add product
         </Link>
       </div>
-      <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         {stats.map((s) => (
           <div key={s.label} className="rounded-2xl border border-border bg-card p-5">
             <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">{s.label}</p>
