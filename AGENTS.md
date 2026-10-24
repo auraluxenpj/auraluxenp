@@ -19,3 +19,4 @@
 - The admin shell permits staff only under /admin/pos; every POS server function/database RPC enforces admin-or-staff access, while existing admin surfaces retain admin-only access.
 - Khata repayments and expenses are admin-only append-only records written through idempotent database RPCs; customer locks serialize credit accrual and repayment, while a narrow POS balance RPC exposes net balance without repayment details to staff.
 - Business cashflow aggregates Nepal-local day boundaries and includes only cash sale totals, cash repayments and cash expenses; immutable vouchers share the POS print helper and receipt styles.
+- Vendor contacts are editable while purchase bills/items/payments are immutable admin-only records; authenticated RPCs snapshot vendor identity, enforce normalized per-vendor invoice uniqueness and lock bills for idempotent bounded payments. Purchase tracking has no inventory or operating-cashflow side effects.
