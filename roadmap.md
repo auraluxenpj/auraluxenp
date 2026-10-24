@@ -52,3 +52,7 @@
 - [ ] Run full Phase 1 automated and end-to-end tests; compare legacy order fingerprints and catalogue/auth/image preservation — blocked by backup gate and activation.
 - [ ] Present results and required configuration; wait for owner release approval. Do not publish or accept the draft without owner review.
 - [x] Product photo zoom: pinch on mobile, click on desktop
+
+## Size & colour prompt + per-size stock (Oct 24)
+- [x] Add-to-bag asks for size and colour first: quick chooser dialog on product cards, explicit selection on product page (no silent defaults). `src/lib/product-options.ts` + 5 tests.
+- [ ] Admin product editor: per-size stock updates using regular sizes S,M,L,XL,2XL,3XL and plus sizes 4XL-10XL.
