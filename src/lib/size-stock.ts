@@ -18,7 +18,9 @@ export function stockForSize(
   const colorTarget = color ? color.trim().toLowerCase() : null;
   return variants.reduce((sum, v) => {
     if (!v.size || v.size.trim().toLowerCase() !== target) return sum;
-    if (colorTarget && (!v.color || v.color.trim().toLowerCase() !== colorTarget)) return sum;
+    // Rows without a colour hold colour-agnostic stock, so they count toward
+    // any colour the shopper picks.
+    if (colorTarget && v.color && v.color.trim().toLowerCase() !== colorTarget) return sum;
     return sum + (Number(v.stock) || 0);
   }, 0);
 }
