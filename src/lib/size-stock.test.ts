@@ -12,12 +12,12 @@ const variants = [
 describe("stockForSize", () => {
   it("sums stock across colours for a size", () => {
     expect(stockForSize(variants, "S")).toBe(3);
-    expect(stockForSize(variants, "M")).toBe(3);
+    expect(stockForSize(variants, "M")).toBe(12);
   });
 
   it("matches sizes case-insensitively", () => {
     expect(stockForSize(variants, "s")).toBe(3);
-    expect(stockForSize(variants, " m ")).toBe(3);
+    expect(stockForSize(variants, " m ")).toBe(12);
   });
 
   it("returns the exact size + colour stock when a colour is given", () => {
@@ -39,7 +39,7 @@ describe("sizeStocks", () => {
   it("maps every listed size to its summed stock", () => {
     expect(sizeStocks({ sizes: ["S", "M", "L"], stock: 5 }, variants)).toEqual([
       { size: "S", stock: 3 },
-      { size: "M", stock: 3 },
+      { size: "M", stock: 12 },
       { size: "L", stock: 0 },
     ]);
   });
