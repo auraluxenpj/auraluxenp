@@ -1,5 +1,10 @@
 # Phase 1: Secure checkout and remove COD
 
+## Vendors and purchase bills
+- [ ] Owner review of additive admin-only vendor/bill/payment tracking plan; stock and daily cashflow unchanged.
+- [ ] Build vendor directory, itemised purchase bills, due/payment status and partial/full payment history.
+- [ ] Verify totals, duplicate vendor bills, payment bounds/retries/concurrency, private access and signed-in persistence; remove disposable tests. Not published.
+
 ## Customer Khata and expenses
 - [x] Owner approved additive admin-only settlement/expense plan. Migrations 0012/0013 add private append-only records, customer locking, idempotent writes and consistent statement snapshot; existing sales/credit unchanged.
 - [x] Searchable Customer Khata, sales/repayment statements, partial/full cash or merchant-confirmed QR repayments, numbered thermal/A4 vouchers and net balances shared with POS.
