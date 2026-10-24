@@ -99,6 +99,13 @@
       "when": 1792819903456,
       "tag": "0013_consistent_customer_statement",
       "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1792820160865,
+      "tag": "0014_vendor_purchase_tracking",
+      "breakpoints": true
     }
   ]
 }
