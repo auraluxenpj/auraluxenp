@@ -13,5 +13,5 @@
 - Category deletion checks product and coupon usage before removing unused categories; preserve linked records and keep existing foreign-key behavior as the database safety net.
 - Category ordering is explicitly reviewed and saved as sort_order updates; on partial failure retain the proposed order for a retry rather than reporting success.
 - Per-size stock is stored as colour-agnostic `product_variants` rows (one per size, colour null); the shop falls back to `products.stock` only when a product has no size rows. With "Track stock for each size" on, the editor keeps `products.stock` equal to the sum of the sizes.
-- Product-information helpers centralize SKU composition and photo disclosure; legacy identifiers are preserved until admin review/save, and copies require an admin identifier before publication.
+- Product-information helpers centralize SKU composition and photo disclosure; SKUs use the shop's own garment letters (`AL-PW-660`, `AL-CO-662`, `AL-S-696`, plus K/SU/D/G/PZ/SH/T/OTH), legacy identifiers are preserved until admin review/save, and copies require an admin identifier before publication.
 - The shared women's size guide is sourced body-measurement reference data, rendered alongside rather than replacing custom product charts; never extrapolate unsupported size measurements.
