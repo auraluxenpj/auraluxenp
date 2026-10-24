@@ -925,6 +925,7 @@ export type Database = {
       can_use_pos: { Args: never; Returns: boolean }
       complete_pos_sale: { Args: { p_request: Json }; Returns: string }
       get_business_day_summary: { Args: { p_date: string }; Returns: Json }
+      get_khata_statement: { Args: { p_customer_id: string }; Returns: Json }
       get_pos_catalog: { Args: never; Returns: Json }
       get_pos_customer_balances: { Args: never; Returns: Json }
       get_pos_qr: { Args: never; Returns: Json }

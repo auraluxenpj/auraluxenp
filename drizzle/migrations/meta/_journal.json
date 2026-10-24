@@ -92,6 +92,13 @@
       "when": 1792819640576,
       "tag": "0012_khata_settlements_expenses",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1792819903456,
+      "tag": "0013_consistent_customer_statement",
+      "breakpoints": true
     }
   ]
 }
