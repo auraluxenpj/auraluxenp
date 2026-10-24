@@ -69,8 +69,8 @@ describe("stylist add-to-bag rules", () => {
       [{ product: product() }, { product: product({ id: "p2", sizes: ["S", "M"], colors: ["Teal"] }) }],
       { p2: { size: "S" } },
     );
-    expect(items[0].size).toBe("M");
-    expect(items[1].size).toBe("S");
-    expect(items[1].color).toBe("Teal");
+    expect(items[0]?.size).toBe("M");
+    expect(items[1]?.size).toBe("S");
+    expect(items[1]?.color).toBe("Teal");
   });
 });

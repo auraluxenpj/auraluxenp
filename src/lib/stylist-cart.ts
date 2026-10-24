@@ -30,7 +30,7 @@ export function stylistCartPrice(p: Pick<Product, "price" | "sale_price">): numb
 function pickOption(list: string[] | null | undefined, chosen?: string | null): string | null {
   const options = (list ?? []).filter(Boolean);
   if (!options.length) return null;
-  return chosen && options.includes(chosen) ? chosen : options[0];
+  return chosen && options.includes(chosen) ? chosen : (options[0] ?? null);
 }
 
 export function stylistCartItem(
