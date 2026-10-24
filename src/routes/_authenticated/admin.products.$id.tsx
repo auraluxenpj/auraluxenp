@@ -112,6 +112,13 @@ function ProductEditor() {
       is_featured: f.is_featured, is_published: f.is_published,
       meta_title: f.meta_title.trim() || null, meta_description: f.meta_description.trim() || null,
     };
+    // With per-size tracking on, the overall stock is always the sum of the sizes.
+    if (trackBySize) {
+      row.stock = list(f.sizes).reduce(
+        (n, s) => n + (Math.max(0, Math.floor(Number(sizeStock[s] ?? "0")) || 0)),
+        0,
+      );
+    }
     setSaving(true);
     const { data: saved, error } = isNew
       ? await supabase.from("products").insert(row).select("id").single()
@@ -218,7 +225,11 @@ function ProductEditor() {
             <label className={label + " block"}>Price<input type="number" min={0} step="0.01" className={input} value={f.price} onChange={(e) => set("price", e.target.value)} /></label>
             <label className={label + " block"}>Sale price (optional)<input type="number" min={0} step="0.01" className={input} value={f.sale_price} onChange={(e) => set("sale_price", e.target.value)} /></label>
             <label className={label + " block"}>SKU<input className={input} value={f.sku} onChange={(e) => set("sku", e.target.value)} /></label>
-            <label className={label + " block"}>Stock<input type="number" min={0} className={input} value={f.stock} onChange={(e) => set("stock", e.target.value)} /></label>
+            <label className={label + " block"}>Stock{trackBySize ? (
+              <input type="number" min={0} className={input} disabled value={list(f.sizes).reduce((n, s) => n + (Math.max(0, Math.floor(Number(sizeStock[s] ?? "0")) || 0)), 0)} />
+            ) : (
+              <input type="number" min={0} className={input} value={f.stock} onChange={(e) => set("stock", e.target.value)} />
+            )}</label>
             <label className={label + " block"}>Low-stock warning at<input type="number" min={0} className={input} value={f.low_stock_threshold} onChange={(e) => set("low_stock_threshold", e.target.value)} /></label>
           </div>
           <div className="space-y-3 rounded-2xl border border-border bg-card p-5">
