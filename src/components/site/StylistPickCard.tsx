@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { ShoppingBag } from "lucide-react";
 import { toast } from "sonner";
@@ -5,15 +6,36 @@ import { effectivePrice, productImage, type Product } from "@/lib/data";
 import { useCart, useMoney } from "@/lib/store";
 import { stylistCartItem } from "@/lib/stylist-cart";
 
-export function StylistPickCard({ product, reason }: { product: Product; reason: string }) {
+export function StylistPickCard({
+  product,
+  reason,
+  onSelectionChange,
+}: {
+  product: Product;
+  reason: string;
+  onSelectionChange?: (productId: string, sel: { size: string | null; color: string | null }) => void;
+}) {
   const money = useMoney();
   const { add } = useCart();
   const price = effectivePrice(product);
   const hasDiscount = product.sale_price != null && Number(product.sale_price) > 0;
   const outOfStock = product.stock <= 0;
+  const sizes = product.sizes ?? [];
+  const colors = product.colors ?? [];
+  const [size, setSize] = useState<string | null>(sizes[0] ?? null);
+  const [color, setColor] = useState<string | null>(colors[0] ?? null);
+
+  const chooseSize = (value: string) => {
+    setSize(value);
+    onSelectionChange?.(product.id, { size: value, color });
+  };
+  const chooseColor = (value: string) => {
+    setColor(value);
+    onSelectionChange?.(product.id, { size, color: value });
+  };
 
   const addPick = () => {
-    const item = stylistCartItem(product);
+    const item = stylistCartItem(product, { size, color });
     if (!item) {
       toast.error(`${product.name} is sold out`);
       return;
@@ -21,6 +43,13 @@ export function StylistPickCard({ product, reason }: { product: Product; reason:
     add(item);
     toast.success(`${product.name} added to your bag`);
   };
+
+  const pill = (active: boolean) =>
+    `rounded-full border px-2.5 py-1 text-[10px] uppercase tracking-[0.1em] transition sm:px-3 sm:text-[11px] ${
+      active
+        ? "border-primary bg-primary text-primary-foreground"
+        : "border-border bg-background text-muted-foreground hover:border-brand/60"
+    }`;
 
   return (
     <article className="group glass flex h-full flex-col rounded-2xl p-2 transition hover:-translate-y-1 sm:rounded-3xl sm:p-3">
@@ -58,6 +87,44 @@ export function StylistPickCard({ product, reason }: { product: Product; reason:
           <p className="mt-1.5 line-clamp-3 text-[11px] leading-snug text-muted-foreground sm:text-xs">
             {reason}
           </p>
+        ) : null}
+
+        {sizes.length > 1 ? (
+          <div className="mt-2">
+            <p className="text-[9px] uppercase tracking-[0.16em] text-muted-foreground">Size</p>
+            <div className="mt-1 flex flex-wrap gap-1.5">
+              {sizes.map((s) => (
+                <button
+                  key={s}
+                  type="button"
+                  aria-pressed={size === s}
+                  onClick={() => chooseSize(s)}
+                  className={pill(size === s)}
+                >
+                  {s}
+                </button>
+              ))}
+            </div>
+          </div>
+        ) : null}
+
+        {colors.length > 1 ? (
+          <div className="mt-2">
+            <p className="text-[9px] uppercase tracking-[0.16em] text-muted-foreground">Colour</p>
+            <div className="mt-1 flex flex-wrap gap-1.5">
+              {colors.map((c) => (
+                <button
+                  key={c}
+                  type="button"
+                  aria-pressed={color === c}
+                  onClick={() => chooseColor(c)}
+                  className={pill(color === c)}
+                >
+                  {c}
+                </button>
+              ))}
+            </div>
+          </div>
         ) : null}
 
         <div className="mt-auto flex gap-2 pt-2.5 sm:pt-3">
