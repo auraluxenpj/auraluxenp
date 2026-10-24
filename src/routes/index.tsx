@@ -6,10 +6,13 @@ import {
   fetchCategories,
   fetchProducts,
   fetchTestimonials,
+  productImage,
+  type Banner,
   type Product,
 } from "@/lib/data";
 import { SiteLayout } from "@/components/site/SiteLayout";
 import { ProductCard } from "@/components/site/ProductCard";
+import { HeroCarousel } from "@/components/site/HeroCarousel";
 import { useSettings, whatsappLink } from "@/lib/store";
 
 export const Route = createFileRoute("/")({
@@ -22,6 +25,8 @@ export const Route = createFileRoute("/")({
           "Shop hand-finished kurtis, co-ord sets, suits, dresses and party wear from Auraluxe, Nepalgunj. Secure QR or bank transfer payment across Nepal.",
       },
       { property: "og:title", content: "Auraluxe — Premium Ladies' Fashion in Nepalgunj" },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
       {
         property: "og:description",
         content: "Hand-finished kurtis, co-ord sets and party wear, designed in Nepalgunj.",
@@ -31,33 +36,42 @@ export const Route = createFileRoute("/")({
   component: Home,
 });
 
-function SectionHeading({ eyebrow, title, to }: { eyebrow: string; title: string; to?: string }) {
+const FALLBACK_HERO: Banner = {
+  id: "default-hero",
+  title: "The season's silhouette, cut for comfort.",
+  subtitle:
+    "Hand-finished kurtis, co-ord sets and party wear in breathable georgette and cotton — designed in Nepalgunj, delivered to your door.",
+  image_url: "/images/hero-auraluxe.jpg",
+  mobile_image_url: null,
+  button_text: "Shop New In",
+  button_link: "/shop",
+  placement: "hero",
+  sort_order: 0,
+  is_active: true,
+  starts_at: null,
+  ends_at: null,
+  created_at: "",
+};
+
+function SectionHeading({ eyebrow, title }: { eyebrow: string; title: string }) {
   return (
-    <div className="mt-14 flex items-end justify-between">
+    <div className="mt-16 flex items-end justify-between">
       <div>
         <p className="eyebrow">{eyebrow}</p>
         <h2 className="mt-2 font-display text-4xl">{title}</h2>
       </div>
-      {to ? (
-        <Link
-          to="/shop"
-          className="hidden text-[13px] uppercase tracking-[0.18em] text-foreground/60 underline decoration-accent decoration-2 underline-offset-4 hover:text-brand sm:block"
-        >
-          View all
-        </Link>
-      ) : null}
+      <Link
+        to="/shop"
+        className="hidden text-[13px] uppercase tracking-[0.18em] text-foreground/60 underline decoration-accent decoration-2 underline-offset-4 hover:text-brand sm:block"
+      >
+        View all
+      </Link>
     </div>
   );
 }
 
-function Grid({ products }: { products: Product[] }) {
-  if (products.length === 0) {
-    return (
-      <p className="glass mt-6 rounded-3xl p-8 text-sm text-muted-foreground">
-        Nothing here yet — new pieces are being added.
-      </p>
-    );
-  }
+function Rail({ products }: { products: Product[] }) {
+  if (products.length === 0) return null;
   return (
     <section className="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
       {products.map((p) => (
@@ -77,101 +91,170 @@ function Home() {
     queryFn: fetchTestimonials,
   });
 
-  const hero = banners.filter((b) => b.placement === "hero" && bannerIsLive(b))[0];
-  const promo = banners.filter((b) => b.placement === "promo" && bannerIsLive(b))[0];
+  const live = banners.filter(bannerIsLive);
+  const heroSlides = live.filter((b) => b.placement === "hero");
+  const promo = live.filter((b) => b.placement === "promo")[0];
 
   const newCollection = products.filter((p) => p.is_new).slice(0, 3);
   const trending = products.filter((p) => p.is_featured).slice(0, 3);
   const bestSellers = products.filter((p) => p.is_bestseller).slice(0, 3);
-  const offers = products.filter((p) => p.sale_price != null && Number(p.sale_price) > 0).slice(0, 3);
+  const offers = products
+    .filter((p) => p.sale_price != null && Number(p.sale_price) > 0)
+    .slice(0, 3);
+
+  const activeCategories = categories.filter((c) => c.is_active).slice(0, 8);
+  const categoryImage = (categoryId: string, fallback?: string | null) =>
+    fallback ??
+    products.find((p) => p.category_id === categoryId)?.images?.[0] ??
+    null;
 
   return (
     <SiteLayout>
-      {/* Hero */}
-      <section className="mt-8 grid gap-6 lg:grid-cols-12">
-        <div className="glass-strong relative overflow-hidden rounded-3xl p-8 sm:p-12 lg:col-span-7">
-          <div className="max-w-md">
-            <p className="eyebrow">Nepalgunj · Est. 2024</p>
-            <h1 className="mt-5 font-display text-5xl leading-[1.02] sm:text-6xl">
-              {hero?.title ?? "The season's silhouette, cut for comfort."}
-            </h1>
-            <p className="mt-5 max-w-sm text-[15px] leading-relaxed text-muted-foreground">
-              {hero?.subtitle ??
-                "Hand-finished kurtis, co-ord sets and party wear in breathable georgette and cotton — designed in Nepalgunj, delivered to your door."}
-            </p>
-            <div className="mt-8 flex flex-wrap items-center gap-4">
-              <Link
-                to="/shop"
-                className="rounded-full bg-primary px-7 py-3.5 text-[13px] uppercase tracking-[0.18em] text-primary-foreground transition hover:bg-brand"
-              >
-                {hero?.button_text ?? "Shop New In"}
-              </Link>
-              <Link
-                to="/about"
-                className="text-[13px] uppercase tracking-[0.18em] text-foreground/70 underline decoration-accent decoration-2 underline-offset-4 transition hover:text-brand"
-              >
-                Our story
-              </Link>
-            </div>
-          </div>
-        </div>
-        <div className="lg:col-span-5">
-          <img
-            src={hero?.image_url ?? "/images/hero-auraluxe.jpg"}
-            alt="Auraluxe lavender georgette kurti"
-            width={1088}
-            height={1408}
-            className="h-full min-h-[320px] w-full rounded-3xl object-cover"
-          />
-        </div>
-      </section>
+      <HeroCarousel banners={heroSlides.length > 0 ? heroSlides : [FALLBACK_HERO]} />
 
-      {/* Featured categories */}
-      <section className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-4">
-        {categories
-          .filter((c) => c.is_active)
-          .slice(0, 4)
-          .map((c) => (
-            <Link
-              key={c.id}
-              to="/shop"
-              search={{ category: c.slug }}
-              className="glass flex items-center justify-between rounded-2xl px-5 py-4 text-left transition hover:border-brand/40"
-            >
-              <span className="font-display text-lg">{c.name}</span>
-              <span className="text-sm text-brand">→</span>
-            </Link>
-          ))}
-      </section>
+      {/* Shop by category */}
+      {activeCategories.length > 0 ? (
+        <>
+          <SectionHeading eyebrow="Find your fit" title="Shop by Category" />
+          <section className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-4">
+            {activeCategories.map((c) => {
+              const img = categoryImage(c.id, c.image_url);
+              return (
+                <Link
+                  key={c.id}
+                  to="/shop"
+                  search={{ category: c.slug }}
+                  className="group glass relative overflow-hidden rounded-3xl transition hover:-translate-y-1"
+                >
+                  <div className="aspect-[4/5] w-full overflow-hidden bg-muted">
+                    {img ? (
+                      <img
+                        src={img}
+                        alt={c.name}
+                        loading="lazy"
+                        width={768}
+                        height={960}
+                        className="h-full w-full object-cover transition duration-500 group-hover:scale-105 motion-reduce:transition-none motion-reduce:group-hover:scale-100"
+                      />
+                    ) : (
+                      <div className="grid h-full w-full place-items-center bg-gradient-to-br from-brand/20 via-secondary to-accent/30">
+                        <span className="font-display text-2xl text-primary">{c.name}</span>
+                      </div>
+                    )}
+                  </div>
+                  <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-ink/70 to-transparent p-4 pt-10">
+                    <div className="flex items-center justify-between">
+                      <span className="font-display text-lg text-primary-foreground drop-shadow">
+                        {c.name}
+                      </span>
+                      <span className="text-primary-foreground/90 transition group-hover:translate-x-1">→</span>
+                    </div>
+                  </div>
+                </Link>
+              );
+            })}
+          </section>
+        </>
+      ) : null}
 
-      <SectionHeading eyebrow="Just landed" title="New Collection" to="/shop" />
-      <Grid products={newCollection} />
+      {newCollection.length > 0 ? (
+        <>
+          <SectionHeading eyebrow="Just landed" title="New Arrivals" />
+          <Rail products={newCollection} />
+        </>
+      ) : null}
 
-      {/* Promotional banner */}
+      {/* Promotional campaign banner */}
       {promo ? (
-        <section className="glass-strong mt-14 overflow-hidden rounded-3xl bg-gradient-to-r from-brand/20 via-secondary to-accent/25 px-8 py-10 sm:px-12">
-          <div className="max-w-lg">
-            <p className="eyebrow">Limited offer</p>
-            <h2 className="mt-3 font-display text-4xl">{promo.title}</h2>
-            <p className="mt-3 text-[15px] text-muted-foreground">{promo.subtitle}</p>
-            <Link
-              to="/shop"
-              className="mt-6 inline-block rounded-full bg-primary px-7 py-3.5 text-[13px] uppercase tracking-[0.18em] text-primary-foreground transition hover:bg-brand"
-            >
-              {promo.button_text ?? "Shop the sale"}
-            </Link>
+        <section className="glass-strong mt-16 overflow-hidden rounded-3xl">
+          <div className="grid md:grid-cols-2">
+            {promo.image_url ? (
+              <img
+                src={promo.image_url}
+                alt={promo.title ?? "Auraluxe promotion"}
+                loading="lazy"
+                width={1024}
+                height={768}
+                className="h-full max-h-96 w-full object-cover"
+              />
+            ) : null}
+            <div className="flex flex-col justify-center p-8 sm:p-12">
+              <p className="eyebrow">Limited offer</p>
+              {promo.title ? <h2 className="mt-3 font-display text-4xl">{promo.title}</h2> : null}
+              {promo.subtitle ? (
+                <p className="mt-3 text-[15px] text-muted-foreground">{promo.subtitle}</p>
+              ) : null}
+              {promo.button_link ? (
+                <Link
+                  to={promo.button_link as "/shop"}
+                  className="mt-6 inline-block w-fit rounded-full bg-primary px-7 py-3.5 text-[13px] uppercase tracking-[0.18em] text-primary-foreground transition hover:bg-brand"
+                >
+                  {promo.button_text ?? "Shop now"}
+                </Link>
+              ) : null}
+            </div>
           </div>
         </section>
       ) : null}
 
-      <SectionHeading eyebrow="Loved right now" title="Trending Now" to="/shop" />
-      <Grid products={trending} />
+      {trending.length > 0 ? (
+        <>
+          <SectionHeading eyebrow="Loved right now" title="Trending Now" />
+          <Rail products={trending} />
+        </>
+      ) : null}
 
-      <SectionHeading eyebrow="Most wanted" title="Best Sellers" to="/shop" />
-      <Grid products={bestSellers} />
+      {bestSellers.length > 0 ? (
+        <>
+          <SectionHeading eyebrow="Most wanted" title="Best Sellers" />
+          <Rail products={bestSellers} />
+        </>
+      ) : null}
 
-      <SectionHeading eyebrow="Reduced this week" title="Special Offers" to="/shop" />
-      <Grid products={offers} />
+      {offers.length > 0 ? (
+        <>
+          <SectionHeading eyebrow="Reduced this week" title="Special Offers" />
+          <Rail products={offers} />
+        </>
+      ) : null}
+
+      {/* Editorial tiles */}
+      <section className="mt-16 grid gap-5 md:grid-cols-3">
+        <Link to="/about" className="group glass relative overflow-hidden rounded-3xl p-8 transition hover:-translate-y-1">
+          <p className="eyebrow">Our story</p>
+          <h3 className="mt-3 font-display text-3xl">Designed in Nepalgunj</h3>
+          <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
+            The Auraluxe atelier, our fabrics, and the hands behind every piece.
+          </p>
+          <span className="mt-5 inline-block text-[12px] uppercase tracking-[0.18em] text-brand transition group-hover:translate-x-1">
+            Read more →
+          </span>
+        </Link>
+        <Link
+          to="/shop"
+          search={{ sort: "newest" }}
+          className="group glass relative overflow-hidden rounded-3xl p-8 transition hover:-translate-y-1"
+        >
+          <p className="eyebrow">The edit</p>
+          <h3 className="mt-3 font-display text-3xl">New-season arrivals</h3>
+          <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
+            Fresh silhouettes and festive pieces, added as they leave the studio.
+          </p>
+          <span className="mt-5 inline-block text-[12px] uppercase tracking-[0.18em] text-brand transition group-hover:translate-x-1">
+            Shop new in →
+          </span>
+        </Link>
+        <Link to="/contact" className="group glass relative overflow-hidden rounded-3xl p-8 transition hover:-translate-y-1">
+          <p className="eyebrow">Visit us</p>
+          <h3 className="mt-3 font-display text-3xl">The Nepalgunj store</h3>
+          <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
+            {settings["address"] ?? "Come try your favourites in person."}
+          </p>
+          <span className="mt-5 inline-block text-[12px] uppercase tracking-[0.18em] text-brand transition group-hover:translate-x-1">
+            Directions & hours →
+          </span>
+        </Link>
+      </section>
 
       {/* Testimonials */}
       {testimonials.length > 0 ? (
@@ -192,7 +275,7 @@ function Home() {
       ) : null}
 
       {/* Social + contact CTA */}
-      <section className="glass-strong mt-14 grid gap-8 rounded-3xl p-8 sm:p-12 md:grid-cols-2">
+      <section className="glass-strong mt-16 grid gap-8 rounded-3xl p-8 sm:p-12 md:grid-cols-2">
         <div>
           <p className="eyebrow">Follow along</p>
           <h2 className="mt-3 font-display text-4xl">The Auraluxe edit, daily</h2>

@@ -1,0 +1,2 @@
+ALTER TABLE public.banners ADD COLUMN IF NOT EXISTS mobile_image_url text;
+COMMENT ON COLUMN public.banners.mobile_image_url IS 'Optional mobile-cropped banner image; falls back to image_url when empty';
