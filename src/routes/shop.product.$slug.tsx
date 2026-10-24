@@ -397,12 +397,6 @@ function ProductDetail() {
             </p>
           ) : null}
 
-          <p className="mt-4 text-xs leading-relaxed text-muted-foreground">
-            Please note: the actual product may vary slightly from the photos. Lighting, camera
-            settings, image enhancement and your screen can all affect how colours and details
-            appear.
-          </p>
-
           {product.size_chart ? (
             <div className="mt-5 rounded-2xl bg-secondary p-4">
               <p className="label-caps text-muted-foreground">Size chart</p>
