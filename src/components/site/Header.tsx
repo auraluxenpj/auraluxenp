@@ -7,7 +7,6 @@ import { fetchCategories } from "@/lib/data";
 
 const NAV = [
   { label: "New Arrivals", to: "/shop", search: { sort: "newest" } as const },
-  { label: "Best Sellers", to: "/shop", search: { tag: "bestseller" } as const },
   { label: "Sale", to: "/shop", search: { category: "sale" } as const },
   { label: "About", to: "/about" },
   { label: "Contact", to: "/contact" },
