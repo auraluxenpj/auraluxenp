@@ -1,9 +1,10 @@
 # Phase 1: Secure checkout and remove COD
 
 ## Vendors and purchase bills
-- [ ] Owner review of additive admin-only vendor/bill/payment tracking plan; stock and daily cashflow unchanged.
-- [ ] Build vendor directory, itemised purchase bills, due/payment status and partial/full payment history.
-- [ ] Verify totals, duplicate vendor bills, payment bounds/retries/concurrency, private access and signed-in persistence; remove disposable tests. Not published.
+- [x] Owner approved additive admin-only plan; migration 0014 adds private vendors, immutable bills/items/payments and authenticated transaction/read functions. Stock and daily cashflow unchanged.
+- [x] Purchases navigation with vendor create/edit/search/balances, itemised invoice entry, discount/tax totals, due/status filters, bill details and partial/full Cash or Bank/QR payment history. Separate bookkeeping only, no uploads or actual transfers.
+- [x] 18 purchase/Khata focused tests pass; signed-in vendor create/edit and invoice 2147 → 300 cash → 1847 bank/QR persisted as paid. Mobile fits, no page errors; latest build OK. Same retries return original; changed retries, normalized duplicate invoice, fractional/future payments and direct writes denied; simultaneous 700 payments against 1000 yield one success. Forged browser total/paid ignored; anonymous read/write denied.
+- [x] Disposable QA records removed; original 69 products and 2 orders retained. Staff-session denial not independently exercised (no staff account); admin-only RLS/RPC and unchanged POS-only shell inspected. Not published.
 
 ## Customer Khata and expenses
 - [x] Owner approved additive admin-only settlement/expense plan. Migrations 0012/0013 add private append-only records, customer locking, idempotent writes and consistent statement snapshot; existing sales/credit unchanged.

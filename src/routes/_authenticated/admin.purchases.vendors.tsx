@@ -1,0 +1,15 @@
+import {createFileRoute} from '@tanstack/react-router';
+import {useQuery} from '@tanstack/react-query';
+import {useServerFn} from '@tanstack/react-start';
+import {useState} from 'react';
+import {Plus,Pencil} from 'lucide-react';
+import {Button} from '@/components/ui/button';
+import {Input} from '@/components/ui/input';
+import {VendorEditor} from '@/components/admin/VendorEditor';
+import {PurchaseNav} from '@/components/admin/PurchaseNav';
+import {getPurchases} from '@/lib/purchases.functions';
+import type {Vendor} from '@/lib/purchases';
+import {businessHead} from '@/lib/business-ledgers';
+import {money} from '@/lib/pos';
+export const Route=createFileRoute('/_authenticated/admin/purchases/vendors')({head:()=>businessHead('Vendors','Private Auraluxe vendor directory and unpaid purchase balances.'),component:Vendors});
+function Vendors(){const read=useServerFn(getPurchases),[search,setSearch]=useState(''),[editing,setEditing]=useState<Vendor|null|undefined>(undefined);const query=useQuery({queryKey:['purchases','list'],queryFn:()=>read({data:{bill_id:null}})}),rows=(query.data?.vendors??[]).filter(v=>`${v.name} ${v.phone}`.toLowerCase().includes(search.toLowerCase()));return <div className="space-y-6"><div className="flex items-center justify-between gap-3"><h1 className="font-display text-3xl">Vendors</h1><Button onClick={()=>setEditing(null)}><Plus/>New vendor</Button></div><PurchaseNav/><Input className="max-w-md" aria-label="Search vendors" placeholder="Search vendor name or phone" value={search} onChange={e=>setSearch(e.target.value)}/>{query.isError?<p role="alert" className="text-destructive">Could not load vendors. <Button variant="link" onClick={()=>query.refetch()}>Retry</Button></p>:query.isPending?<p>Loading vendors…</p>:<div className="overflow-x-auto"><table className="w-full text-left text-sm"><thead className="border-b border-border text-xs text-muted-foreground"><tr>{['Vendor','Contact','Unpaid balance',''].map((h,i)=><th key={i} className="p-3">{h}</th>)}</tr></thead><tbody>{rows.map(v=><tr key={v.id} className="border-b border-border"><td className="p-3"><p className="font-medium">{v.name}</p><p className="text-xs text-muted-foreground">{v.address}</p></td><td className="p-3"><p>{v.phone}</p><p className="text-xs text-muted-foreground">{v.email}</p></td><td className="p-3 whitespace-nowrap">Rs. {money((query.data?.bills??[]).filter(b=>b.vendor_id===v.id).reduce((n,b)=>n+Number(b.total)-Number(b.paid),0))}</td><td className="p-3"><Button variant="outline" size="icon" title="Edit vendor" aria-label={`Edit ${v.name}`} onClick={()=>setEditing(v)}><Pencil/></Button></td></tr>)}</tbody></table>{!rows.length&&<p className="py-12 text-center text-muted-foreground">No matching vendors</p>}</div>}{editing!==undefined&&<VendorEditor key={editing?.id??'new'} vendor={editing} onClose={()=>setEditing(undefined)}/>}</div>;}

@@ -33,6 +33,7 @@ const NAV = [
   { to: "/admin/pos", label: "POS Billing" },
   { to: "/admin/khata", label: "Customer Khata" },
   { to: "/admin/expenses", label: "Expenses" },
+  { to: "/admin/purchases", label: "Purchases" },
   { to: "/admin/settings", label: "Settings" },
 ] as const;
 

@@ -834,6 +834,162 @@ export type Database = {
         }
         Relationships: []
       }
+      purchase_bill_items: {
+        Row: {
+          bill_id: string
+          description: string
+          id: string
+          line_total: number
+          quantity: number
+          sort_order: number
+          unit_cost: number
+        }
+        Insert: {
+          bill_id: string
+          description: string
+          id?: string
+          line_total: number
+          quantity: number
+          sort_order: number
+          unit_cost: number
+        }
+        Update: {
+          bill_id?: string
+          description?: string
+          id?: string
+          line_total?: number
+          quantity?: number
+          sort_order?: number
+          unit_cost?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "purchase_bill_items_bill_id_fkey"
+            columns: ["bill_id"]
+            isOneToOne: false
+            referencedRelation: "purchase_bills"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      purchase_bills: {
+        Row: {
+          bill_date: string
+          bill_reference: string
+          created_at: string
+          created_by: string
+          discount: number
+          due_date: string | null
+          id: string
+          invoice_number: string
+          notes: string
+          request_fingerprint: string
+          request_key: string
+          subtotal: number
+          tax: number
+          tax_rate: number
+          total: number
+          vendor_id: string
+          vendor_snapshot: Json
+        }
+        Insert: {
+          bill_date: string
+          bill_reference?: string
+          created_at?: string
+          created_by: string
+          discount: number
+          due_date?: string | null
+          id?: string
+          invoice_number: string
+          notes?: string
+          request_fingerprint: string
+          request_key: string
+          subtotal: number
+          tax: number
+          tax_rate: number
+          total: number
+          vendor_id: string
+          vendor_snapshot: Json
+        }
+        Update: {
+          bill_date?: string
+          bill_reference?: string
+          created_at?: string
+          created_by?: string
+          discount?: number
+          due_date?: string | null
+          id?: string
+          invoice_number?: string
+          notes?: string
+          request_fingerprint?: string
+          request_key?: string
+          subtotal?: number
+          tax?: number
+          tax_rate?: number
+          total?: number
+          vendor_id?: string
+          vendor_snapshot?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "purchase_bills_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      purchase_payments: {
+        Row: {
+          amount: number
+          bill_id: string
+          created_at: string
+          created_by: string
+          id: string
+          notes: string
+          payment_date: string
+          payment_source: string
+          reference: string
+          request_fingerprint: string
+          request_key: string
+        }
+        Insert: {
+          amount: number
+          bill_id: string
+          created_at?: string
+          created_by: string
+          id?: string
+          notes?: string
+          payment_date: string
+          payment_source: string
+          reference?: string
+          request_fingerprint: string
+          request_key: string
+        }
+        Update: {
+          amount?: number
+          bill_id?: string
+          created_at?: string
+          created_by?: string
+          id?: string
+          notes?: string
+          payment_date?: string
+          payment_source?: string
+          reference?: string
+          request_fingerprint?: string
+          request_key?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "purchase_payments_bill_id_fkey"
+            columns: ["bill_id"]
+            isOneToOne: false
+            referencedRelation: "purchase_bills"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       reviews: {
         Row: {
           author_name: string
@@ -917,6 +1073,45 @@ export type Database = {
         }
         Relationships: []
       }
+      vendors: {
+        Row: {
+          address: string
+          created_at: string
+          created_by: string
+          email: string
+          id: string
+          name: string
+          notes: string
+          phone: string
+          updated_at: string
+          updated_by: string
+        }
+        Insert: {
+          address?: string
+          created_at?: string
+          created_by?: string
+          email?: string
+          id?: string
+          name: string
+          notes?: string
+          phone: string
+          updated_at?: string
+          updated_by?: string
+        }
+        Update: {
+          address?: string
+          created_at?: string
+          created_by?: string
+          email?: string
+          id?: string
+          name?: string
+          notes?: string
+          phone?: string
+          updated_at?: string
+          updated_by?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -929,6 +1124,7 @@ export type Database = {
       get_pos_catalog: { Args: never; Returns: Json }
       get_pos_customer_balances: { Args: never; Returns: Json }
       get_pos_qr: { Args: never; Returns: Json }
+      get_purchase_data: { Args: { p_bill_id?: string }; Returns: Json }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -948,6 +1144,8 @@ export type Database = {
       }
       record_business_expense: { Args: { p_request: Json }; Returns: string }
       record_pos_repayment: { Args: { p_request: Json }; Returns: Json }
+      record_purchase_bill: { Args: { p_request: Json }; Returns: string }
+      record_purchase_payment: { Args: { p_request: Json }; Returns: string }
       restock_order: {
         Args: { p_items: Json; p_order_id: string }
         Returns: undefined
