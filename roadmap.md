@@ -68,3 +68,9 @@
 ## Low stock warning removal (Oct 24, 04:30 UTC)
 - [x] Low stock warnings removed: the shopper-facing "Only N left" line on product pages, and the dashboard's "Low stock" stat card and list. Build clean; dashboard and product page checked signed in.
 - [x] SKU review: admin now builds codes with the shop's own garment letters (`PW` `CO` `S` + `K` `SU` `D` `G` `PZ` `SH` `T` `OTH`), so the 35 codes already in the catalogue stay exactly as they are. "AL- CO-665" typo fixed to `AL-CO-665`; the four real products that had no code filled as `AL-PW-702`, `AL-CO-703`, `AL-PW-704`, `AL-PW-705`. Left for the owner: 33 Rs 0 test entries and `AL-S-693/694`.
+
+## Publish (Oct 24, 04:36 UTC)
+- [x] Fresh security scan before publishing: 3 findings, all previously dismissed by the owner (product-images download rule, site_settings and pages public reads). No new or unresolved critical findings.
+- [x] Published to https://www.auraluxe.com.np; page returns HTTP 200 with the Auraluxe title.
+- [x] Live product pages verified: `AL-CO-665`, `AL-CO-703`, `AL-PW-702` show correctly, the photo disclaimer and women's size chart render, and the "Only N left" low stock line is gone.
+- [ ] Owner decisions still open: 33 Rs 0 test entries, `AL-S-693/694` (one code, two items), prices for Modish Aqua Blue and Trendy Cream Designer (still Rs 0).
