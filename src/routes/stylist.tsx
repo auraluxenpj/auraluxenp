@@ -1,9 +1,13 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { Sparkles } from "lucide-react";
+import { ShoppingBag, Sparkles } from "lucide-react";
+import { toast } from "sonner";
 import { recommendProducts, type StylistResult } from "@/lib/stylist.functions";
-import { ProductCard } from "@/components/site/ProductCard";
+import { StylistPickCard } from "@/components/site/StylistPickCard";
+import { useCart } from "@/lib/store";
+import { stylistCartItems } from "@/lib/stylist-cart";
+
 
 export const Route = createFileRoute("/stylist")({
   head: () => ({
