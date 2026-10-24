@@ -12,3 +12,4 @@
 - Category management reuses the protected admin layout and existing category RLS; invalidate the shared categories query after writes so shop and product forms reflect changes.
 - Category deletion checks product and coupon usage before removing unused categories; preserve linked records and keep existing foreign-key behavior as the database safety net.
 - Category ordering is explicitly reviewed and saved as sort_order updates; on partial failure retain the proposed order for a retry rather than reporting success.
+- Per-size stock is stored as colour-agnostic `product_variants` rows (one per size, colour null); the shop falls back to `products.stock` only when a product has no size rows. With "Track stock for each size" on, the editor keeps `products.stock` equal to the sum of the sizes.

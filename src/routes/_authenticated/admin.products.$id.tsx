@@ -56,6 +56,30 @@ function ProductEditor() {
     },
   });
 
+  const [trackBySize, setTrackBySize] = useState(false);
+  const [sizeStock, setSizeStock] = useState<Record<string, string>>({});
+  const { data: variants = [] } = useQuery({
+    queryKey: ["admin", "product-variants", id],
+    enabled: !isNew,
+    queryFn: async () => {
+      const { data, error } = await supabase.from("product_variants").select("*").eq("product_id", id);
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  useEffect(() => {
+    if (isNew || !product) return;
+    const rows = variants.filter((v) => v.size);
+    setTrackBySize(rows.length > 0);
+    const map: Record<string, string> = {};
+    for (const s of product.sizes) {
+      const row = rows.find((v) => v.size?.trim().toLowerCase() === s.trim().toLowerCase());
+      map[s] = String(row ? row.stock : 0);
+    }
+    setSizeStock(map);
+  }, [isNew, product, variants]);
+
   useEffect(() => {
     if (!product) return;
     setF({
@@ -88,12 +112,44 @@ function ProductEditor() {
       is_featured: f.is_featured, is_published: f.is_published,
       meta_title: f.meta_title.trim() || null, meta_description: f.meta_description.trim() || null,
     };
+    // With per-size tracking on, the overall stock is always the sum of the sizes.
+    if (trackBySize) {
+      row.stock = list(f.sizes).reduce(
+        (n, s) => n + (Math.max(0, Math.floor(Number(sizeStock[s] ?? "0")) || 0)),
+        0,
+      );
+    }
     setSaving(true);
-    const { error } = isNew
-      ? await supabase.from("products").insert(row)
-      : await supabase.from("products").update(row).eq("id", id);
+    const { data: saved, error } = isNew
+      ? await supabase.from("products").insert(row).select("id").single()
+      : await supabase.from("products").update(row).eq("id", id).select("id").single();
+    if (error || !saved) {
+      setSaving(false);
+      toast.error(error?.code === "23505" ? "That link or SKU is already used" : error?.message ?? "Couldn't save");
+      return;
+    }
+    const productId = isNew ? saved.id : id;
+    const { error: clearError } = await supabase
+      .from("product_variants")
+      .delete()
+      .eq("product_id", productId)
+      .not("size", "is", null);
+    if (clearError) { setSaving(false); toast.error(clearError.message); return; }
+    if (trackBySize) {
+      const sizes = list(f.sizes);
+      if (sizes.length) {
+        const { error: variantError } = await supabase.from("product_variants").insert(
+          sizes.map((s) => ({
+            product_id: productId,
+            size: s,
+            color: null,
+            stock: Math.max(0, Math.floor(Number(sizeStock[s] ?? "0")) || 0),
+          })),
+        );
+        if (variantError) { setSaving(false); toast.error(variantError.message); return; }
+      }
+    }
     setSaving(false);
-    if (error) { toast.error(error.code === "23505" ? "That link or SKU is already used" : error.message); return; }
     toast.success(isNew ? "Product created — it's on the shop now" : "Product saved");
     qc.invalidateQueries();
     navigate({ to: "/admin/products" });
@@ -169,9 +225,52 @@ function ProductEditor() {
             <label className={label + " block"}>Price<input type="number" min={0} step="0.01" className={input} value={f.price} onChange={(e) => set("price", e.target.value)} /></label>
             <label className={label + " block"}>Sale price (optional)<input type="number" min={0} step="0.01" className={input} value={f.sale_price} onChange={(e) => set("sale_price", e.target.value)} /></label>
             <label className={label + " block"}>SKU<input className={input} value={f.sku} onChange={(e) => set("sku", e.target.value)} /></label>
-            <label className={label + " block"}>Stock<input type="number" min={0} className={input} value={f.stock} onChange={(e) => set("stock", e.target.value)} /></label>
+            <label className={label + " block"}>Stock{trackBySize ? (
+              <input type="number" min={0} className={input} disabled value={list(f.sizes).reduce((n, s) => n + (Math.max(0, Math.floor(Number(sizeStock[s] ?? "0")) || 0)), 0)} />
+            ) : (
+              <input type="number" min={0} className={input} value={f.stock} onChange={(e) => set("stock", e.target.value)} />
+            )}</label>
             <label className={label + " block"}>Low-stock warning at<input type="number" min={0} className={input} value={f.low_stock_threshold} onChange={(e) => set("low_stock_threshold", e.target.value)} /></label>
           </div>
+          <div className="space-y-3 rounded-2xl border border-border bg-card p-5">
+            <label className="flex items-center gap-3 text-sm">
+                <input
+                  type="checkbox"
+                  checked={trackBySize}
+                  onChange={(e) => setTrackBySize(e.target.checked)}
+                  className="size-4 accent-primary"
+                />
+                Track stock for each size
+              </label>
+              {trackBySize ? (
+                <div className="space-y-2">
+                  {list(f.sizes).length === 0 ? (
+                    <p className="text-xs text-muted-foreground">Add sizes above first.</p>
+                  ) : (
+                    list(f.sizes).map((s) => (
+                      <div key={s} className="flex items-center gap-3">
+                        <span className="w-14 shrink-0 text-[11px] uppercase tracking-[0.15em] text-muted-foreground">{s}</span>
+                        <input
+                          type="number"
+                          min={0}
+                          className={input}
+                          value={sizeStock[s] ?? "0"}
+                          onChange={(e) => setSizeStock((p) => ({ ...p, [s]: e.target.value }))}
+                        />
+                      </div>
+                    ))
+                  )}
+                  <p className="text-xs text-muted-foreground">
+                    0 marks that size sold out on the shop. Colours share each size's stock.
+                  </p>
+                </div>
+              ) : (
+                <p className="text-xs text-muted-foreground">
+                  Turn this on to set how many pieces you have in every size. Sizes set to 0 show as sold
+                  out and can't be ordered.
+                </p>
+              )}
+            </div>
           <div className="space-y-3 rounded-2xl border border-border bg-card p-5 text-sm">
             {([["is_published", "Visible on shop"], ["is_new", "New arrival"], ["is_bestseller", "Best seller"], ["is_featured", "Featured / trending"]] as const).map(([k, l]) => (
               <label key={k} className="flex items-center gap-3"><input type="checkbox" checked={f[k]} onChange={(e) => set(k, e.target.checked)} className="size-4 accent-primary" />{l}</label>

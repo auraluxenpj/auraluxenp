@@ -1,10 +1,17 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { SiteLayout } from "@/components/site/SiteLayout";
 import { ProductCard } from "@/components/site/ProductCard";
-import { effectivePrice, fetchProductBySlug, fetchProducts, productImage } from "@/lib/data";
+import {
+  effectivePrice,
+  fetchProductBySlug,
+  fetchProducts,
+  fetchVariantsForProduct,
+  productImage,
+} from "@/lib/data";
+import { sizeStockLabel, sizeStocks, stockForSize } from "@/lib/size-stock";
 import { useCart, useMoney, useSettings, whatsappLink } from "@/lib/store";
 import { requiredOptionLabels } from "@/lib/product-options";
 import { PhotoZoom } from "@/components/site/PhotoZoom";
@@ -41,12 +48,48 @@ function ProductDetail() {
     queryFn: () => fetchProductBySlug(slug),
   });
   const { data: all = [] } = useQuery({ queryKey: ["products"], queryFn: fetchProducts });
+  const productId = product?.id ?? null;
+  const { data: variants = [] } = useQuery({
+    queryKey: ["product-variants", productId],
+    queryFn: () => fetchVariantsForProduct(productId as string),
+    enabled: productId != null,
+  });
 
   const [size, setSize] = useState<string | null>(null);
   const [color, setColor] = useState<string | null>(null);
-  const [qty, setQty] = useState(1);
+  const [quantity, setQuantity] = useState(1);
   const [active, setActive] = useState(0);
   const [zoomed, setZoomed] = useState(false);
+
+  // Per-size stock comes from tracked variants; pieces without any fall back
+  // to the single product-level stock figure.
+  const derived = useMemo(() => {
+    if (!product) return null;
+    const sizeStocksList = sizeStocks(product, variants);
+    const effectiveSize = size ?? (product.sizes?.length === 1 ? product.sizes[0] ?? null : null);
+    const effectiveColor = color ?? (product.colors?.length === 1 ? product.colors[0] ?? null : null);
+    const comboStock = effectiveSize ? stockForSize(variants, effectiveSize, effectiveColor) : null;
+    const sizeTotalStock = effectiveSize ? stockForSize(variants, effectiveSize) : null;
+    const maxQty = comboStock ?? sizeTotalStock;
+    const qty = Math.max(1, Math.min(quantity, maxQty ?? quantity));
+    const allSizesSoldOut =
+      !!sizeStocksList &&
+      sizeStocksList.length > 0 &&
+      sizeStocksList.every((e) => e.stock != null && e.stock <= 0);
+    const sizeSoldOut = (sizeTotalStock ?? 1) <= 0;
+    return {
+      sizeStocksList,
+      effectiveSize,
+      effectiveColor,
+      comboStock,
+      sizeTotalStock,
+      maxQty,
+      qty,
+      allSizesSoldOut,
+      sizeSoldOut,
+    };
+  }, [product, variants, size, color, quantity]);
+
   const sliderRef = useRef<HTMLDivElement>(null);
   const goTo = (i: number) => {
     const el = sliderRef.current;
@@ -62,7 +105,7 @@ function ProductDetail() {
     );
   }
 
-  if (!product) {
+  if (!product || !derived) {
     return (
       <SiteLayout>
         <div className="glass mt-10 rounded-3xl p-8">
@@ -75,15 +118,15 @@ function ProductDetail() {
     );
   }
 
+  const d = derived;
   const price = effectivePrice(product);
   const hasDiscount = product.sale_price != null && Number(product.sale_price) > 0;
   const images = product.images?.length ? product.images : [productImage(product)];
-  const outOfStock = product.stock <= 0;
-  // A single size or colour is applied automatically; anything else must be
-  // chosen by the shopper before it can go into the bag.
-  const effectiveSize = size ?? (product.sizes?.length === 1 ? product.sizes[0] : null);
-  const effectiveColor = color ?? (product.colors?.length === 1 ? product.colors[0] : null);
-  const missingOptions = requiredOptionLabels(product, effectiveSize, effectiveColor);
+  const headerStock = d.comboStock ?? d.sizeTotalStock ?? product.stock;
+  const comboEmpty = d.comboStock != null && d.comboStock <= 0 && (d.sizeTotalStock ?? 0) > 0;
+  const outOfStock =
+    product.stock <= 0 || d.allSizesSoldOut || (d.effectiveSize != null && d.sizeSoldOut);
+  const missingOptions = requiredOptionLabels(product, d.effectiveSize, d.effectiveColor);
   const related = all.filter((p) => p.category_id === product.category_id && p.id !== product.id).slice(0, 3);
 
   const chosen = {
@@ -92,9 +135,9 @@ function ProductDetail() {
     name: product.name,
     image: images[0] ?? null,
     price,
-    size: effectiveSize,
-    color: effectiveColor,
-    quantity: qty,
+    size: d.effectiveSize,
+    color: d.effectiveColor,
+    quantity: d.qty,
   };
 
   return (
@@ -202,9 +245,11 @@ function ProductDetail() {
           <p className="mt-2 text-[12px] uppercase tracking-[0.18em] text-muted-foreground">
             {outOfStock
               ? "Out of stock"
-              : product.stock <= product.low_stock_threshold
-                ? `Only ${product.stock} left`
-                : "In stock"}
+              : comboEmpty
+                ? "Sold out in this colour — please pick another"
+                : headerStock <= product.low_stock_threshold
+                  ? `Only ${headerStock} left`
+                  : "In stock"}
             {product.sku ? ` · SKU ${product.sku}` : ""}
           </p>
 
@@ -212,20 +257,36 @@ function ProductDetail() {
             <div className="mt-6">
               <p className="label-caps text-muted-foreground">Size</p>
               <div className="mt-3 flex flex-wrap gap-2">
-                {product.sizes.map((s) => (
-                  <button
-                    key={s}
-                    type="button"
-                    onClick={() => setSize(s)}
-                    className={`rounded-full px-5 py-2.5 text-[12px] uppercase tracking-[0.15em] ${
-                      size === s
-                        ? "bg-primary text-primary-foreground"
-                        : "glass text-foreground/70"
-                    }`}
-                  >
-                    {s}
-                  </button>
-                ))}
+                {product.sizes.map((s) => {
+                  const entry = d.sizeStocksList?.find((e) => e.size === s);
+                  const soldOut = entry?.stock != null && entry.stock <= 0;
+                  return (
+                    <button
+                      key={s}
+                      type="button"
+                      disabled={soldOut}
+                      onClick={() => setSize(s)}
+                      className={`flex min-w-[4.5rem] flex-col items-center rounded-full px-5 py-2 text-[12px] uppercase tracking-[0.15em] ${
+                        d.effectiveSize === s
+                          ? "bg-primary text-primary-foreground"
+                          : soldOut
+                            ? "glass text-muted-foreground/60"
+                            : "glass text-foreground/70"
+                      } ${soldOut ? "cursor-not-allowed" : ""}`}
+                    >
+                      <span className={soldOut ? "line-through" : ""}>{s}</span>
+                      {entry?.stock != null ? (
+                        <span
+                          className={`text-[10px] normal-case tracking-normal ${
+                            soldOut ? "text-destructive/80" : "text-muted-foreground"
+                          }`}
+                        >
+                          {sizeStockLabel(entry)}
+                        </span>
+                      ) : null}
+                    </button>
+                  );
+                })}
               </div>
               {(product.sizes?.length ?? 0) > 1 && !size ? (
                 <p className="mt-2 text-xs text-destructive">Please select a size</p>
@@ -261,20 +322,33 @@ function ProductDetail() {
           <div className="mt-5 flex items-center gap-3">
             <p className="label-caps text-muted-foreground">Quantity</p>
             <div className="glass flex items-center rounded-full">
-              <button type="button" className="px-4 py-2" onClick={() => setQty((q) => Math.max(1, q - 1))}>
+              <button
+                type="button"
+                className="px-4 py-2"
+                onClick={() => setQuantity((q) => Math.max(1, Math.min(q, d.maxQty ?? q) - 1))}
+              >
                 −
               </button>
-              <span className="w-8 text-center text-sm">{qty}</span>
-              <button type="button" className="px-4 py-2" onClick={() => setQty((q) => q + 1)}>
+              <span className="w-8 text-center text-sm">{d.qty}</span>
+              <button
+                type="button"
+                className="px-4 py-2"
+                onClick={() =>
+                  setQuantity((q) => Math.min(d.maxQty ?? Number.POSITIVE_INFINITY, Math.max(q, 1) + 1))
+                }
+              >
                 +
               </button>
             </div>
+            {d.maxQty != null && d.maxQty > 0 ? (
+              <span className="text-xs text-muted-foreground">Max {d.maxQty}</span>
+            ) : null}
           </div>
 
           <div className="mt-7 flex flex-col gap-3 sm:flex-row">
             <button
               type="button"
-              disabled={outOfStock || missingOptions.length > 0}
+              disabled={outOfStock || comboEmpty || missingOptions.length > 0}
               onClick={() => {
                 add(chosen);
                 toast.success("Added to your bag");
@@ -290,6 +364,11 @@ function ProductDetail() {
                 if (missingOptions.length) {
                   e.preventDefault();
                   toast.error(`Please select a ${missingOptions.join(" and ")}`);
+                  return;
+                }
+                if (comboEmpty) {
+                  e.preventDefault();
+                  toast.error("That colour is sold out in this size — please pick another");
                   return;
                 }
                 add(chosen);

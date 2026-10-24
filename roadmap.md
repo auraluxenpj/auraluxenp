@@ -55,4 +55,6 @@
 
 ## Size & colour prompt + per-size stock (Oct 24)
 - [x] Add-to-bag asks for size and colour first: quick chooser dialog on product cards, explicit selection on product page (no silent defaults). `src/lib/product-options.ts` + 5 tests.
-- [ ] Admin product editor: per-size stock updates using regular sizes S,M,L,XL,2XL,3XL and plus sizes 4XL-10XL.
+- [x] Per-size stock on product pages: sizes show "N left"/"Sold out", sold-out sizes disabled, quantity capped to the chosen size. Data comes from `product_variants` rows (colour-agnostic, one per size); `src/lib/size-stock.ts` + 10 tests (42 total pass). Products without variant rows keep the single product-level stock figure.
+- [x] Admin product editor: "Track stock for each size" toggle with per-size stock inputs (S–3XL regular, 4XL–10XL plus — any size labels work); saving replaces the size rows and keeps the overall Stock equal to their sum. Browser-verified end to end (create → shop display → quantity cap → delete test product).
+- [ ] Server-side per-size stock enforcement in `place_order` (validate + decrement the chosen size's variant stock, and fix duplicate-line aggregate overdraw) — planned, awaiting owner approval before the migration.
