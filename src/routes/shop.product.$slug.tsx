@@ -348,7 +348,7 @@ function ProductDetail() {
           <div className="mt-7 flex flex-col gap-3 sm:flex-row">
             <button
               type="button"
-              disabled={outOfStock || missingOptions.length > 0}
+              disabled={outOfStock || comboEmpty || missingOptions.length > 0}
               onClick={() => {
                 add(chosen);
                 toast.success("Added to your bag");
@@ -364,6 +364,11 @@ function ProductDetail() {
                 if (missingOptions.length) {
                   e.preventDefault();
                   toast.error(`Please select a ${missingOptions.join(" and ")}`);
+                  return;
+                }
+                if (comboEmpty) {
+                  e.preventDefault();
+                  toast.error("That colour is sold out in this size — please pick another");
                   return;
                 }
                 add(chosen);
