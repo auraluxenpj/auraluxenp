@@ -19,7 +19,7 @@ export function ProductCard({ product }: { product: Product }) {
         : null;
 
   return (
-    <article className="group glass rounded-3xl p-3 transition hover:-translate-y-1">
+    <article className="group glass rounded-2xl p-2 transition hover:-translate-y-1 sm:rounded-3xl sm:p-3">
       <Link to="/shop/product/$slug" params={{ slug: product.slug }} className="relative block">
         <img
           src={productImage(product)}
@@ -27,36 +27,36 @@ export function ProductCard({ product }: { product: Product }) {
           loading="lazy"
           width={1024}
           height={1280}
-          className="aspect-[4/5] w-full rounded-2xl bg-muted object-cover"
+          className="aspect-[4/5] w-full rounded-xl bg-muted object-cover sm:rounded-2xl"
         />
         {badge ? (
-          <span className="absolute left-3 top-3 rounded-full bg-accent/90 px-3 py-1 text-[10px] uppercase tracking-[0.2em] text-accent-foreground backdrop-blur">
+          <span className="absolute left-2 top-2 rounded-full bg-accent/90 px-2 py-0.5 text-[9px] uppercase tracking-[0.18em] text-accent-foreground backdrop-blur sm:left-3 sm:top-3 sm:px-3 sm:py-1 sm:text-[10px]">
             {badge}
           </span>
         ) : null}
         {outOfStock ? (
-          <span className="absolute right-3 top-3 rounded-full bg-primary/90 px-3 py-1 text-[10px] uppercase tracking-[0.2em] text-primary-foreground">
+          <span className="absolute right-2 top-2 rounded-full bg-primary/90 px-2 py-0.5 text-[9px] uppercase tracking-[0.18em] text-primary-foreground sm:right-3 sm:top-3 sm:px-3 sm:py-1 sm:text-[10px]">
             Sold out
           </span>
         ) : null}
       </Link>
-      <div className="px-2 pb-2 pt-4">
-        <div className="flex items-start justify-between gap-3">
-          <h3 className="font-display text-xl leading-tight">
+      <div className="px-1 pb-1 pt-2 sm:px-2 sm:pb-2 sm:pt-4">
+        <div className="flex items-start justify-between gap-2">
+          <h3 className="line-clamp-2 font-display text-sm leading-tight sm:text-xl">
             <Link to="/shop/product/$slug" params={{ slug: product.slug }}>
               {product.name}
             </Link>
           </h3>
-          <div className="text-right">
-            <span className="font-display text-lg text-primary">{money(price)}</span>
+          <div className="shrink-0 text-right">
+            <span className="font-display text-sm text-primary sm:text-lg">{money(price)}</span>
             {hasDiscount ? (
-              <span className="ml-2 text-xs text-muted-foreground line-through">
+              <span className="ml-1.5 text-[10px] text-muted-foreground line-through sm:text-xs">
                 {money(Number(product.price))}
               </span>
             ) : null}
           </div>
         </div>
-        <p className="mt-1 text-xs uppercase tracking-[0.15em] text-muted-foreground">
+        <p className="mt-1 hidden text-xs uppercase tracking-[0.15em] text-muted-foreground sm:block">
           {[product.fabric, product.sizes?.join(" ")].filter(Boolean).join(" · ")}
         </p>
         <button
@@ -75,7 +75,7 @@ export function ProductCard({ product }: { product: Product }) {
             });
             toast.success(`${product.name} added to your bag`);
           }}
-          className="mt-4 w-full rounded-full border border-brand/30 bg-secondary py-3 text-[12px] uppercase tracking-[0.18em] text-primary backdrop-blur transition group-hover:bg-primary group-hover:text-primary-foreground disabled:cursor-not-allowed disabled:opacity-50"
+          className="mt-2 w-full rounded-full border border-brand/30 bg-secondary py-2 text-[10px] uppercase tracking-[0.15em] text-primary backdrop-blur transition group-hover:bg-primary group-hover:text-primary-foreground disabled:cursor-not-allowed disabled:opacity-50 sm:mt-4 sm:py-3 sm:text-[12px] sm:tracking-[0.18em]"
         >
           {outOfStock ? "Sold out" : "Add to bag"}
         </button>

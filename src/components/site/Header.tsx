@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { ChevronDown, Menu, Search, ShoppingBag, X } from "lucide-react";
 import { useCart, useSettings } from "@/lib/store";
@@ -22,18 +22,27 @@ export function Header() {
   const { data: categories = [] } = useQuery({ queryKey: ["categories"], queryFn: fetchCategories });
 
   const activeCategories = categories.filter((c) => c.is_active);
-  const announcementOn = settings["announcement_enabled"] !== "false" && settings["announcement"];
+
+  // Auto-hide the header when scrolling down, reveal when scrolling up
+  const [hidden, setHidden] = useState(false);
+  useEffect(() => {
+    let last = window.scrollY;
+    const onScroll = () => {
+      const y = window.scrollY;
+      setHidden(y > last && y > 120);
+      last = y;
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
 
   return (
-    <div className="sticky top-3 z-30">
-      {announcementOn ? (
-        <div className="glass flex items-center justify-center gap-3 rounded-full px-5 py-2 text-center text-[11px] uppercase tracking-[0.25em] text-muted-foreground">
-          <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-accent" />
-          <span className="truncate">{settings["announcement"]}</span>
-        </div>
-      ) : null}
-
-      <header className="glass mt-3 flex items-center justify-between rounded-2xl px-5 py-4 sm:px-7">
+    <div
+      className={`sticky top-3 z-30 transition-transform duration-300 motion-reduce:transition-none ${
+        hidden && !open ? "-translate-y-[140%]" : ""
+      }`}
+    >
+      <header className="glass flex items-center justify-between rounded-2xl px-5 py-4 sm:px-7">
         <Link to="/" className="flex items-baseline gap-1">
           <span className="font-display text-2xl font-semibold tracking-[0.12em]">
             AURA<span className="text-brand">LUXE</span>
