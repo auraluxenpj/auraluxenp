@@ -40,9 +40,13 @@ function StylistPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<StylistResult | null>(null);
+  const [selections, setSelections] = useState<Record<string, { size: string | null; color: string | null }>>({});
+
+  const noteSelection = (productId: string, sel: { size: string | null; color: string | null }) =>
+    setSelections((prev) => ({ ...prev, [productId]: sel }));
 
   const addAll = () => {
-    const items = stylistCartItems(result?.picks ?? []);
+    const items = stylistCartItems(result?.picks ?? [], selections);
     if (!items.length) {
       toast.error("These pieces are no longer available — please try again.");
       return;
@@ -64,6 +68,7 @@ function StylistPage() {
       const res = await recommend({
         data: { occasion, style, budget: parsedBudget },
       });
+      setSelections({});
       setResult(res);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong — please try again.");
@@ -149,7 +154,7 @@ function StylistPage() {
               </div>
               <div className="mt-6 grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-3">
                 {result.picks.map(({ product, reason }) => (
-                  <StylistPickCard key={product.id} product={product} reason={reason} />
+                  <StylistPickCard key={product.id} product={product} reason={reason} onSelectionChange={noteSelection} />
                 ))}
               </div>
             </>
