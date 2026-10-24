@@ -221,6 +221,47 @@ function ProductEditor() {
             <label className={label + " block"}>Stock<input type="number" min={0} className={input} value={f.stock} onChange={(e) => set("stock", e.target.value)} /></label>
             <label className={label + " block"}>Low-stock warning at<input type="number" min={0} className={input} value={f.low_stock_threshold} onChange={(e) => set("low_stock_threshold", e.target.value)} /></label>
           </div>
+          {!isNew && product ? (
+            <div className="space-y-3 rounded-2xl border border-border bg-card p-5">
+              <label className="flex items-center gap-3 text-sm">
+                <input
+                  type="checkbox"
+                  checked={trackBySize}
+                  onChange={(e) => setTrackBySize(e.target.checked)}
+                  className="size-4 accent-primary"
+                />
+                Track stock for each size
+              </label>
+              {trackBySize ? (
+                <div className="space-y-2">
+                  {list(f.sizes).length === 0 ? (
+                    <p className="text-xs text-muted-foreground">Add sizes above first.</p>
+                  ) : (
+                    list(f.sizes).map((s) => (
+                      <div key={s} className="flex items-center gap-3">
+                        <span className="w-14 shrink-0 text-[11px] uppercase tracking-[0.15em] text-muted-foreground">{s}</span>
+                        <input
+                          type="number"
+                          min={0}
+                          className={input}
+                          value={sizeStock[s] ?? "0"}
+                          onChange={(e) => setSizeStock((p) => ({ ...p, [s]: e.target.value }))}
+                        />
+                      </div>
+                    ))
+                  )}
+                  <p className="text-xs text-muted-foreground">
+                    0 marks that size sold out on the shop. Colours share each size's stock.
+                  </p>
+                </div>
+              ) : (
+                <p className="text-xs text-muted-foreground">
+                  Turn this on to set how many pieces you have in every size. Sizes set to 0 show as sold
+                  out and can't be ordered.
+                </p>
+              )}
+            </div>
+          ) : null}
           <div className="space-y-3 rounded-2xl border border-border bg-card p-5 text-sm">
             {([["is_published", "Visible on shop"], ["is_new", "New arrival"], ["is_bestseller", "Best seller"], ["is_featured", "Featured / trending"]] as const).map(([k, l]) => (
               <label key={k} className="flex items-center gap-3"><input type="checkbox" checked={f[k]} onChange={(e) => set(k, e.target.checked)} className="size-4 accent-primary" />{l}</label>
