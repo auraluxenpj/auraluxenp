@@ -14,6 +14,12 @@
 - [x] `/track` page + `trackOrder` server function calling new `public.track_order` DB function (migration 0006): order number + phone/email both required, returns limited summary (status, payment, tracking number, items, total); no address exposed. Footer link added.
 - [x] Verified in preview: real AI picks in ~10s within budget, real legacy order lookup works, wrong contact shows "not found", 19 tests pass, build OK. Not published.
 
+## Stylist add-to-bag + publish (Oct 24, 03:09 UTC)
+- [x] Each AI Stylist recommendation now has its own "Add to bag" button plus a "View" link, and an "Add all N to bag" button above the grid; sold-out picks are refused. Rules live in `src/lib/stylist-cart.ts` with 6 tests (25 total pass). Browser check: 6 picks → per-card add then add-all left 7 items in the bag at correct sale prices.
+- [x] Published /stylist and /track (with the add-to-bag buttons) to https://www.auraluxe.com.np; fresh security scan cleared the old checkout-price warning, remaining findings are the user-ignored product-images rule and intentional public storefront reads.
+
+
+
 
 ## October 24 release review
 - [x] Check both draft statuses: Payment Settings draft accepted; current review draft matches main and has no additional code changes.
