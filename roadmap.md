@@ -1,5 +1,10 @@
 # Phase 1: Secure checkout and remove COD
 
+## Admin category management
+- [ ] Add category create/edit/delete and reviewable ordering in the protected admin panel.
+- [ ] Preserve assigned products and coupons when deleting categories; reuse existing admin permissions.
+- [ ] Verify category rules, signed-in management, storefront updates, and current app health. Do not publish.
+
 - [x] Audit existing backend, checkout paths, payment settings and legacy order baseline.
 - [x] Record owner-confirmed newest backup timestamp: October 21, 2026, 15:04:14 UTC (2026-10-21T15:04:14Z); not independently inspected.
 - [x] Owner confirms supported full database export downloaded (not independently inspected).
