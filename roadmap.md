@@ -1,5 +1,14 @@
 # Phase 1: Secure checkout and remove COD
 
+## October 24 release review
+- [x] Check both draft statuses: Payment Settings draft accepted; current review draft matches main and has no additional code changes.
+- [x] Run payment rules and CSV tests: 12 passed.
+- [x] Inspect live activation: payment settings and place_order exist; QR and bank toggles enabled with configured fields; private QR bucket contains one image. Genuine ownership of merchant details was not independently verified.
+- [x] Check current records: 69 products, 1 profile, 507 product images; both baseline COD orders remain with their IDs and totals, now cancelled. Changes since the earlier baseline were not made by this review.
+- [ ] Resolve release risk: place_order checks duplicate product lines separately before decrementing stock, allowing aggregate quantities to exceed stock. Awaiting owner decision before further implementation or publication.
+- [ ] Complete real checkout/admin acceptance tests and legacy item fingerprint comparison. Initial browser check showed loading states, not a verified flow.
+- [ ] Publish requested drafts after release review and owner decision; no publication requested in this review yet.
+
 ## Admin category management
 - [x] Add category create/edit/delete and reviewable ordering in the protected admin panel.
 - [x] Preserve assigned products and coupons when deleting categories; reuse existing admin permissions. No schema or policy changes.
