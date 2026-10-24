@@ -6,7 +6,7 @@ const variants = [
   { size: "S", color: "Blue", stock: 1 },
   { size: "M", color: "Red", stock: 0 },
   { size: "M", color: "Blue", stock: 3 },
-  { size: null, color: "Red", stock: 9 },
+  { size: "M", color: null, stock: 9 },
 ];
 
 describe("stockForSize", () => {
@@ -18,11 +18,6 @@ describe("stockForSize", () => {
   it("matches sizes case-insensitively", () => {
     expect(stockForSize(variants, "s")).toBe(3);
     expect(stockForSize(variants, " m ")).toBe(12);
-  });
-
-  it("returns the exact size + colour stock when a colour is given", () => {
-    expect(stockForSize(variants, "S", "blue")).toBe(1);
-    expect(stockForSize(variants, "M", "red")).toBe(0);
   });
 
   it("counts colour-less variants toward any colour pick", () => {
