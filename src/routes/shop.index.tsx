@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { SiteLayout } from "@/components/site/SiteLayout";
 import { ProductCard } from "@/components/site/ProductCard";
 import { effectivePrice, fetchCategories, fetchProducts } from "@/lib/data";
@@ -14,7 +14,6 @@ type ShopSearch = {
   color?: string | undefined;
   max?: number | undefined;
   stock?: string | undefined;
-  page?: number | undefined;
 };
 
 export const Route = createFileRoute("/shop/")({
@@ -26,7 +25,6 @@ export const Route = createFileRoute("/shop/")({
     color: typeof search["color"] === "string" ? search["color"] : undefined,
     max: search["max"] != null ? Number(search["max"]) : undefined,
     stock: typeof search["stock"] === "string" ? search["stock"] : undefined,
-    page: search["page"] != null ? Number(search["page"]) : undefined,
   }),
   head: () => ({
     meta: [
@@ -61,7 +59,7 @@ function Shop() {
   const { data: categories = [] } = useQuery({ queryKey: ["categories"], queryFn: fetchCategories });
 
   const update = (patch: Partial<ShopSearch>) =>
-    navigate({ search: (prev) => ({ ...prev, ...patch, page: patch.page ?? 1 }) });
+    navigate({ search: (prev) => ({ ...prev, ...patch }) });
 
   const sizes = useMemo(
     () => Array.from(new Set(products.flatMap((p) => p.sizes ?? []))).sort(),
@@ -117,9 +115,30 @@ function Shop() {
     return list;
   }, [products, search, categoryId]);
 
-  const page = search.page && search.page > 0 ? search.page : 1;
-  const pages = Math.max(1, Math.ceil(filtered.length / PER_PAGE));
-  const visible = filtered.slice((page - 1) * PER_PAGE, page * PER_PAGE);
+  const [limit, setLimit] = useState(PER_PAGE);
+  const sentinelRef = useRef<HTMLDivElement | null>(null);
+
+  // Reset the shown count whenever the search or filters change
+  useEffect(() => {
+    setLimit(PER_PAGE);
+  }, [search]);
+
+  const visible = filtered.slice(0, limit);
+  const hasMore = visible.length < filtered.length;
+
+  // Load the next batch automatically as the shopper scrolls
+  useEffect(() => {
+    const node = sentinelRef.current;
+    if (!node || !hasMore) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((e) => e.isIntersecting)) setLimit((l) => l + PER_PAGE);
+      },
+      { rootMargin: "600px 0px" },
+    );
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [hasMore, filtered.length]);
 
   const selectClass =
     "glass rounded-full px-4 py-2.5 text-[12px] uppercase tracking-[0.15em] text-foreground/75 outline-none";
@@ -256,19 +275,16 @@ function Shop() {
         </p>
       ) : null}
 
-      {pages > 1 ? (
-        <div className="mt-10 flex justify-center gap-2">
-          {Array.from({ length: pages }, (_, i) => i + 1).map((n) => (
-            <button
-              key={n}
-              type="button"
-              onClick={() => navigate({ search: (prev) => ({ ...prev, page: n }) })}
-              className={`size-10 rounded-full text-sm ${n === page ? "bg-primary text-primary-foreground" : "glass"}`}
-            >
-              {n}
-            </button>
-          ))}
+      {hasMore ? (
+        <div ref={sentinelRef} className="mt-10 flex justify-center" aria-hidden={false}>
+          <span className="text-[12px] uppercase tracking-[0.18em] text-muted-foreground">
+            Loading more…
+          </span>
         </div>
+      ) : filtered.length > PER_PAGE ? (
+        <p className="mt-10 text-center text-[12px] uppercase tracking-[0.18em] text-muted-foreground">
+          You've seen all {filtered.length} pieces
+        </p>
       ) : null}
     </SiteLayout>
   );
