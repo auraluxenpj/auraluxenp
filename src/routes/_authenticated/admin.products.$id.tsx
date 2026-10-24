@@ -8,7 +8,7 @@ import { fetchCategories, slugify } from "@/lib/data";
 import { ImageUploader } from "@/components/admin/ImageUploader";
 import { Button } from "@/components/ui/button";
 import { WomensSizeGuide } from "@/components/site/WomensSizeGuide";
-import { buildProductSku, GARMENT_TYPES, PHOTO_DISCLAIMER, skuTypeForProduct, splitProductSku } from "@/lib/product-information";
+import { buildProductSku, GARMENT_LABELS, GARMENT_TYPES, PHOTO_DISCLAIMER, skuTypeForProduct, splitProductSku } from "@/lib/product-information";
 
 export const Route = createFileRoute("/_authenticated/admin/products/$id")({
   head: ({ params }) => ({ meta: [
@@ -257,7 +257,7 @@ function ProductEditor() {
               <legend className={label}>SKU</legend>
               <label className="block text-xs text-muted-foreground">Kind of dress
                 <select className={input} value={skuKind} onChange={(e) => { setSkuKind(e.target.value); setSkuKindTouched(true); }}>
-                  {GARMENT_TYPES.map((kind) => <option key={kind} value={kind}>{kind.replace(/-/g, " ")}</option>)}
+                  {GARMENT_TYPES.map((kind) => <option key={kind} value={kind}>{GARMENT_LABELS[kind] ?? kind}</option>)}
                 </select>
               </label>
               <label className="block text-xs text-muted-foreground">Final SKU identifier

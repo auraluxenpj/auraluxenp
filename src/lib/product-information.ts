@@ -1,20 +1,35 @@
 export const PHOTO_DISCLAIMER = "Please note: the actual product’s colour, texture and fine details may vary slightly from the images shown due to lighting, camera settings, screen display and AI-generated or enhanced imagery.";
 
-export const GARMENT_TYPES = ["KURTI", "CO-ORD-SET", "SUIT", "DRESS", "SAREE", "GOWN", "PALAZZO-SET", "SHARARA-SET", "TOP", "PARTY-WEAR", "OTHER"] as const;
+// AURALUXE's own garment letters, kept identical to the codes already used in the catalogue.
+export const GARMENT_TYPES = ["PW", "CO", "S", "K", "SU", "D", "G", "PZ", "SH", "T", "OTH"] as const;
+
+export const GARMENT_LABELS: Record<string, string> = {
+  PW: "Party Wear",
+  CO: "Co-ord Set",
+  S: "Saree",
+  K: "Kurti",
+  SU: "Suit",
+  D: "Dress",
+  G: "Gown",
+  PZ: "Palazzo Set",
+  SH: "Sharara Set",
+  T: "Top",
+  OTH: "Other",
+};
 
 export function skuTypeForProduct(name: string, category = ""): string {
   const value = `${name} ${category}`.toLowerCase();
-  if (/saree|sari/.test(value)) return "SAREE";
-  if (/sharara/.test(value)) return "SHARARA-SET";
-  if (/co[ -]?ord/.test(value)) return "CO-ORD-SET";
-  if (/palazzo|plazzo/.test(value)) return "PALAZZO-SET";
-  if (/kurti|kurta/.test(value)) return "KURTI";
-  if (/gown/.test(value)) return "GOWN";
-  if (/dress/.test(value)) return "DRESS";
-  if (/suit/.test(value)) return "SUIT";
-  if (/\btop\b/.test(value)) return "TOP";
-  if (/party/.test(value)) return "PARTY-WEAR";
-  return "OTHER";
+  if (/saree|sari/.test(value)) return "S";
+  if (/sharara/.test(value)) return "SH";
+  if (/co[ -]?ord/.test(value)) return "CO";
+  if (/palazzo|plazzo/.test(value)) return "PZ";
+  if (/kurti|kurta/.test(value)) return "K";
+  if (/gown/.test(value)) return "G";
+  if (/dress/.test(value)) return "D";
+  if (/suit/.test(value)) return "SU";
+  if (/\btop\b/.test(value)) return "T";
+  if (/party/.test(value)) return "PW";
+  return "OTH";
 }
 
 export function buildProductSku(kind: string, suffix: string): string {
@@ -29,8 +44,8 @@ export function splitProductSku(sku: string | null, name: string, category = "")
   const value = sku?.trim().toUpperCase() ?? "";
   const kind = [...GARMENT_TYPES].sort((a, b) => b.length - a.length).find((t) => value.startsWith(`AL-${t}-`));
   if (kind) return { kind, suffix: value.slice(`AL-${kind}-`.length) };
-  // Retain legacy identifiers when the admin saves using the descriptive format.
-  return { kind: skuTypeForProduct(name, category), suffix: value.replace(/^AL-[A-Z]+-/, "") };
+  // Retain legacy identifiers, including ones typed with a stray space, until the admin saves.
+  return { kind: skuTypeForProduct(name, category), suffix: value.replace(/^AL-\s*[A-Z]*\s*-/, "") };
 }
 
 export function isProductSku(value: string): boolean {
