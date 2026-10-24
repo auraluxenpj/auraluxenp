@@ -27,10 +27,20 @@ type Form = {
   meta_title: string; meta_description: string;
 };
 
+const WOMENS_SIZE_CHART = [
+  "Women's size chart (inches)",
+  "S — Bust 34, Waist 26–28, Hip 36",
+  "M — Bust 36, Waist 28–30, Hip 38",
+  "L — Bust 38, Waist 30–32, Hip 40",
+  "XL — Bust 40, Waist 32–34, Hip 42",
+  "2XL — Bust 42, Waist 34–36, Hip 44",
+  "3XL — Bust 44, Waist 36–38, Hip 46",
+].join("\n");
+
 const EMPTY: Form = {
   name: "", slug: "", sku: "", description: "", fabric: "", category_id: "",
   price: "", sale_price: "", stock: "0", low_stock_threshold: "5",
-  sizes: "S, M, L, XL", colors: "", images: "", size_chart: "",
+  sizes: "S, M, L, XL", colors: "", images: "", size_chart: WOMENS_SIZE_CHART,
   is_new: true, is_bestseller: false, is_featured: false, is_published: true,
   meta_title: "", meta_description: "",
 };
