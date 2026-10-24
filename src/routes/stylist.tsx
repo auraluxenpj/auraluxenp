@@ -32,12 +32,27 @@ export const Route = createFileRoute("/stylist")({
 
 function StylistPage() {
   const recommend = useServerFn(recommendProducts);
+  const { add } = useCart();
+
   const [occasion, setOccasion] = useState("");
   const [style, setStyle] = useState("");
   const [budget, setBudget] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<StylistResult | null>(null);
+
+  const addAll = () => {
+    const items = stylistCartItems(result?.picks ?? []);
+    if (!items.length) {
+      toast.error("These pieces are no longer available — please try again.");
+      return;
+    }
+    items.forEach((item) => add(item));
+    toast.success(
+      `${items.length} ${items.length === 1 ? "piece" : "pieces"} added to your bag`,
+    );
+  };
+
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -122,18 +137,26 @@ function StylistPage() {
           <p className="text-center font-display text-xl">{result.summary}</p>
           {result.picks.length ? (
             <>
+              <div className="mt-5 flex justify-center">
+                <button
+                  type="button"
+                  onClick={addAll}
+                  className="inline-flex items-center gap-2 rounded-full border border-brand/40 bg-secondary px-5 py-2.5 text-[11px] uppercase tracking-[0.16em] text-primary transition hover:bg-primary hover:text-primary-foreground"
+                >
+                  <ShoppingBag className="h-3.5 w-3.5" />
+                  Add all {result.picks.length} to bag
+                </button>
+              </div>
               <div className="mt-6 grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-3">
                 {result.picks.map(({ product, reason }) => (
-                  <div key={product.id}>
-                    <ProductCard product={product} />
-                    <p className="mt-2 px-1 text-xs text-muted-foreground">{reason}</p>
-                  </div>
+                  <StylistPickCard key={product.id} product={product} reason={reason} />
                 ))}
               </div>
             </>
           ) : null}
         </section>
       ) : null}
+
     </main>
   );
 }
