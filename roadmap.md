@@ -9,6 +9,11 @@
 - [ ] Not yet done: homepage section ordering controls, wishlist, quick view. Owner to test banner upload/reorder signed in, then publish.
 - [ ] Catalogue contains test-named products (e.g. "hnfg", "dfrdg", "dsgbsf" at Rs. 0) from earlier testing — owner may want to remove them in admin.
 
+## AI stylist + order tracking (Oct 24)
+- [x] `/stylist` page: occasion/style/budget form, `recommendProducts` server function streams openai/gpt-6-astra with strict JSON picks by product id, only live published in-stock products returned, friendly gateway error messages. Footer link added.
+- [x] `/track` page + `trackOrder` server function calling new `public.track_order` DB function (migration 0006): order number + phone/email both required, returns limited summary (status, payment, tracking number, items, total); no address exposed. Footer link added.
+- [x] Verified in preview: real AI picks in ~10s within budget, real legacy order lookup works, wrong contact shows "not found", 19 tests pass, build OK. Not published.
+
 
 ## October 24 release review
 - [x] Check both draft statuses: Payment Settings draft accepted; current review draft matches main and has no additional code changes.
