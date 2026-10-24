@@ -52,7 +52,7 @@ export function HeroCarousel({ banners }: { banners: Banner[] }) {
     <section
       aria-roledescription="carousel"
       aria-label="Featured campaigns"
-      className="relative -mx-4 -mt-2 overflow-hidden sm:-mx-6 lg:-mx-10"
+      className="relative -mx-5 -mt-2 overflow-hidden sm:-mx-8"
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
     >
