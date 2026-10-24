@@ -126,7 +126,6 @@ function ProductDetail() {
   const price = effectivePrice(product);
   const hasDiscount = product.sale_price != null && Number(product.sale_price) > 0;
   const images = product.images?.length ? product.images : [productImage(product)];
-  const headerStock = d.comboStock ?? d.sizeTotalStock ?? product.stock;
   const comboEmpty = d.comboStock != null && d.comboStock <= 0 && (d.sizeTotalStock ?? 0) > 0;
   const outOfStock =
     product.stock <= 0 || d.allSizesSoldOut || (d.effectiveSize != null && d.sizeSoldOut);
@@ -251,9 +250,7 @@ function ProductDetail() {
               ? "Out of stock"
               : comboEmpty
                 ? "Sold out in this colour — please pick another"
-                : headerStock <= product.low_stock_threshold
-                  ? `Only ${headerStock} left`
-                  : "In stock"}
+                : "In stock"}
             {product.sku ? ` · SKU ${product.sku}` : ""}
           </p>
 
