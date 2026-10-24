@@ -7,6 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { fetchCategories, slugify } from "@/lib/data";
 import { ImageUploader } from "@/components/admin/ImageUploader";
 import { Button } from "@/components/ui/button";
+import { WomensSizeGuide } from "@/components/site/WomensSizeGuide";
 import { buildProductSku, GARMENT_TYPES, PHOTO_DISCLAIMER, skuTypeForProduct, splitProductSku } from "@/lib/product-information";
 
 export const Route = createFileRoute("/_authenticated/admin/products/$id")({
@@ -245,6 +246,7 @@ function ProductEditor() {
             <textarea rows={3} className={input} value={f.images} onChange={(e) => set("images", e.target.value)} placeholder="https://…/photo.jpg" />
           </details>
           <label className={label + " block"}>Size chart<textarea rows={3} className={input} value={f.size_chart} onChange={(e) => set("size_chart", e.target.value)} /></label>
+          <WomensSizeGuide customChart={f.size_chart} />
         </div>
 
         <div className="space-y-4">
