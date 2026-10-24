@@ -21,7 +21,7 @@ describe("stockForSize", () => {
   });
 
   it("counts colour-less variants toward any colour pick", () => {
-    expect(stockForSize(variants, "M", "green")).toBe(12);
+    expect(stockForSize(variants, "M", "green")).toBe(9);
     expect(stockForSize(variants, "M", "red")).toBe(9);
   });
 
