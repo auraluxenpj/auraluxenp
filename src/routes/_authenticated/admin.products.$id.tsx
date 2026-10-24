@@ -27,10 +27,20 @@ type Form = {
   meta_title: string; meta_description: string;
 };
 
+const WOMENS_SIZE_CHART = [
+  "Women's size chart (inches)",
+  "S — Bust 34, Waist 26–28, Hip 36",
+  "M — Bust 36, Waist 28–30, Hip 38",
+  "L — Bust 38, Waist 30–32, Hip 40",
+  "XL — Bust 40, Waist 32–34, Hip 42",
+  "2XL — Bust 42, Waist 34–36, Hip 44",
+  "3XL — Bust 44, Waist 36–38, Hip 46",
+].join("\n");
+
 const EMPTY: Form = {
   name: "", slug: "", sku: "", description: "", fabric: "", category_id: "",
   price: "", sale_price: "", stock: "0", low_stock_threshold: "5",
-  sizes: "S, M, L, XL", colors: "", images: "", size_chart: "",
+  sizes: "S, M, L, XL", colors: "", images: "", size_chart: WOMENS_SIZE_CHART,
   is_new: true, is_bestseller: false, is_featured: false, is_published: true,
   meta_title: "", meta_description: "",
 };
@@ -182,7 +192,13 @@ function ProductEditor() {
           <div className="grid gap-4 sm:grid-cols-2">
             <label className={label}>Fabric<input className={input} value={f.fabric} onChange={(e) => set("fabric", e.target.value)} /></label>
             <label className={label}>Category
-              <select className={input} value={f.category_id} onChange={(e) => set("category_id", e.target.value)}>
+              <select className={input} value={f.category_id} onChange={(e) => {
+                set("category_id", e.target.value);
+                if (!f.sku.trim() && e.target.value) {
+                  const cat = categories.find((c) => c.id === e.target.value);
+                  if (cat) set("sku", `AL-${slugify(cat.name).toUpperCase().replace(/-/g, "") || "ITEM"}-`);
+                }
+              }}>
                 <option value="">None</option>
                 {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
               </select>
@@ -224,7 +240,10 @@ function ProductEditor() {
           <div className="space-y-4 rounded-2xl border border-border bg-card p-5">
             <label className={label + " block"}>Price<input type="number" min={0} step="0.01" className={input} value={f.price} onChange={(e) => set("price", e.target.value)} /></label>
             <label className={label + " block"}>Sale price (optional)<input type="number" min={0} step="0.01" className={input} value={f.sale_price} onChange={(e) => set("sale_price", e.target.value)} /></label>
-            <label className={label + " block"}>SKU<input className={input} value={f.sku} onChange={(e) => set("sku", e.target.value)} /></label>
+            <label className={label + " block"}>SKU
+              <input className={input} value={f.sku} placeholder="AL-KURTI-001" onChange={(e) => set("sku", e.target.value.toUpperCase())} />
+              <span className="block text-[10px] normal-case tracking-normal text-muted-foreground">Format: AL-type-number, e.g. AL-KURTI-001. You fill in the last part.</span>
+            </label>
             <label className={label + " block"}>Stock{trackBySize ? (
               <input type="number" min={0} className={input} disabled value={list(f.sizes).reduce((n, s) => n + (Math.max(0, Math.floor(Number(sizeStock[s] ?? "0")) || 0)), 0)} />
             ) : (
