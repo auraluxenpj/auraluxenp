@@ -257,20 +257,36 @@ function ProductDetail() {
             <div className="mt-6">
               <p className="label-caps text-muted-foreground">Size</p>
               <div className="mt-3 flex flex-wrap gap-2">
-                {product.sizes.map((s) => (
-                  <button
-                    key={s}
-                    type="button"
-                    onClick={() => setSize(s)}
-                    className={`rounded-full px-5 py-2.5 text-[12px] uppercase tracking-[0.15em] ${
-                      size === s
-                        ? "bg-primary text-primary-foreground"
-                        : "glass text-foreground/70"
-                    }`}
-                  >
-                    {s}
-                  </button>
-                ))}
+                {product.sizes.map((s) => {
+                  const entry = d.sizeStocksList?.find((e) => e.size === s);
+                  const soldOut = entry?.stock != null && entry.stock <= 0;
+                  return (
+                    <button
+                      key={s}
+                      type="button"
+                      disabled={soldOut}
+                      onClick={() => setSize(s)}
+                      className={`flex min-w-[4.5rem] flex-col items-center rounded-full px-5 py-2 text-[12px] uppercase tracking-[0.15em] ${
+                        d.effectiveSize === s
+                          ? "bg-primary text-primary-foreground"
+                          : soldOut
+                            ? "glass text-muted-foreground/60"
+                            : "glass text-foreground/70"
+                      } ${soldOut ? "cursor-not-allowed" : ""}`}
+                    >
+                      <span className={soldOut ? "line-through" : ""}>{s}</span>
+                      {entry?.stock != null ? (
+                        <span
+                          className={`text-[10px] normal-case tracking-normal ${
+                            soldOut ? "text-destructive/80" : "text-muted-foreground"
+                          }`}
+                        >
+                          {sizeStockLabel(entry)}
+                        </span>
+                      ) : null}
+                    </button>
+                  );
+                })}
               </div>
               {(product.sizes?.length ?? 0) > 1 && !size ? (
                 <p className="mt-2 text-xs text-destructive">Please select a size</p>
@@ -306,14 +322,27 @@ function ProductDetail() {
           <div className="mt-5 flex items-center gap-3">
             <p className="label-caps text-muted-foreground">Quantity</p>
             <div className="glass flex items-center rounded-full">
-              <button type="button" className="px-4 py-2" onClick={() => setQty((q) => Math.max(1, q - 1))}>
+              <button
+                type="button"
+                className="px-4 py-2"
+                onClick={() => setQuantity((q) => Math.max(1, Math.min(q, d.maxQty ?? q) - 1))}
+              >
                 −
               </button>
-              <span className="w-8 text-center text-sm">{qty}</span>
-              <button type="button" className="px-4 py-2" onClick={() => setQty((q) => q + 1)}>
+              <span className="w-8 text-center text-sm">{d.qty}</span>
+              <button
+                type="button"
+                className="px-4 py-2"
+                onClick={() =>
+                  setQuantity((q) => Math.min(d.maxQty ?? Number.POSITIVE_INFINITY, Math.max(q, 1) + 1))
+                }
+              >
                 +
               </button>
             </div>
+            {d.maxQty != null && d.maxQty > 0 ? (
+              <span className="text-xs text-muted-foreground">Max {d.maxQty}</span>
+            ) : null}
           </div>
 
           <div className="mt-7 flex flex-col gap-3 sm:flex-row">
