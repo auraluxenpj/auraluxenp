@@ -128,7 +128,7 @@ function ImageSlot({
         img.src = URL.createObjectURL(file);
       });
       const kb = Math.round(file.size / 1024);
-      const info = `${dims ? `${dims} · ` : ""}${file.type.split("/")[1].toUpperCase()} · ${kb} KB`;
+      const info = `${dims ? `${dims} · ` : ""}${file.type.split("/")[1]?.toUpperCase() ?? "IMG"} · ${kb} KB`;
       setMeta(info);
       onChange(data.signedUrl, info);
       toast.success(`${label} uploaded`);
@@ -308,7 +308,9 @@ function AdminBanners() {
     const from = ids.indexOf(dragId);
     const to = ids.indexOf(targetId);
     if (from < 0 || to < 0) return;
-    ids.splice(to, 0, ids.splice(from, 1)[0]);
+    const [moved] = ids.splice(from, 1);
+    if (!moved) return;
+    ids.splice(to, 0, moved);
     const results = await Promise.all(
       ids.map((id, i) => supabase.from("banners").update({ sort_order: i + 1 }).eq("id", id)),
     );

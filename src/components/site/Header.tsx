@@ -5,12 +5,14 @@ import { ChevronDown, Menu, Search, ShoppingBag, X } from "lucide-react";
 import { useCart, useSettings } from "@/lib/store";
 import { fetchCategories } from "@/lib/data";
 
-const NAV = [
-  { label: "New Arrivals", to: "/shop", search: { sort: "newest" } as const },
-  { label: "Sale", to: "/shop", search: { category: "sale" } as const },
+const SHOP_LINKS = [
+  { label: "New Arrivals", search: { sort: "newest" } as const },
+  { label: "Sale", search: { category: "sale" } as const },
+];
+const PLAIN_LINKS = [
   { label: "About", to: "/about" },
   { label: "Contact", to: "/contact" },
-];
+] as const;
 
 export function Header() {
   const { count } = useCart();
@@ -72,13 +74,13 @@ export function Header() {
               </div>
             ) : null}
           </div>
-          {NAV.map((item) => (
-            <Link
-              key={item.label}
-              to={item.to}
-              search={"search" in item ? item.search : undefined}
-              className="transition hover:text-brand"
-            >
+          {SHOP_LINKS.map((item) => (
+            <Link key={item.label} to="/shop" search={item.search} className="transition hover:text-brand">
+              {item.label}
+            </Link>
+          ))}
+          {PLAIN_LINKS.map((item) => (
+            <Link key={item.label} to={item.to} className="transition hover:text-brand">
               {item.label}
             </Link>
           ))}
@@ -136,11 +138,21 @@ export function Header() {
               {c.name}
             </Link>
           ))}
-          {NAV.map((item) => (
+          {SHOP_LINKS.map((item) => (
+            <Link
+              key={item.label}
+              to="/shop"
+              search={item.search}
+              onClick={() => setOpen(false)}
+              className="rounded-xl px-4 py-3 text-[13px] uppercase tracking-[0.18em] text-foreground/75"
+            >
+              {item.label}
+            </Link>
+          ))}
+          {PLAIN_LINKS.map((item) => (
             <Link
               key={item.label}
               to={item.to}
-              search={"search" in item ? item.search : undefined}
               onClick={() => setOpen(false)}
               className="rounded-xl px-4 py-3 text-[13px] uppercase tracking-[0.18em] text-foreground/75"
             >
