@@ -23,6 +23,7 @@ const NAV = [
   { to: "/admin", label: "Dashboard" },
   { to: "/admin/orders", label: "Orders" },
   { to: "/admin/products", label: "Products" },
+  { to: "/admin/categories", label: "Categories" },
   { to: "/admin/inventory", label: "Inventory" },
   { to: "/admin/settings", label: "Settings" },
 ] as const;
@@ -46,7 +47,7 @@ function AdminLayout() {
           <Link to="/" className="font-display text-xl font-semibold tracking-[0.12em]">
             AURA<span className="text-brand">LUXE</span>
           </Link>
-          <nav className="flex gap-1 text-sm">
+          <nav className="flex w-full flex-wrap gap-1 text-sm sm:w-auto">
             {NAV.map((n) => (
               <Link key={n.to} to={n.to} activeOptions={{ exact: n.to === "/admin" }} className="rounded-full px-4 py-2 text-muted-foreground" activeProps={{ className: "bg-secondary text-foreground" }}>
                 {n.label}
