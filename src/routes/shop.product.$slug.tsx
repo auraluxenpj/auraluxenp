@@ -45,6 +45,7 @@ function ProductDetail() {
   const [color, setColor] = useState<string | null>(null);
   const [qty, setQty] = useState(1);
   const [active, setActive] = useState(0);
+  const [zoomed, setZoomed] = useState(false);
   const sliderRef = useRef<HTMLDivElement>(null);
   const goTo = (i: number) => {
     const el = sliderRef.current;

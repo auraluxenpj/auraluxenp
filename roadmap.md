@@ -51,4 +51,4 @@
 - [ ] After activation, test with a real admin session: settings save/refresh, QR upload, checkout with genuine QR/bank, disabled methods, unauthorized reads/writes, direct COD API rejection, atomic insert rollback, legacy COD fingerprints unchanged, auth/admin/products/images. Blocked: staged tables/functions do not exist in the draft until accept.
 - [ ] Run full Phase 1 automated and end-to-end tests; compare legacy order fingerprints and catalogue/auth/image preservation — blocked by backup gate and activation.
 - [ ] Present results and required configuration; wait for owner release approval. Do not publish or accept the draft without owner review.
-- [ ] Product photo zoom: pinch on mobile, click on desktop
+- [x] Product photo zoom: pinch on mobile, click on desktop
