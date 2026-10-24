@@ -218,7 +218,7 @@ function ProductDetail() {
                     type="button"
                     onClick={() => setSize(s)}
                     className={`rounded-full px-5 py-2.5 text-[12px] uppercase tracking-[0.15em] ${
-                      (size ?? product.sizes[0]) === s
+                      size === s
                         ? "bg-primary text-primary-foreground"
                         : "glass text-foreground/70"
                     }`}
@@ -227,6 +227,9 @@ function ProductDetail() {
                   </button>
                 ))}
               </div>
+              {(product.sizes?.length ?? 0) > 1 && !size ? (
+                <p className="mt-2 text-xs text-destructive">Please select a size</p>
+              ) : null}
             </div>
           ) : null}
 
@@ -240,7 +243,7 @@ function ProductDetail() {
                     type="button"
                     onClick={() => setColor(c)}
                     className={`rounded-full px-5 py-2.5 text-[12px] uppercase tracking-[0.15em] ${
-                      (color ?? product.colors[0]) === c
+                      color === c
                         ? "bg-primary text-primary-foreground"
                         : "glass text-foreground/70"
                     }`}
@@ -249,6 +252,9 @@ function ProductDetail() {
                   </button>
                 ))}
               </div>
+              {(product.colors?.length ?? 0) > 1 && !color ? (
+                <p className="mt-2 text-xs text-destructive">Please select a colour</p>
+              ) : null}
             </div>
           ) : null}
 
@@ -268,7 +274,7 @@ function ProductDetail() {
           <div className="mt-7 flex flex-col gap-3 sm:flex-row">
             <button
               type="button"
-              disabled={outOfStock}
+              disabled={outOfStock || missingOptions.length > 0}
               onClick={() => {
                 add(chosen);
                 toast.success("Added to your bag");
@@ -280,7 +286,14 @@ function ProductDetail() {
             <Link
               to="/checkout"
               disabled={outOfStock}
-              onClick={() => add(chosen)}
+              onClick={(e) => {
+                if (missingOptions.length) {
+                  e.preventDefault();
+                  toast.error(`Please select a ${missingOptions.join(" and ")}`);
+                  return;
+                }
+                add(chosen);
+              }}
               className="flex-1 rounded-full bg-primary py-3.5 text-center text-[12px] uppercase tracking-[0.18em] text-primary-foreground"
             >
               Buy now
