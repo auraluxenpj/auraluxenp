@@ -4,7 +4,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { money, type PosReceipt as Receipt } from '@/lib/pos';
 export function PosReceipt({receipt,onClose}:{receipt:Receipt|null;onClose:()=>void}) {
  if(!receipt) return null;
- function print(format:'thermal'|'a4') { document.body.dataset['posPrint']=format; window.print(); delete document.body.dataset['posPrint']; }
+ function print(format:'thermal'|'a4') {
+  const source=document.getElementById('pos-print-receipt'); if(!source)return;
+  const root=document.createElement('div');root.id='pos-print-root';root.append(source.cloneNode(true));document.body.append(root);document.body.dataset['posPrint']=format;
+  try { window.print(); } finally { root.remove();delete document.body.dataset['posPrint']; }
+ }
  return <Dialog open onOpenChange={open=>{if(!open)onClose();}}><DialogContent className="max-h-[90dvh] overflow-y-auto sm:max-w-lg pos-receipt-dialog"><DialogHeader className="pos-no-print"><DialogTitle>Receipt · {receipt.receipt_number}</DialogTitle></DialogHeader>
  <div className="flex gap-2 pos-no-print"><Button onClick={()=>print('thermal')}><Printer/>80 mm receipt</Button><Button variant="outline" onClick={()=>print('a4')}><Printer/>A4 receipt</Button></div>
  <article id="pos-print-receipt" className="space-y-4 border border-border bg-background p-5 text-sm">
