@@ -56,6 +56,30 @@ function ProductEditor() {
     },
   });
 
+  const [trackBySize, setTrackBySize] = useState(false);
+  const [sizeStock, setSizeStock] = useState<Record<string, string>>({});
+  const { data: variants = [] } = useQuery({
+    queryKey: ["admin", "product-variants", id],
+    enabled: !isNew,
+    queryFn: async () => {
+      const { data, error } = await supabase.from("product_variants").select("*").eq("product_id", id);
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  useEffect(() => {
+    if (isNew || !product) return;
+    const rows = variants.filter((v) => v.size);
+    setTrackBySize(rows.length > 0);
+    const map: Record<string, string> = {};
+    for (const s of product.sizes) {
+      const row = rows.find((v) => v.size?.trim().toLowerCase() === s.trim().toLowerCase());
+      map[s] = String(row ? row.stock : 0);
+    }
+    setSizeStock(map);
+  }, [isNew, product, variants]);
+
   useEffect(() => {
     if (!product) return;
     setF({
@@ -89,11 +113,36 @@ function ProductEditor() {
       meta_title: f.meta_title.trim() || null, meta_description: f.meta_description.trim() || null,
     };
     setSaving(true);
-    const { error } = isNew
-      ? await supabase.from("products").insert(row)
-      : await supabase.from("products").update(row).eq("id", id);
+    const { data: saved, error } = isNew
+      ? await supabase.from("products").insert(row).select("id").single()
+      : await supabase.from("products").update(row).eq("id", id).select("id").single();
+    if (error || !saved) {
+      setSaving(false);
+      toast.error(error?.code === "23505" ? "That link or SKU is already used" : error?.message ?? "Couldn't save");
+      return;
+    }
+    const productId = isNew ? saved.id : id;
+    const { error: clearError } = await supabase
+      .from("product_variants")
+      .delete()
+      .eq("product_id", productId)
+      .not("size", "is", null);
+    if (clearError) { setSaving(false); toast.error(clearError.message); return; }
+    if (trackBySize) {
+      const sizes = list(f.sizes);
+      if (sizes.length) {
+        const { error: variantError } = await supabase.from("product_variants").insert(
+          sizes.map((s) => ({
+            product_id: productId,
+            size: s,
+            color: null,
+            stock: Math.max(0, Math.floor(Number(sizeStock[s] ?? "0")) || 0),
+          })),
+        );
+        if (variantError) { setSaving(false); toast.error(variantError.message); return; }
+      }
+    }
     setSaving(false);
-    if (error) { toast.error(error.code === "23505" ? "That link or SKU is already used" : error.message); return; }
     toast.success(isNew ? "Product created — it's on the shop now" : "Product saved");
     qc.invalidateQueries();
     navigate({ to: "/admin/products" });
