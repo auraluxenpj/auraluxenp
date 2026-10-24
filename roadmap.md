@@ -1,5 +1,11 @@
 # Phase 1: Secure checkout and remove COD
 
+## Product information standards
+- [x] Add AL garment-type admin-suffix SKU editing; legacy SKUs remain until admin review/save, and new imports/copy publication require the format.
+- [x] Add BIBA-sourced S–XXL women's body-size guidance without replacing custom garment charts or inventing larger measurements.
+- [x] Show the polished photo variation disclaimer alongside all product descriptions, including products with no description.
+- [x] 23 focused tests pass; signed-in draft creation/save/reload/deletion and mobile chart/disclaimer verified without page errors; automatic build OK. Not published.
+
 ## BIBA-inspired redesign (Oct 24)
 - [x] Sticky header with category dropdown + mobile drawer; announcement bar with admin on/off toggle.
 - [x] Hero carousel (autoplay, pause-on-hover, arrows, dots, reduced-motion, desktop/mobile image via `<picture>`) driven by live hero banners, default fallback hero.
