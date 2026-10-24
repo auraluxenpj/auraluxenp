@@ -2,7 +2,7 @@ import {createServerFn} from '@tanstack/react-start';
 import {z} from 'zod';
 import {requireSupabaseAuth} from '@/integrations/supabase/auth-middleware';
 import type {Json} from '@/integrations/supabase/types';
-import type {PosCustomer,PosReceipt} from './pos';
+import type {PosCustomer} from './pos';
 import {EXPENSE_CATEGORIES,type CustomerStatement,type RepaymentVoucher,type Expense,type DaySummary} from './business-ledgers';
 const daySchema=z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
 export const getKhataDirectory=createServerFn({method:'GET'}).middleware([requireSupabaseAuth]).handler(async({context})=>{
@@ -10,12 +10,7 @@ export const getKhataDirectory=createServerFn({method:'GET'}).middleware([requir
  const {data,error}=await context.supabase.rpc('get_pos_customer_balances');if(error)throw new Error(error.message);return data as unknown as PosCustomer[];
 });
 export const getCustomerStatement=createServerFn({method:'GET'}).middleware([requireSupabaseAuth]).inputValidator((input:unknown)=>z.object({id:z.string().uuid()}).parse(input)).handler(async({data,context})=>{
- const {data:allowed,error:roleError}=await context.supabase.rpc('has_role',{_user_id:context.userId,_role:'admin'});if(roleError||!allowed)throw new Error('Admin access required');
- const {data:customers,error}=await context.supabase.rpc('get_pos_customer_balances');if(error)throw new Error(error.message);const customer=(customers as unknown as PosCustomer[]).find(c=>c.id===data.id);if(!customer)throw new Error('Customer not found');
- const sales:PosReceipt[]=[],repayments:RepaymentVoucher[]=[];
- for(let offset=0;;offset+=500){const r=await context.supabase.from('pos_sales').select('receipt').eq('customer_id',data.id).order('created_at').order('id').range(offset,offset+499);if(r.error)throw new Error(r.error.message);sales.push(...(r.data??[]).map(s=>s.receipt as unknown as PosReceipt));if((r.data?.length??0)<500)break;}
- for(let offset=0;;offset+=500){const r=await context.supabase.from('pos_repayments').select('voucher').eq('customer_id',data.id).order('created_at').order('id').range(offset,offset+499);if(r.error)throw new Error(r.error.message);repayments.push(...(r.data??[]).map(s=>s.voucher as unknown as RepaymentVoucher));if((r.data?.length??0)<500)break;}
- return {customer,sales,repayments} as CustomerStatement;
+ const {data:statement,error}=await context.supabase.rpc('get_khata_statement',{p_customer_id:data.id});if(error)throw new Error(error.message);return statement as unknown as CustomerStatement;
 });
 export const recordRepayment=createServerFn({method:'POST'}).middleware([requireSupabaseAuth]).inputValidator((input:unknown)=>z.object({request_key:z.string().uuid(),customer_id:z.string().uuid(),amount:z.number().finite().positive().max(999999999),payment_method:z.enum(['cash','qr']),qr_confirmed:z.boolean()}).parse(input)).handler(async({data,context})=>{
  const {data:voucher,error}=await context.supabase.rpc('record_pos_repayment',{p_request:data as Json});if(error)throw new Error(error.message);return voucher as unknown as RepaymentVoucher;
