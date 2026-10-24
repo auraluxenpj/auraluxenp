@@ -67,3 +67,4 @@
 
 ## Low stock warning removal (Oct 24, 04:30 UTC)
 - [ ] Remove the low stock warning shown to shoppers/admin (owner request); confirm build and preview after.
+- [ ] Review every existing product SKU and help the owner fill in the admin identifier (AL-TYPE-XXX) before publishing.
