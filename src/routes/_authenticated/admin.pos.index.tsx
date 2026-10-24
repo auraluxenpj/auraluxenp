@@ -26,7 +26,7 @@ function PosCounter(){
  const stockError=cart.some(l=>!l.product || lines.filter(other=>other.product_id===l.product_id).reduce((n,other)=>n+other.quantity,0)>l.product.stock || lines.filter(other=>other.product_id===l.product_id && other.size===l.size).reduce((n,other)=>n+other.quantity,0)>posAvailable(l.product,variants,l.size));
  const visible=products.filter(p=>(category==='all'||p.category_id===category)&&(!search||`${p.name} ${p.sku ?? ''}`.toLowerCase().includes(search.toLowerCase())));
  function changed(){setRequestKey(null);setConfirmed(false);}
- function pick(p:Product){setPicked(p);setSize(p.sizes.length===1?p.sizes[0]:null);setColor(p.colors.length===1?p.colors[0]:null);}
+ function pick(p:Product){setPicked(p);setSize(p.sizes.length===1?(p.sizes[0] ?? null):null);setColor(p.colors.length===1?(p.colors[0] ?? null):null);}
  function add(){if(!picked)return; if(picked.sizes.length && !size || picked.colors.length && !color){toast.error('Choose size and colour');return;} const existing=lines.find(l=>l.product_id===picked.id&&l.size===size&&l.color===color);const used=lines.filter(l=>l.product_id===picked.id&&l.size===size).reduce((n,l)=>n+l.quantity,0),totalUsed=lines.filter(l=>l.product_id===picked.id).reduce((n,l)=>n+l.quantity,0);if(used>=posAvailable(picked,variants,size)||totalUsed>=picked.stock){toast.error('No more stock available');return;}setLines(existing?lines.map(l=>l===existing?{...l,quantity:l.quantity+1}:l):[...lines,{product_id:picked.id,size,color,quantity:1,discount:0}]);changed();setPicked(null);}
  function quantity(index:number,delta:number){setLines(lines.map((l,i)=>i===index?{...l,quantity:Math.max(1,Math.min(99,l.quantity+delta))}:l));changed();}
  async function finish(){
