@@ -9,6 +9,7 @@ export type Page = Tables<"pages">;
 export type Order = Tables<"orders">;
 export type OrderItem = Tables<"order_items">;
 export type Coupon = Tables<"coupons">;
+export type ProductVariant = Tables<"product_variants">;
 
 export type SettingsMap = Record<string, string>;
 
@@ -60,6 +61,15 @@ export async function fetchProductBySlug(slug: string): Promise<Product | null> 
   const { data, error } = await supabase.from("products").select("*").eq("slug", slug).maybeSingle();
   if (error) throw error;
   return data;
+}
+
+export async function fetchVariantsForProduct(productId: string): Promise<ProductVariant[]> {
+  const { data, error } = await supabase
+    .from("product_variants")
+    .select("*")
+    .eq("product_id", productId);
+  if (error) throw error;
+  return data ?? [];
 }
 
 export async function fetchBanners(placement?: string): Promise<Banner[]> {
