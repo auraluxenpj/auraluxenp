@@ -1,0 +1,15 @@
+import {roundMoney} from './pos';
+import type {PosCustomer,PosReceipt} from './pos';
+export const EXPENSE_CATEGORIES=['Packaging & Courier','Refreshments/Tea','Rent & Utilities','Shop Maintenance','Staff Allowance','Miscellaneous'] as const;
+export type RepaymentVoucher={id:string;voucher_number:string;customer_id:string;customer_name:string;customer_phone:string;amount:number;payment_method:'cash'|'qr';balance_before:number;balance_after:number;created_at:string;operator_name:string;store:Record<string,string>};
+export type Expense={id:string;expense_date:string;category:string;payment_source:string;amount:number;payee:string;notes:string;receipt_reference:string;created_at:string};
+export type DaySummary={cash_sales:number;cash_recovered:number;cash_expenses:number;total_expenses:number;net_cashflow:number};
+export type CustomerStatement={customer:PosCustomer;sales:PosReceipt[];repayments:RepaymentVoucher[]};
+export function netCredit(credit:number[],payments:number[]){return roundMoney(credit.reduce((n,v)=>n+v,0)-payments.reduce((n,v)=>n+v,0));}
+export function repaymentRemaining(balance:number,amount:number){if(!Number.isFinite(amount)||amount<=0||amount!==roundMoney(amount)||amount>balance)throw new Error('Repayment must be positive and within outstanding balance');return roundMoney(balance-amount);}
+export function cashflow(sales:{payment_method:string;total:number}[],payments:{payment_method:string;amount:number}[],expenses:{payment_source:string;amount:number}[]){return roundMoney(sales.filter(s=>s.payment_method==='cash').reduce((n,s)=>n+s.total,0)+payments.filter(p=>p.payment_method==='cash').reduce((n,p)=>n+p.amount,0)-expenses.filter(e=>e.payment_source==='cash').reduce((n,e)=>n+e.amount,0));}
+export function businessHead(title:string,description:string){return {meta:[{title:`${title} — Auraluxe`},{name:'description',content:description},{property:'og:title',content:`${title} — Auraluxe`},{property:'og:description',content:description},{property:'og:type',content:'website'},{name:'twitter:card',content:'summary'},{name:'robots',content:'noindex'}]};}
+export function statementEntries(statement:CustomerStatement){
+ const entries=[...statement.sales.map(s=>({id:s.id,date:s.created_at,reference:s.receipt_number,label:s.payment_method==='credit'?'Credit sale':`Sale · ${s.payment_method}`,debit:s.payment_method==='credit'?s.total:0,credit:0,sale:s,voucher:null as RepaymentVoucher|null})),...statement.repayments.map(v=>({id:v.id,date:v.created_at,reference:v.voucher_number,label:`Repayment · ${v.payment_method}`,debit:0,credit:v.amount,sale:null as PosReceipt|null,voucher:v}))].sort((a,b)=>a.date.localeCompare(b.date)||a.reference.localeCompare(b.reference));
+ let running=0;return entries.map(e=>{running=roundMoney(running+e.debit-e.credit);return {...e,balance:running};});
+}

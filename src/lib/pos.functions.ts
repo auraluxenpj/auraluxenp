@@ -7,10 +7,7 @@ export const getPosCatalog = createServerFn({ method:'GET' }).middleware([requir
   const { data, error } = await context.supabase.rpc('get_pos_catalog'); if (error) throw new Error(error.message); return data as unknown as PosCatalog;
 });
 export const getPosCustomers = createServerFn({method:'GET'}).middleware([requireSupabaseAuth]).handler(async ({context}) => {
-  const {data: allowed, error: roleError} = await context.supabase.rpc('can_use_pos'); if(roleError || !allowed) throw new Error('POS access denied');
-  const {data, error} = await context.supabase.from('pos_customers').select('id,name,phone').order('name'); if(error) throw new Error(error.message);
-  const {data: entries, error: ledgerError} = await context.supabase.from('pos_credit_entries').select('customer_id,amount'); if(ledgerError) throw new Error(ledgerError.message);
-  return (data ?? []).map(c => ({...c,balance:(entries ?? []).filter(e => e.customer_id === c.id).reduce((n,e)=>n+Number(e.amount),0)})) as PosCustomer[];
+  const {data,error}=await context.supabase.rpc('get_pos_customer_balances');if(error)throw new Error(error.message);return data as unknown as PosCustomer[];
 });
 export const createPosCustomer = createServerFn({method:'POST'}).middleware([requireSupabaseAuth]).inputValidator((input:unknown)=>z.object({name:z.string().trim().min(2).max(100),phone:z.string().transform(v=>v.replace(/\D/g,'').replace(/^977(?=\d{10}$)/,'')).pipe(z.string().regex(/^\d{7,15}$/))}).parse(input)).handler(async ({data,context})=>{
   const {data: row,error} = await context.supabase.from('pos_customers').insert({...data,created_by:context.userId}).select('id,name,phone').single(); if(error) throw new Error(error.code==='23505'?'A customer with this phone already exists':error.message); return {...row,balance:0};
