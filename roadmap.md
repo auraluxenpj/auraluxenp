@@ -1,5 +1,11 @@
 # Phase 1: Secure checkout and remove COD
 
+## Customer Khata and expenses
+- [ ] Review additive settlement/expense schema and access plan with owner; keep existing sales and credit immutable.
+- [ ] Add searchable party directory, statements, cash/confirmed-QR partial/full repayments, vouchers and net balances shared with POS.
+- [ ] Add expense capture and Nepal-day summary with cashflow = cash POS sales + cash credit recoveries − cash expenses.
+- [ ] Verify totals, overpayment/concurrent/retry rejection, private access, authenticated repayment/expense persistence and printable vouchers. No publication.
+
 ## POS & in-store counter billing
 - [x] Inspect shared stock, protected admin access, payment boundaries and current records; resolve admins-and-staff access and ordinary receipts.
 - [x] Owner approved additive POS schema/security plan. Added private POS tables and authorized transaction/read RPCs (0010), tightened inherited grants explicitly (0011); online checkout unchanged. Not published.
