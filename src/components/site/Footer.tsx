@@ -19,6 +19,12 @@ export function Footer() {
           <p className="mt-1 text-sm text-muted-foreground">{s["store_hours"]}</p>
         </div>
         <div className="flex flex-wrap gap-x-10 gap-y-2 text-[12px] uppercase tracking-[0.15em] text-foreground/60">
+          <Link className="hover:text-brand" to="/stylist">
+            AI Stylist
+          </Link>
+          <Link className="hover:text-brand" to="/track">
+            Track Order
+          </Link>
           <Link className="hover:text-brand" to="/contact">
             Contact
           </Link>
