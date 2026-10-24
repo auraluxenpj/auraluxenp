@@ -1,6 +1,7 @@
-import { createFileRoute, Link, Outlet, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, Outlet, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/_authenticated/admin")({
   head: () => ({
@@ -9,12 +10,15 @@ export const Route = createFileRoute("/_authenticated/admin")({
       { name: "description", content: "Manage Auraluxe products and inventory." },
       { property: "og:title", content: "Admin — Auraluxe" },
       { property: "og:description", content: "Manage Auraluxe products and inventory." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
       { name: "robots", content: "noindex" },
     ],
   }),
   beforeLoad: async ({ context }) => {
     const { data } = await supabase.rpc("has_role", { _user_id: context.user.id, _role: "admin" });
-    return { isAdmin: !!data };
+    const { data: isPosUser } = await supabase.rpc("can_use_pos");
+    return { isAdmin: !!data, isPosUser: !!isPosUser };
   },
   component: AdminLayout,
 });
@@ -26,11 +30,14 @@ const NAV = [
   { to: "/admin/categories", label: "Categories" },
   { to: "/admin/banners", label: "Banners" },
   { to: "/admin/inventory", label: "Inventory" },
+  { to: "/admin/pos", label: "POS Billing" },
   { to: "/admin/settings", label: "Settings" },
 ] as const;
 
 function AdminLayout() {
-  const { isAdmin, user } = Route.useRouteContext();
+  const { isAdmin, isPosUser, user } = Route.useRouteContext();
+  const pathname = useRouterState({ select: s => s.location.pathname });
+  const isPosPage = pathname === "/admin/pos" || pathname.startsWith("/admin/pos/");
   const navigate = useNavigate();
   const qc = useQueryClient();
 
@@ -49,7 +56,7 @@ function AdminLayout() {
             AURA<span className="text-brand">LUXE</span>
           </Link>
           <nav className="flex w-full flex-wrap gap-1 text-sm sm:w-auto">
-            {NAV.map((n) => (
+            {NAV.filter(n => isAdmin || (isPosUser && n.to === "/admin/pos")).map((n) => (
               <Link key={n.to} to={n.to} activeOptions={{ exact: n.to === "/admin" }} className="rounded-full px-4 py-2 text-muted-foreground" activeProps={{ className: "bg-secondary text-foreground" }}>
                 {n.label}
               </Link>
@@ -57,12 +64,12 @@ function AdminLayout() {
           </nav>
           <div className="ml-auto flex items-center gap-3 text-sm">
             <span className="hidden text-muted-foreground sm:inline">{user.email}</span>
-            <button onClick={signOut} className="rounded-full border border-border px-4 py-2">Sign out</button>
+            <Button variant="outline" onClick={signOut}>Sign out</Button>
           </div>
         </div>
       </header>
       <main className="mx-auto max-w-6xl px-5 py-8">
-        {isAdmin ? (
+        {isAdmin || (isPosUser && isPosPage) ? (
           <Outlet />
         ) : (
           <div className="rounded-2xl border border-border p-8 text-center">

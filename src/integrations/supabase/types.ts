@@ -407,6 +407,190 @@ export type Database = {
         }
         Relationships: []
       }
+      pos_credit_entries: {
+        Row: {
+          amount: number
+          created_at: string
+          created_by: string
+          customer_id: string
+          id: string
+          sale_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          created_by: string
+          customer_id: string
+          id?: string
+          sale_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          created_by?: string
+          customer_id?: string
+          id?: string
+          sale_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pos_credit_entries_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "pos_customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pos_credit_entries_sale_id_fkey"
+            columns: ["sale_id"]
+            isOneToOne: true
+            referencedRelation: "pos_sales"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pos_customers: {
+        Row: {
+          created_at: string
+          created_by: string
+          id: string
+          name: string
+          phone: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string
+          id?: string
+          name: string
+          phone: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          id?: string
+          name?: string
+          phone?: string
+        }
+        Relationships: []
+      }
+      pos_sale_items: {
+        Row: {
+          color: string | null
+          discount: number
+          id: string
+          line_total: number
+          product_id: string
+          product_name: string
+          quantity: number
+          sale_id: string
+          size: string | null
+          sku: string | null
+          unit_price: number
+        }
+        Insert: {
+          color?: string | null
+          discount: number
+          id?: string
+          line_total: number
+          product_id: string
+          product_name: string
+          quantity: number
+          sale_id: string
+          size?: string | null
+          sku?: string | null
+          unit_price: number
+        }
+        Update: {
+          color?: string | null
+          discount?: number
+          id?: string
+          line_total?: number
+          product_id?: string
+          product_name?: string
+          quantity?: number
+          sale_id?: string
+          size?: string | null
+          sku?: string | null
+          unit_price?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pos_sale_items_sale_id_fkey"
+            columns: ["sale_id"]
+            isOneToOne: false
+            referencedRelation: "pos_sales"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pos_sales: {
+        Row: {
+          cart_discount: number
+          change_due: number
+          created_at: string
+          customer_id: string | null
+          id: string
+          item_discount: number
+          operator_id: string
+          payment_method: string
+          receipt: Json
+          receipt_number: string
+          request_fingerprint: string
+          request_key: string
+          subtotal: number
+          tax: number
+          tax_rate: number
+          tendered: number
+          total: number
+        }
+        Insert: {
+          cart_discount: number
+          change_due?: number
+          created_at?: string
+          customer_id?: string | null
+          id?: string
+          item_discount: number
+          operator_id: string
+          payment_method: string
+          receipt: Json
+          receipt_number: string
+          request_fingerprint: string
+          request_key: string
+          subtotal: number
+          tax: number
+          tax_rate: number
+          tendered?: number
+          total: number
+        }
+        Update: {
+          cart_discount?: number
+          change_due?: number
+          created_at?: string
+          customer_id?: string | null
+          id?: string
+          item_discount?: number
+          operator_id?: string
+          payment_method?: string
+          receipt?: Json
+          receipt_number?: string
+          request_fingerprint?: string
+          request_key?: string
+          subtotal?: number
+          tax?: number
+          tax_rate?: number
+          tendered?: number
+          total?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pos_sales_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "pos_customers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       product_variants: {
         Row: {
           color: string | null
@@ -643,6 +827,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      can_use_pos: { Args: never; Returns: boolean }
+      complete_pos_sale: { Args: { p_request: Json }; Returns: string }
+      get_pos_catalog: { Args: never; Returns: Json }
+      get_pos_qr: { Args: never; Returns: Json }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
