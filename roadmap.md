@@ -14,6 +14,11 @@
 - [x] `/track` page + `trackOrder` server function calling new `public.track_order` DB function (migration 0006): order number + phone/email both required, returns limited summary (status, payment, tracking number, items, total); no address exposed. Footer link added.
 - [x] Verified in preview: real AI picks in ~10s within budget, real legacy order lookup works, wrong contact shows "not found", 19 tests pass, build OK. Not published.
 
+## Stylist add-to-bag + publish (Oct 24, 03:09 UTC)
+- [ ] Give each AI Stylist recommendation a clear direct add-to-bag action (and a way to add the whole set), verified by clicking through to the bag in the browser.
+- [ ] Publish /stylist and /track to the live site once the add-to-bag buttons are in.
+
+
 
 ## October 24 release review
 - [x] Check both draft statuses: Payment Settings draft accepted; current review draft matches main and has no additional code changes.
