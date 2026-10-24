@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { toast } from "sonner";
 import { SiteLayout } from "@/components/site/SiteLayout";
 import { ProductCard } from "@/components/site/ProductCard";
@@ -44,6 +44,12 @@ function ProductDetail() {
   const [color, setColor] = useState<string | null>(null);
   const [qty, setQty] = useState(1);
   const [active, setActive] = useState(0);
+  const sliderRef = useRef<HTMLDivElement>(null);
+  const goTo = (i: number) => {
+    const el = sliderRef.current;
+    if (el) el.scrollTo({ left: i * el.clientWidth, behavior: "smooth" });
+    setActive(i);
+  };
 
   if (isLoading) {
     return (
@@ -98,17 +104,60 @@ function ProductDetail() {
 
       <section className="mt-6 grid gap-8 lg:grid-cols-2">
         <div>
-          <img
-            src={images[active] ?? images[0]}
-            alt={product.name}
-            width={1024}
-            height={1280}
-            className="aspect-[4/5] w-full rounded-3xl bg-muted object-cover"
-          />
+          <div className="relative">
+            <div
+              ref={sliderRef}
+              onScroll={(e) => {
+                const el = e.currentTarget;
+                const i = Math.round(el.scrollLeft / el.clientWidth);
+                if (i !== active) setActive(i);
+              }}
+              className="flex snap-x snap-mandatory overflow-x-auto rounded-3xl [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+            >
+              {images.map((img, i) => (
+                <img
+                  key={img + i}
+                  src={img}
+                  alt={`${product.name} view ${i + 1}`}
+                  loading={i === 0 ? "eager" : "lazy"}
+                  width={1024}
+                  height={1280}
+                  className="aspect-[4/5] w-full shrink-0 snap-center bg-muted object-cover"
+                />
+              ))}
+            </div>
+            {images.length > 1 ? (
+              <>
+                <button
+                  type="button"
+                  aria-label="Previous image"
+                  onClick={() => goTo(Math.max(0, active - 1))}
+                  className="absolute left-3 top-1/2 grid h-10 w-10 -translate-y-1/2 place-items-center rounded-full bg-background/80 text-foreground shadow disabled:opacity-0"
+                  disabled={active === 0}
+                >
+                  ‹
+                </button>
+                <button
+                  type="button"
+                  aria-label="Next image"
+                  onClick={() => goTo(Math.min(images.length - 1, active + 1))}
+                  className="absolute right-3 top-1/2 grid h-10 w-10 -translate-y-1/2 place-items-center rounded-full bg-background/80 text-foreground shadow disabled:opacity-0"
+                  disabled={active === images.length - 1}
+                >
+                  ›
+                </button>
+                <div className="absolute bottom-3 left-1/2 flex -translate-x-1/2 gap-1.5">
+                  {images.map((_, i) => (
+                    <span key={i} className={`h-1.5 rounded-full transition-all ${i === active ? "w-5 bg-background" : "w-1.5 bg-background/60"}`} />
+                  ))}
+                </div>
+              </>
+            ) : null}
+          </div>
           {images.length > 1 ? (
             <div className="mt-3 grid grid-cols-4 gap-3">
               {images.map((img, i) => (
-                <button key={img + i} type="button" onClick={() => setActive(i)}>
+                <button key={img + i} type="button" onClick={() => goTo(i)}>
                   <img
                     src={img}
                     alt={`${product.name} view ${i + 1}`}
