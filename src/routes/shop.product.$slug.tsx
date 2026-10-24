@@ -6,6 +6,7 @@ import { SiteLayout } from "@/components/site/SiteLayout";
 import { ProductCard } from "@/components/site/ProductCard";
 import { effectivePrice, fetchProductBySlug, fetchProducts, productImage } from "@/lib/data";
 import { useCart, useMoney, useSettings, whatsappLink } from "@/lib/store";
+import { PhotoZoom } from "@/components/site/PhotoZoom";
 
 export const Route = createFileRoute("/shop/product/$slug")({
   head: ({ params }) => {
@@ -44,6 +45,7 @@ function ProductDetail() {
   const [color, setColor] = useState<string | null>(null);
   const [qty, setQty] = useState(1);
   const [active, setActive] = useState(0);
+  const [zoomed, setZoomed] = useState(false);
   const sliderRef = useRef<HTMLDivElement>(null);
   const goTo = (i: number) => {
     const el = sliderRef.current;
@@ -122,7 +124,8 @@ function ProductDetail() {
                   loading={i === 0 ? "eager" : "lazy"}
                   width={1024}
                   height={1280}
-                  className="aspect-[4/5] w-full shrink-0 snap-center bg-muted object-cover"
+                  onClick={() => setZoomed(true)}
+                  className="aspect-[4/5] w-full shrink-0 cursor-zoom-in snap-center bg-muted object-cover"
                 />
               ))}
             </div>
@@ -318,6 +321,7 @@ function ProductDetail() {
           </section>
         </>
       ) : null}
+      {zoomed ? <PhotoZoom src={images[active] ?? images[0] ?? ""} alt={`${product.name} view ${active + 1}`} onClose={() => setZoomed(false)} /> : null}
     </SiteLayout>
   );
 }
