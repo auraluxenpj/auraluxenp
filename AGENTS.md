@@ -17,3 +17,5 @@
 - The shared women's size guide is sourced body-measurement reference data, rendered alongside rather than replacing custom product charts; never extrapolate unsupported size measurements.
 - POS sales use dedicated immutable sale/receipt and credit tables plus an authenticated atomic database RPC that locks shared product and size stock; keep online checkout and counter payments separate to preserve storefront payment restrictions.
 - The admin shell permits staff only under /admin/pos; every POS server function/database RPC enforces admin-or-staff access, while existing admin surfaces retain admin-only access.
+- Khata repayments and expenses are admin-only append-only records written through idempotent database RPCs; customer locks serialize credit accrual and repayment, while a narrow POS balance RPC exposes net balance without repayment details to staff.
+- Business cashflow aggregates Nepal-local day boundaries and includes only cash sale totals, cash repayments and cash expenses; immutable vouchers share the POS print helper and receipt styles.

@@ -1,10 +1,11 @@
 # Phase 1: Secure checkout and remove COD
 
 ## Customer Khata and expenses
-- [ ] Review additive settlement/expense schema and access plan with owner; keep existing sales and credit immutable.
-- [ ] Add searchable party directory, statements, cash/confirmed-QR partial/full repayments, vouchers and net balances shared with POS.
-- [ ] Add expense capture and Nepal-day summary with cashflow = cash POS sales + cash credit recoveries − cash expenses.
-- [ ] Verify totals, overpayment/concurrent/retry rejection, private access, authenticated repayment/expense persistence and printable vouchers. No publication.
+- [x] Owner approved additive admin-only settlement/expense plan. Migrations 0012/0013 add private append-only records, customer locking, idempotent writes and consistent statement snapshot; existing sales/credit unchanged.
+- [x] Searchable Customer Khata, sales/repayment statements, partial/full cash or merchant-confirmed QR repayments, numbered thermal/A4 vouchers and net balances shared with POS.
+- [x] Expenses page records category/source/date/amount/payee/notes/slip reference; Nepal-day cashflow uses cash POS totals + cash recoveries − cash expenses, excludes QR/bank.
+- [x] 38 focused tests pass; signed-in 1000 credit → 300 repayment → 700 balance, concurrent 500 repayments give one success, full settlement reads 0 in POS; cashflow 850+300−150=1000. Configured QR repayment and bank expense excluded from cashflow; changed retries/overpayment/unconfirmed QR denied. Voucher print/mobile verified; no page errors, latest build OK.
+- [x] Disposable test records removed and original catalogue/orders preserved. No publication; genuine QR funds and physical printer not independently verified. New modules remain admin-only; no staff accounts available for staff-session testing.
 
 ## POS & in-store counter billing
 - [x] Inspect shared stock, protected admin access, payment boundaries and current records; resolve admins-and-staff access and ordinary receipts.

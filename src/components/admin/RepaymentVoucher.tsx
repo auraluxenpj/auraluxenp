@@ -1,0 +1,10 @@
+import {Printer} from 'lucide-react';
+import {Button} from '@/components/ui/button';
+import {Dialog,DialogContent,DialogHeader,DialogTitle} from '@/components/ui/dialog';
+import {money} from '@/lib/pos';
+import {printBusinessReceipt} from '@/lib/receipt-print';
+import type {RepaymentVoucher as Voucher} from '@/lib/business-ledgers';
+export function RepaymentVoucher({voucher,onClose}:{voucher:Voucher|null;onClose:()=>void}){
+ if(!voucher)return null;
+ return <Dialog open onOpenChange={o=>{if(!o)onClose();}}><DialogContent className="pos-receipt-dialog max-h-[90dvh] overflow-y-auto"><DialogHeader className="pos-no-print"><DialogTitle>Repayment voucher · {voucher.voucher_number}</DialogTitle></DialogHeader><div className="pos-no-print flex gap-2"><Button onClick={()=>printBusinessReceipt('thermal')}><Printer/>80 mm voucher</Button><Button variant="outline" onClick={()=>printBusinessReceipt('a4')}><Printer/>A4 voucher</Button></div><article id="pos-print-receipt" className="space-y-5 border border-border bg-background p-5 text-sm"><header className="text-center"><h2 className="font-display text-3xl">{voucher.store['brand_name']||'AURALUXE'}</h2><p>{voucher.store['address']}</p><p>{voucher.store['phone']}</p><p className="mt-4 font-semibold">UDHARO REPAYMENT RECEIPT</p><p>{voucher.voucher_number}</p><p>{new Date(voucher.created_at).toLocaleString('en-NP',{timeZone:'Asia/Kathmandu'})}</p></header><div className="border-y border-border py-3"><p>{voucher.customer_name}</p><p>{voucher.customer_phone}</p><p>Received by: {voucher.operator_name}</p><p>Payment: {voucher.payment_method==='cash'?'Cash':'QR · merchant receipt confirmed'}</p></div><div className="space-y-3">{[['Previous balance',voucher.balance_before],['Payment received',voucher.amount],['Remaining balance',voucher.balance_after]].map(([label,value])=><div className="flex justify-between gap-3" key={String(label)}><span>{label}</span><strong>Rs. {money(Number(value))}</strong></div>)}</div><p className="text-center">Thank you. This receipt records your Udharo repayment.</p></article></DialogContent></Dialog>;
+}
