@@ -36,6 +36,13 @@
       "when": 1792714690590,
       "tag": "0004_order_restock",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1792809251638,
+      "tag": "0005_banner_mobile_image",
+      "breakpoints": true
     }
   ]
 }

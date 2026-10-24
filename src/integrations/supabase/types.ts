@@ -23,6 +23,7 @@ export type Database = {
           id: string
           image_url: string | null
           is_active: boolean
+          mobile_image_url: string | null
           placement: string
           sort_order: number
           starts_at: string | null
@@ -37,6 +38,7 @@ export type Database = {
           id?: string
           image_url?: string | null
           is_active?: boolean
+          mobile_image_url?: string | null
           placement?: string
           sort_order?: number
           starts_at?: string | null
@@ -51,6 +53,7 @@ export type Database = {
           id?: string
           image_url?: string | null
           is_active?: boolean
+          mobile_image_url?: string | null
           placement?: string
           sort_order?: number
           starts_at?: string | null
