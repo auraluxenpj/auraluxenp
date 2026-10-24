@@ -51,4 +51,26 @@ describe("stylist add-to-bag rules", () => {
   it("uses the placeholder photo when a product has no images", () => {
     expect(stylistCartItem(product({ images: [] }))?.image).toBe("/images/placeholder-product.jpg");
   });
+
+  it("bags the shopper's chosen size and colour", () => {
+    const item = stylistCartItem(product({ colors: ["Ivory", "Rose"] }), { size: "L", color: "Rose" })!;
+    expect(item.size).toBe("L");
+    expect(item.color).toBe("Rose");
+  });
+
+  it("falls back to the first option when a stale choice is not offered", () => {
+    const item = stylistCartItem(product(), { size: "XXL", color: "Emerald" })!;
+    expect(item.size).toBe("M");
+    expect(item.color).toBe("Ivory");
+  });
+
+  it("passes per-product selections through stylistCartItems", () => {
+    const items = stylistCartItems(
+      [{ product: product() }, { product: product({ id: "p2", sizes: ["S", "M"], colors: ["Teal"] }) }],
+      { p2: { size: "S" } },
+    );
+    expect(items[0].size).toBe("M");
+    expect(items[1].size).toBe("S");
+    expect(items[1].color).toBe("Teal");
+  });
 });
