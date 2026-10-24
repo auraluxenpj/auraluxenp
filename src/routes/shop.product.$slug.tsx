@@ -1,10 +1,17 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { SiteLayout } from "@/components/site/SiteLayout";
 import { ProductCard } from "@/components/site/ProductCard";
-import { effectivePrice, fetchProductBySlug, fetchProducts, productImage } from "@/lib/data";
+import {
+  effectivePrice,
+  fetchProductBySlug,
+  fetchProducts,
+  fetchVariantsForProduct,
+  productImage,
+} from "@/lib/data";
+import { sizeStockLabel, sizeStocks, stockForSize } from "@/lib/size-stock";
 import { useCart, useMoney, useSettings, whatsappLink } from "@/lib/store";
 import { requiredOptionLabels } from "@/lib/product-options";
 import { PhotoZoom } from "@/components/site/PhotoZoom";
@@ -41,10 +48,16 @@ function ProductDetail() {
     queryFn: () => fetchProductBySlug(slug),
   });
   const { data: all = [] } = useQuery({ queryKey: ["products"], queryFn: fetchProducts });
+  const productId = product?.id ?? null;
+  const { data: variants = [] } = useQuery({
+    queryKey: ["product-variants", productId],
+    queryFn: () => fetchVariantsForProduct(productId as string),
+    enabled: productId != null,
+  });
 
   const [size, setSize] = useState<string | null>(null);
   const [color, setColor] = useState<string | null>(null);
-  const [qty, setQty] = useState(1);
+  const [quantity, setQuantity] = useState(1);
   const [active, setActive] = useState(0);
   const [zoomed, setZoomed] = useState(false);
   const sliderRef = useRef<HTMLDivElement>(null);
