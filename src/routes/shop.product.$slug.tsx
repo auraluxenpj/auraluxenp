@@ -118,15 +118,15 @@ function ProductDetail() {
     );
   }
 
+  const d = derived;
   const price = effectivePrice(product);
   const hasDiscount = product.sale_price != null && Number(product.sale_price) > 0;
   const images = product.images?.length ? product.images : [productImage(product)];
-  const outOfStock = product.stock <= 0;
-  // A single size or colour is applied automatically; anything else must be
-  // chosen by the shopper before it can go into the bag.
-  const effectiveSize = size ?? (product.sizes?.length === 1 ? product.sizes[0] : null);
-  const effectiveColor = color ?? (product.colors?.length === 1 ? product.colors[0] : null);
-  const missingOptions = requiredOptionLabels(product, effectiveSize, effectiveColor);
+  const headerStock = d.comboStock ?? d.sizeTotalStock ?? product.stock;
+  const comboEmpty = d.comboStock != null && d.comboStock <= 0 && (d.sizeTotalStock ?? 0) > 0;
+  const outOfStock =
+    product.stock <= 0 || d.allSizesSoldOut || (d.effectiveSize != null && d.sizeSoldOut);
+  const missingOptions = requiredOptionLabels(product, d.effectiveSize, d.effectiveColor);
   const related = all.filter((p) => p.category_id === product.category_id && p.id !== product.id).slice(0, 3);
 
   const chosen = {
@@ -135,9 +135,9 @@ function ProductDetail() {
     name: product.name,
     image: images[0] ?? null,
     price,
-    size: effectiveSize,
-    color: effectiveColor,
-    quantity: qty,
+    size: d.effectiveSize,
+    color: d.effectiveColor,
+    quantity: d.qty,
   };
 
   return (
@@ -245,9 +245,11 @@ function ProductDetail() {
           <p className="mt-2 text-[12px] uppercase tracking-[0.18em] text-muted-foreground">
             {outOfStock
               ? "Out of stock"
-              : product.stock <= product.low_stock_threshold
-                ? `Only ${product.stock} left`
-                : "In stock"}
+              : comboEmpty
+                ? "Sold out in this colour — please pick another"
+                : headerStock <= product.low_stock_threshold
+                  ? `Only ${headerStock} left`
+                  : "In stock"}
             {product.sku ? ` · SKU ${product.sku}` : ""}
           </p>
 
