@@ -6,8 +6,17 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { fetchAllProducts, productImage, type Product } from "@/lib/data";
 import { useMoney } from "@/lib/store";
+import { isProductSku } from "@/lib/product-information";
 
 export const Route = createFileRoute("/_authenticated/admin/products/")({
+  head: () => ({ meta: [
+    { title: "Products — Auraluxe Admin" },
+    { name: "description", content: "Manage Auraluxe products, SKUs and catalogue imports." },
+    { property: "og:title", content: "Products — Auraluxe Admin" },
+    { property: "og:description", content: "Manage Auraluxe products and catalogue imports." },
+    { property: "og:type", content: "website" },
+    { name: "twitter:card", content: "summary" },
+  ] }),
   component: ProductsList,
 });
 
@@ -21,6 +30,7 @@ function ProductsList() {
 
   const togglePublish = useMutation({
     mutationFn: async (p: Product) => {
+      if (!p.is_published && (!p.sku || !isProductSku(p.sku))) throw new Error("Edit this product and fill its AL garment-type SKU before publishing");
       const { error } = await supabase.from("products").update({ is_published: !p.is_published }).eq("id", p.id);
       if (error) throw error;
     },
@@ -46,12 +56,12 @@ function ProductsList() {
         ...rest,
         name: `${p.name} (copy)`,
         slug: `${p.slug}-${suffix}`,
-        sku: p.sku ? `${p.sku}-${suffix}` : null,
+        sku: null,
         is_published: false,
       });
       if (error) throw error;
     },
-    onSuccess: () => { toast.success("Draft copy created"); refresh(); },
+    onSuccess: () => { toast.success("Draft copy created — fill its final SKU identifier before publishing"); refresh(); },
     onError: (e) => toast.error((e as Error).message),
   });
 
@@ -97,6 +107,10 @@ function ProductsList() {
         if (r.error) { errors.push(`Row ${r.line}: ${r.error}`); continue; }
         const d: any = r.data;
         const match = products.find((p) => (d.sku && p.sku === d.sku) || (d.slug && p.slug === d.slug));
+        if ((!match || (d.sku && d.sku !== match.sku)) && (!d.sku || !isProductSku(d.sku))) {
+          errors.push(`Row ${r.line}: use AL-garment type-final identifier, e.g. AL-KURTI-001`);
+          continue;
+        }
         if (match) {
           const { slug: _s, ...upd }: any = d;
           const { error } = await supabase.from("products").update(upd).eq("id", match.id);
@@ -155,6 +169,7 @@ function ProductsList() {
               <p className="text-xs text-muted-foreground">
                 {p.sku ?? "No SKU"} · {money(Number(p.sale_price ?? p.price))} · {p.stock} in stock · {p.is_published ? "Live" : "Hidden"}
               </p>
+              {!p.sku || !isProductSku(p.sku) ? <p className="text-xs text-muted-foreground">SKU format needs admin review</p> : null}
             </div>
             <div className="flex flex-wrap gap-2 text-xs">
               <Link to="/admin/products/$id" params={{ id: p.id }} className="rounded-full bg-secondary px-3 py-2">Edit</Link>

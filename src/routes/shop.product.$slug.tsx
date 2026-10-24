@@ -15,6 +15,8 @@ import { sizeStockLabel, sizeStocks, stockForSize } from "@/lib/size-stock";
 import { useCart, useMoney, useSettings, whatsappLink } from "@/lib/store";
 import { requiredOptionLabels } from "@/lib/product-options";
 import { PhotoZoom } from "@/components/site/PhotoZoom";
+import { WomensSizeGuide } from "@/components/site/WomensSizeGuide";
+import { PHOTO_DISCLAIMER } from "@/lib/product-information";
 
 export const Route = createFileRoute("/shop/product/$slug")({
   head: ({ params }) => {
@@ -27,6 +29,8 @@ export const Route = createFileRoute("/shop/product/$slug")({
           content: `${pretty} from Auraluxe, Nepalgunj. Sizes, colours, fabric details and secure QR or bank transfer payment across Nepal.`,
         },
         { property: "og:title", content: `${pretty} — Auraluxe` },
+        { property: "og:type", content: "product" },
+        { name: "twitter:card", content: "summary_large_image" },
         {
           property: "og:description",
           content: `${pretty} from Auraluxe, Nepalgunj. Secure QR or bank transfer payment across Nepal.`,
@@ -391,18 +395,11 @@ function ProductDetail() {
             Ask on WhatsApp
           </a>
 
-          {product.description ? (
-            <p className="mt-7 whitespace-pre-line border-t border-border pt-6 text-[15px] leading-relaxed text-muted-foreground">
-              {product.description}
-            </p>
-          ) : null}
-
-          {product.size_chart ? (
-            <div className="mt-5 rounded-2xl bg-secondary p-4">
-              <p className="label-caps text-muted-foreground">Size chart</p>
-              <p className="mt-2 whitespace-pre-line text-sm">{product.size_chart}</p>
-            </div>
-          ) : null}
+          <div className="mt-7 border-t border-border pt-6">
+            {product.description ? <p className="whitespace-pre-line text-[15px] leading-relaxed text-muted-foreground">{product.description}</p> : null}
+            <p className="mt-4 text-xs leading-relaxed text-muted-foreground">{PHOTO_DISCLAIMER}</p>
+          </div>
+          <WomensSizeGuide customChart={product.size_chart} />
         </div>
       </section>
 
