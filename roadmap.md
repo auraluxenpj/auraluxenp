@@ -1,8 +1,9 @@
 # Phase 1: Secure checkout and remove COD
 
 ## Home-screen installation
-- [ ] Add official circular icons, safely padded maskable icon, Apple touch icon, local favicon and standalone manifest without service workers or business changes.
-- [ ] Validate manifest/icon paths, browser installability and HTTPS; request deployment only after checks pass and report physical-device limitations.
+- [x] Add official circular icons, safely padded maskable icon, Apple touch icon, local favicon and standalone manifest without service workers or business changes.
+- [x] Three tests passed; all icons/manifest HTTP 200 with correct sizes, safe maskable artwork and no Chromium installability errors. Install/launch commands succeeded; headless standalone window display and physical Android/iPhone checks remain unverified. Existing HTTPS site returns 200, automatic build OK, homepage/shop render without page errors.
+- [ ] Request deployment of current snapshot after validation; verify new manifest on live domain when deployment becomes available. File report and device instructions are in PWA.md.
 
 ## Vendors and purchase bills
 - [x] Owner approved additive admin-only plan; migration 0014 adds private vendors, immutable bills/items/payments and authenticated transaction/read functions. Stock and daily cashflow unchanged.
