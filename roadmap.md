@@ -1,5 +1,9 @@
 # Phase 1: Secure checkout and remove COD
 
+## Home-screen installation
+- [ ] Add official circular icons, safely padded maskable icon, Apple touch icon, local favicon and standalone manifest without service workers or business changes.
+- [ ] Validate manifest/icon paths, browser installability and HTTPS; request deployment only after checks pass and report physical-device limitations.
+
 ## Vendors and purchase bills
 - [x] Owner approved additive admin-only plan; migration 0014 adds private vendors, immutable bills/items/payments and authenticated transaction/read functions. Stock and daily cashflow unchanged.
 - [x] Purchases navigation with vendor create/edit/search/balances, itemised invoice entry, discount/tax totals, due/status filters, bill details and partial/full Cash or Bank/QR payment history. Separate bookkeeping only, no uploads or actual transfers.
