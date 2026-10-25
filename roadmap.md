@@ -1,5 +1,11 @@
 # Phase 1: Secure checkout and remove COD
 
+## Home-screen installation
+- [x] Add official circular icons, safely padded maskable icon, Apple touch icon, local favicon and standalone manifest without service workers or business changes.
+- [x] Three tests passed; all icons/manifest HTTP 200 with correct sizes, safe maskable artwork and no Chromium installability errors. Install/launch commands succeeded; headless standalone window display and physical Android/iPhone checks remain unverified. Existing HTTPS site returns 200, automatic build OK, homepage/shop render without page errors.
+- [x] Requested deployment of the validated current snapshot to https://www.auraluxe.com.np; scheduling is confirmed, completion is not. File report and device instructions are in PWA.md.
+- [ ] Verify deployed manifest and installation on real desktop/Android/iPhone devices; blocked until the new deployment is available and physical devices can be used.
+
 ## Vendors and purchase bills
 - [x] Owner approved additive admin-only plan; migration 0014 adds private vendors, immutable bills/items/payments and authenticated transaction/read functions. Stock and daily cashflow unchanged.
 - [x] Purchases navigation with vendor create/edit/search/balances, itemised invoice entry, discount/tax totals, due/status filters, bill details and partial/full Cash or Bank/QR payment history. Separate bookkeeping only, no uploads or actual transfers.
