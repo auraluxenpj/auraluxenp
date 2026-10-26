@@ -144,6 +144,9 @@ function ProductsList() {
           <button onClick={exportCsv} disabled={products.length === 0} className="rounded-full border border-border px-5 py-2.5 text-[12px] uppercase tracking-[0.15em] disabled:opacity-50">
             Export CSV
           </button>
+          <Link to="/admin/products/quick" className="rounded-full border border-border px-5 py-2.5 text-[12px] uppercase tracking-[0.15em]">
+            Smart add
+          </Link>
           <Link to="/admin/products/$id" params={{ id: "new" }} className="rounded-full bg-primary px-5 py-2.5 text-[12px] uppercase tracking-[0.15em] text-primary-foreground">
             Add product
           </Link>
