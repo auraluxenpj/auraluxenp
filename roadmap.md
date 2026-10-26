@@ -2,7 +2,9 @@
 
 ## Smart Product Upload Upgrade (Oct 26)
 - [x] Inspected existing product routes (admin list/editor, CSV import/export), Supabase setup (products, product_variants, categories; Lovable Cloud active) and inventory logic (per-size variants with product.stock as sum fallback).
-- [ ] Scope and build the smart upload upgrade — awaiting owner's choice of smart features.
+- [x] Owner chose AI description & SEO + AI auto-fill details on a new quick-add page.
+- [x] Built /admin/products/quick: name + optional notes + photos → admin-only AI server function drafts description, SEO title/description, fabric, category, sizes, colours and SKU garment kind → review/edit → save creates the product. "Smart add" button on the products page. No schema changes.
+- [x] 3 sanitize tests pass; build OK; signed-in browser test: real AI draft generated (cotton/maroon/kurti category correct), hidden test product saved as AL-K-QA1 then deleted; catalogue unchanged. Not published.
 
 ## Home-screen installation
 - [x] Add official circular icons, safely padded maskable icon, Apple touch icon, local favicon and standalone manifest without service workers or business changes.
