@@ -38,6 +38,7 @@ import { Route as AuthenticatedAdminPosIndexRouteImport } from './routes/_authen
 import { Route as AuthenticatedAdminPosSalesRouteImport } from './routes/_authenticated/admin.pos.sales'
 import { Route as AuthenticatedAdminProductsIndexRouteImport } from './routes/_authenticated/admin.products.index'
 import { Route as AuthenticatedAdminProductsIdRouteImport } from './routes/_authenticated/admin.products.$id'
+import { Route as AuthenticatedAdminProductsQuickRouteImport } from './routes/_authenticated/admin.products.quick'
 import { Route as AuthenticatedAdminPurchasesIndexRouteImport } from './routes/_authenticated/admin.purchases.index'
 import { Route as AuthenticatedAdminPurchasesIdRouteImport } from './routes/_authenticated/admin.purchases.$id'
 import { Route as AuthenticatedAdminPurchasesNewRouteImport } from './routes/_authenticated/admin.purchases.new'
@@ -200,6 +201,12 @@ const AuthenticatedAdminProductsIdRoute =
     path: '/products/$id',
     getParentRoute: () => AuthenticatedAdminRoute,
   } as any)
+const AuthenticatedAdminProductsQuickRoute =
+  AuthenticatedAdminProductsQuickRouteImport.update({
+    id: '/products/quick',
+    path: '/products/quick',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
 const AuthenticatedAdminPurchasesIndexRoute =
   AuthenticatedAdminPurchasesIndexRouteImport.update({
     id: '/',
@@ -251,6 +258,7 @@ export interface FileRoutesByFullPath {
   '/admin/khata/$id': typeof AuthenticatedAdminKhataIdRoute
   '/admin/pos/sales': typeof AuthenticatedAdminPosSalesRoute
   '/admin/products/$id': typeof AuthenticatedAdminProductsIdRoute
+  '/admin/products/quick': typeof AuthenticatedAdminProductsQuickRoute
   '/admin/purchases/$id': typeof AuthenticatedAdminPurchasesIdRoute
   '/admin/purchases/new': typeof AuthenticatedAdminPurchasesNewRoute
   '/admin/purchases/vendors': typeof AuthenticatedAdminPurchasesVendorsRoute
@@ -281,6 +289,7 @@ export interface FileRoutesByTo {
   '/admin/khata/$id': typeof AuthenticatedAdminKhataIdRoute
   '/admin/pos/sales': typeof AuthenticatedAdminPosSalesRoute
   '/admin/products/$id': typeof AuthenticatedAdminProductsIdRoute
+  '/admin/products/quick': typeof AuthenticatedAdminProductsQuickRoute
   '/admin/purchases/$id': typeof AuthenticatedAdminPurchasesIdRoute
   '/admin/purchases/new': typeof AuthenticatedAdminPurchasesNewRoute
   '/admin/purchases/vendors': typeof AuthenticatedAdminPurchasesVendorsRoute
@@ -317,6 +326,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/khata/$id': typeof AuthenticatedAdminKhataIdRoute
   '/_authenticated/admin/pos/sales': typeof AuthenticatedAdminPosSalesRoute
   '/_authenticated/admin/products/$id': typeof AuthenticatedAdminProductsIdRoute
+  '/_authenticated/admin/products/quick': typeof AuthenticatedAdminProductsQuickRoute
   '/_authenticated/admin/purchases/$id': typeof AuthenticatedAdminPurchasesIdRoute
   '/_authenticated/admin/purchases/new': typeof AuthenticatedAdminPurchasesNewRoute
   '/_authenticated/admin/purchases/vendors': typeof AuthenticatedAdminPurchasesVendorsRoute
@@ -353,6 +363,7 @@ export interface FileRouteTypes {
     | '/admin/khata/$id'
     | '/admin/pos/sales'
     | '/admin/products/$id'
+    | '/admin/products/quick'
     | '/admin/purchases/$id'
     | '/admin/purchases/new'
     | '/admin/purchases/vendors'
@@ -383,6 +394,7 @@ export interface FileRouteTypes {
     | '/admin/khata/$id'
     | '/admin/pos/sales'
     | '/admin/products/$id'
+    | '/admin/products/quick'
     | '/admin/purchases/$id'
     | '/admin/purchases/new'
     | '/admin/purchases/vendors'
@@ -418,6 +430,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/khata/$id'
     | '/_authenticated/admin/pos/sales'
     | '/_authenticated/admin/products/$id'
+    | '/_authenticated/admin/products/quick'
     | '/_authenticated/admin/purchases/$id'
     | '/_authenticated/admin/purchases/new'
     | '/_authenticated/admin/purchases/vendors'
@@ -647,6 +660,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminProductsIdRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
+    '/_authenticated/admin/products/quick': {
+      id: '/_authenticated/admin/products/quick'
+      path: '/products/quick'
+      fullPath: '/admin/products/quick'
+      preLoaderRoute: typeof AuthenticatedAdminProductsQuickRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
     '/_authenticated/admin/purchases/': {
       id: '/_authenticated/admin/purchases/'
       path: '/'
@@ -743,6 +763,7 @@ interface AuthenticatedAdminRouteChildren {
   AuthenticatedAdminSettingsRoute: typeof AuthenticatedAdminSettingsRoute
   AuthenticatedAdminIndexRoute: typeof AuthenticatedAdminIndexRoute
   AuthenticatedAdminProductsIdRoute: typeof AuthenticatedAdminProductsIdRoute
+  AuthenticatedAdminProductsQuickRoute: typeof AuthenticatedAdminProductsQuickRoute
   AuthenticatedAdminProductsIndexRoute: typeof AuthenticatedAdminProductsIndexRoute
 }
 
@@ -759,6 +780,7 @@ const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
   AuthenticatedAdminSettingsRoute: AuthenticatedAdminSettingsRoute,
   AuthenticatedAdminIndexRoute: AuthenticatedAdminIndexRoute,
   AuthenticatedAdminProductsIdRoute: AuthenticatedAdminProductsIdRoute,
+  AuthenticatedAdminProductsQuickRoute: AuthenticatedAdminProductsQuickRoute,
   AuthenticatedAdminProductsIndexRoute: AuthenticatedAdminProductsIndexRoute,
 }
 
