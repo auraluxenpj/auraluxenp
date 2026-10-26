@@ -1,5 +1,9 @@
 # Phase 1: Secure checkout and remove COD
 
+## Smart Product Upload Upgrade (Oct 26)
+- [x] Inspected existing product routes (admin list/editor, CSV import/export), Supabase setup (products, product_variants, categories; Lovable Cloud active) and inventory logic (per-size variants with product.stock as sum fallback).
+- [ ] Scope and build the smart upload upgrade — awaiting owner's choice of smart features.
+
 ## Home-screen installation
 - [x] Add official circular icons, safely padded maskable icon, Apple touch icon, local favicon and standalone manifest without service workers or business changes.
 - [x] Three tests passed; all icons/manifest HTTP 200 with correct sizes, safe maskable artwork and no Chromium installability errors. Install/launch commands succeeded; headless standalone window display and physical Android/iPhone checks remain unverified. Existing HTTPS site returns 200, automatic build OK, homepage/shop render without page errors.
