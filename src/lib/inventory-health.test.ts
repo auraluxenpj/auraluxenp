@@ -11,7 +11,7 @@ describe('read-only inventory health rules', () => {
     const products = [product({ sku: 'AL-OTH-999' })];
     const variants = [{ product_id: 'one', size: 'S', stock: 2 }, { product_id: 'one', size: 'M', stock: 3 }];
     expect(inventoryHealth(products, variants).mismatches[0]?.sizeTotal).toBe(5);
-    expect(products[0].stock).toBe(1);
+    expect(products[0]?.stock).toBe(1);
   });
   it('does not flag matching totals or untracked products', () => {
     expect(inventoryHealth([product({ stock: 5 }), product({ id: 'two', sku: null })],

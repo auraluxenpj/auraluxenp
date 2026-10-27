@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate, useRouter } from '@tanstack/react-router';
+import { createFileRoute, useNavigate, useRouter, type ErrorComponentProps } from '@tanstack/react-router';
 import { useSuspenseQuery } from '@tanstack/react-query';
 import { RefreshCw, Search, ShieldCheck, AlertTriangle, Copy, CircleDollarSign } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -9,8 +9,8 @@ import type { HealthProduct } from '@/lib/inventory-health';
 type HealthView = 'stock' | 'sku' | 'price';
 export const Route = createFileRoute('/_authenticated/admin/inventory-health')({
   validateSearch: (search: Record<string, unknown>): { view: HealthView; q: string } => ({
-    view: search.view === 'sku' || search.view === 'price' ? search.view : 'stock',
-    q: typeof search.q === 'string' ? search.q : '',
+    view: search['view'] === 'sku' || search['view'] === 'price' ? search['view'] : 'stock',
+    q: typeof search['q'] === 'string' ? search['q'] : '',
   }),
   loader: async ({ context }) => {
     if (!context.isAdmin) throw new Error('Administrator access required');
@@ -30,7 +30,7 @@ export const Route = createFileRoute('/_authenticated/admin/inventory-health')({
   notFoundComponent: () => <p>Inventory health page not found.</p>,
 });
 
-function HealthError({ error }: { error: Error }) {
+function HealthError({ error }: ErrorComponentProps) {
   const router = useRouter();
   return <div role="alert" className="space-y-4 py-8"><h1 className="font-display text-3xl">Inventory check unavailable</h1><p>{error.message}</p><Button variant="outline" onClick={() => router.invalidate()}><RefreshCw />Retry</Button></div>;
 }
@@ -66,7 +66,7 @@ function InventoryHealthPage() {
       <h2 className="font-display text-2xl">{view === 'stock' ? 'Stock reconciliation' : view === 'sku' ? 'Shared SKU identifiers' : 'Published with no price'} <span className="text-lg text-muted-foreground">({visibleCount})</span></h2>
       {visibleCount === 0 && <div className="border-y border-border py-10 text-center"><ShieldCheck className="mx-auto mb-3 size-6 text-brand" /><p>{q ? 'No flagged products match your search.' : 'No exceptions found in this category.'}</p></div>}
       {view === 'stock' && stock.map(row => <article key={row.product.id} className="rounded-lg border border-border bg-card p-4"><div className="grid gap-4 sm:grid-cols-[1fr_auto]"><ProductIdentity product={row.product} /><div className="flex gap-6 text-sm"><div><p className="text-muted-foreground">Product stock</p><p className="text-2xl tabular-nums">{row.product.stock}</p></div><div><p className="text-muted-foreground">Size total</p><p className="text-2xl tabular-nums text-destructive">{row.sizeTotal}</p></div></div></div><p className="mt-4 border-t border-border pt-3 text-sm text-muted-foreground">{row.sizes.map(s => `${s.size}: ${s.stock}`).join(' · ')}</p></article>)}
-      {view === 'sku' && skus.map(group => <article key={group[0].id} className="rounded-lg border border-border bg-card p-4"><h3 className="mb-4 font-sans font-medium">{group[0].sku?.trim()} <span className="ml-2 text-sm text-muted-foreground">{group.length} products</span></h3><div className="divide-y divide-border">{group.map(product => <div key={product.id} className="grid gap-2 py-3 first:pt-0 sm:grid-cols-[1fr_auto]"><ProductIdentity product={product} /><p className="text-sm text-muted-foreground">Stock {product.stock}</p></div>)}</div></article>)}
+      {view === 'sku' && skus.map(group => <article key={group[0]?.id} className="rounded-lg border border-border bg-card p-4"><h3 className="mb-4 font-sans font-medium">{group[0]?.sku?.trim()} <span className="ml-2 text-sm text-muted-foreground">{group.length} products</span></h3><div className="divide-y divide-border">{group.map(product => <div key={product.id} className="grid gap-2 py-3 first:pt-0 sm:grid-cols-[1fr_auto]"><ProductIdentity product={product} /><p className="text-sm text-muted-foreground">Stock {product.stock}</p></div>)}</div></article>)}
       {view === 'price' && prices.map(product => <article key={product.id} className="grid gap-3 rounded-lg border border-border bg-card p-4 sm:grid-cols-[1fr_auto]"><ProductIdentity product={product} /><div className="text-sm"><p className="font-medium text-destructive">Price 0</p><p className="text-muted-foreground">Stock {product.stock}</p></div></article>)}
     </section>
   </div>;
