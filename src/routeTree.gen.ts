@@ -26,6 +26,7 @@ import { Route as AuthenticatedAdminBannersRouteImport } from './routes/_authent
 import { Route as AuthenticatedAdminCategoriesRouteImport } from './routes/_authenticated/admin.categories'
 import { Route as AuthenticatedAdminExpensesRouteImport } from './routes/_authenticated/admin.expenses'
 import { Route as AuthenticatedAdminInventoryRouteImport } from './routes/_authenticated/admin.inventory'
+import { Route as AuthenticatedAdminInventoryHealthRouteImport } from './routes/_authenticated/admin.inventory-health'
 import { Route as AuthenticatedAdminKhataRouteImport } from './routes/_authenticated/admin.khata'
 import { Route as AuthenticatedAdminOrdersRouteImport } from './routes/_authenticated/admin.orders'
 import { Route as AuthenticatedAdminPosRouteImport } from './routes/_authenticated/admin.pos'
@@ -130,6 +131,12 @@ const AuthenticatedAdminInventoryRoute =
   AuthenticatedAdminInventoryRouteImport.update({
     id: '/inventory',
     path: '/inventory',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
+const AuthenticatedAdminInventoryHealthRoute =
+  AuthenticatedAdminInventoryHealthRouteImport.update({
+    id: '/inventory-health',
+    path: '/inventory-health',
     getParentRoute: () => AuthenticatedAdminRoute,
   } as any)
 const AuthenticatedAdminKhataRoute = AuthenticatedAdminKhataRouteImport.update({
@@ -248,6 +255,7 @@ export interface FileRoutesByFullPath {
   '/admin/categories': typeof AuthenticatedAdminCategoriesRoute
   '/admin/expenses': typeof AuthenticatedAdminExpensesRoute
   '/admin/inventory': typeof AuthenticatedAdminInventoryRoute
+  '/admin/inventory-health': typeof AuthenticatedAdminInventoryHealthRoute
   '/admin/khata': typeof AuthenticatedAdminKhataRouteWithChildren
   '/admin/orders': typeof AuthenticatedAdminOrdersRoute
   '/admin/pos': typeof AuthenticatedAdminPosRouteWithChildren
@@ -282,6 +290,7 @@ export interface FileRoutesByTo {
   '/admin/categories': typeof AuthenticatedAdminCategoriesRoute
   '/admin/expenses': typeof AuthenticatedAdminExpensesRoute
   '/admin/inventory': typeof AuthenticatedAdminInventoryRoute
+  '/admin/inventory-health': typeof AuthenticatedAdminInventoryHealthRoute
   '/admin/orders': typeof AuthenticatedAdminOrdersRoute
   '/admin/settings': typeof AuthenticatedAdminSettingsRoute
   '/shop/product/$slug': typeof ShopProductSlugRoute
@@ -316,6 +325,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/categories': typeof AuthenticatedAdminCategoriesRoute
   '/_authenticated/admin/expenses': typeof AuthenticatedAdminExpensesRoute
   '/_authenticated/admin/inventory': typeof AuthenticatedAdminInventoryRoute
+  '/_authenticated/admin/inventory-health': typeof AuthenticatedAdminInventoryHealthRoute
   '/_authenticated/admin/khata': typeof AuthenticatedAdminKhataRouteWithChildren
   '/_authenticated/admin/orders': typeof AuthenticatedAdminOrdersRoute
   '/_authenticated/admin/pos': typeof AuthenticatedAdminPosRouteWithChildren
@@ -353,6 +363,7 @@ export interface FileRouteTypes {
     | '/admin/categories'
     | '/admin/expenses'
     | '/admin/inventory'
+    | '/admin/inventory-health'
     | '/admin/khata'
     | '/admin/orders'
     | '/admin/pos'
@@ -387,6 +398,7 @@ export interface FileRouteTypes {
     | '/admin/categories'
     | '/admin/expenses'
     | '/admin/inventory'
+    | '/admin/inventory-health'
     | '/admin/orders'
     | '/admin/settings'
     | '/shop/product/$slug'
@@ -420,6 +432,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/categories'
     | '/_authenticated/admin/expenses'
     | '/_authenticated/admin/inventory'
+    | '/_authenticated/admin/inventory-health'
     | '/_authenticated/admin/khata'
     | '/_authenticated/admin/orders'
     | '/_authenticated/admin/pos'
@@ -574,6 +587,13 @@ declare module '@tanstack/react-router' {
       path: '/inventory'
       fullPath: '/admin/inventory'
       preLoaderRoute: typeof AuthenticatedAdminInventoryRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/_authenticated/admin/inventory-health': {
+      id: '/_authenticated/admin/inventory-health'
+      path: '/inventory-health'
+      fullPath: '/admin/inventory-health'
+      preLoaderRoute: typeof AuthenticatedAdminInventoryHealthRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
     '/_authenticated/admin/khata': {
@@ -756,6 +776,7 @@ interface AuthenticatedAdminRouteChildren {
   AuthenticatedAdminCategoriesRoute: typeof AuthenticatedAdminCategoriesRoute
   AuthenticatedAdminExpensesRoute: typeof AuthenticatedAdminExpensesRoute
   AuthenticatedAdminInventoryRoute: typeof AuthenticatedAdminInventoryRoute
+  AuthenticatedAdminInventoryHealthRoute: typeof AuthenticatedAdminInventoryHealthRoute
   AuthenticatedAdminKhataRoute: typeof AuthenticatedAdminKhataRouteWithChildren
   AuthenticatedAdminOrdersRoute: typeof AuthenticatedAdminOrdersRoute
   AuthenticatedAdminPosRoute: typeof AuthenticatedAdminPosRouteWithChildren
@@ -772,6 +793,8 @@ const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
   AuthenticatedAdminCategoriesRoute: AuthenticatedAdminCategoriesRoute,
   AuthenticatedAdminExpensesRoute: AuthenticatedAdminExpensesRoute,
   AuthenticatedAdminInventoryRoute: AuthenticatedAdminInventoryRoute,
+  AuthenticatedAdminInventoryHealthRoute:
+    AuthenticatedAdminInventoryHealthRoute,
   AuthenticatedAdminKhataRoute: AuthenticatedAdminKhataRouteWithChildren,
   AuthenticatedAdminOrdersRoute: AuthenticatedAdminOrdersRoute,
   AuthenticatedAdminPosRoute: AuthenticatedAdminPosRouteWithChildren,

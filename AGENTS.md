@@ -10,6 +10,7 @@
 <!-- LOVABLE:END -->
 
 - Category management reuses the protected admin layout and existing category RLS; invalidate the shared categories query after writes so shop and product forms reflect changes.
+- Inventory health uses administrator-verified, paginated narrow catalogue reads and pure exception analysis; keep the dashboard free of mutation controls and scope its query cache to the signed-in user.
 - Home-screen installation uses manifest-only metadata and CDN icon pointers with a local favicon; do not add app-shell service workers or offline caches unless explicitly requested, to keep live store and preview updates safe.
 - Category deletion checks product and coupon usage before removing unused categories; preserve linked records and keep existing foreign-key behavior as the database safety net.
 - Category ordering is explicitly reviewed and saved as sort_order updates; on partial failure retain the proposed order for a retry rather than reporting success.

@@ -30,6 +30,7 @@ const NAV = [
   { to: "/admin/categories", label: "Categories" },
   { to: "/admin/banners", label: "Banners" },
   { to: "/admin/inventory", label: "Inventory" },
+  { to: "/admin/inventory-health", label: "Inventory Health" },
   { to: "/admin/pos", label: "POS Billing" },
   { to: "/admin/khata", label: "Customer Khata" },
   { to: "/admin/expenses", label: "Expenses" },
