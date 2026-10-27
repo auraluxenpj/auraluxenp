@@ -1,5 +1,9 @@
 # Phase 1: Secure checkout and remove COD
 
+## App icon update (Oct 27)
+- [ ] Restore the generated full-master-logo icon set, upload CDN pointers, and update manifest/Apple/favicon references without publishing or changing the website branding.
+- [ ] Verify icon dimensions/paths, manifest tests and automatic build; physical-device checks require real devices.
+
 ## Read-only inventory health
 - [x] Add administrator-only dashboard for size-stock mismatches, duplicate SKU groups and published zero-price products with complete paginated reads; no catalogue writes or schema changes.
 - [x] 14 focused tests pass; signed-in dashboard reports 582 products, 1 stock mismatch, 2 duplicate SKU groups and 48 published zero-price products. Search, refresh, empty results and signed-out redirect verified; no catalogue write requests or page errors; automatic build OK. Not published.
