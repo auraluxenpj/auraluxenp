@@ -2,7 +2,7 @@
 
 ## Read-only inventory health
 - [x] Add administrator-only dashboard for size-stock mismatches, duplicate SKU groups and published zero-price products with complete paginated reads; no catalogue writes or schema changes.
-- [ ] Verify rule tests, signed-in dashboard/search/refresh and access denial before completion; do not publish.
+- [x] 14 focused tests pass; signed-in dashboard reports 582 products, 1 stock mismatch, 2 duplicate SKU groups and 48 published zero-price products. Search, refresh, empty results and signed-out redirect verified; no catalogue write requests or page errors; automatic build OK. Not published.
 
 ## Smart Product Upload Upgrade (Oct 26)
 - [x] Inspected existing product routes (admin list/editor, CSV import/export), Supabase setup (products, product_variants, categories; Lovable Cloud active) and inventory logic (per-size variants with product.stock as sum fallback).
