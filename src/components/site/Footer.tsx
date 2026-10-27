@@ -1,6 +1,5 @@
 import { Link } from "@tanstack/react-router";
 import { useSettings } from "@/lib/store";
-import brandLogo from "@/assets/auraluxe-wordmark.png.asset.json";
 
 export function Footer() {
   const s = useSettings();

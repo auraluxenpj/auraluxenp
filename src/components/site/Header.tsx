@@ -4,7 +4,6 @@ import { useQuery } from "@tanstack/react-query";
 import { ChevronDown, Menu, Search, ShoppingBag, X } from "lucide-react";
 import { useCart, useSettings } from "@/lib/store";
 import { fetchCategories } from "@/lib/data";
-import brandLogo from "@/assets/auraluxe-wordmark.png.asset.json";
 
 const SHOP_LINKS = [
   { label: "New Arrivals", search: { sort: "newest" } as const },
