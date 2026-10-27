@@ -11,19 +11,19 @@
   "lang": "en",
   "icons": [
     {
-      "src": "/__l5e/assets-v1/ff01d22e-42ff-4ed1-83ab-bffb63af7e4a/icon-192.png",
+      "src": "/__l5e/assets-v1/68365082-fbe8-4524-977d-85d1579277e2/icon-192.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/__l5e/assets-v1/5b6de082-a32f-4caf-836f-032f508ebd55/icon-512.png",
+      "src": "/__l5e/assets-v1/0a336950-00b4-4d80-8358-b8bf7a95b9bf/icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/__l5e/assets-v1/4505419b-c766-4711-b8e9-f33452592d3a/icon-maskable-512.png",
+      "src": "/__l5e/assets-v1/224e2d9e-b064-4048-8afb-bc79facc857e/icon-maskable-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"
