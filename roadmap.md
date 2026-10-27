@@ -1,6 +1,5 @@
 # Phase 1: Secure checkout and remove COD
 
-
 ## Smart Product Upload Upgrade (Oct 26)
 - [x] Inspected existing product routes (admin list/editor, CSV import/export), Supabase setup (products, product_variants, categories; Lovable Cloud active) and inventory logic (per-size variants with product.stock as sum fallback).
 - [x] Owner chose AI description & SEO + AI auto-fill details on a new quick-add page.
