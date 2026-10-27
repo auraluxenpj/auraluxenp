@@ -17,8 +17,8 @@
 ## Home-screen installation
 - [x] Add official circular icons, safely padded maskable icon, Apple touch icon, local favicon and standalone manifest without service workers or business changes.
 - [x] Three tests passed; all icons/manifest HTTP 200 with correct sizes, safe maskable artwork and no Chromium installability errors. Install/launch commands succeeded; headless standalone window display and physical Android/iPhone checks remain unverified. Existing HTTPS site returns 200, automatic build OK, homepage/shop render without page errors.
-- [x] Requested deployment of the validated current snapshot to https://www.auraluxe.com.np; scheduling is confirmed, completion is not. File report and device instructions are in PWA.md.
-- [ ] Verify deployed manifest and installation on real desktop/Android/iPhone devices; blocked until the new deployment is available and physical devices can be used.
+- [x] Published the new icon set to https://www.auraluxe.com.np after a fresh scan (three findings, all previously dismissed by the owner). Live checks: home and manifest HTTP 200; manifest lists 192/512/maskable-512 icons; all three serve at those exact pixel sizes; Apple touch icon 180x180 and favicon 64x64 serve HTTP 200; theme-color, apple-mobile-web-app title/capable/status-bar tags present.
+- [ ] Verify installed app on real iOS and Android devices (owner request Oct 27, 03:29 UTC); blocked — this sandbox has no physical phones, so only the live files above could be checked.
 
 ## Vendors and purchase bills
 - [x] Owner approved additive admin-only plan; migration 0014 adds private vendors, immutable bills/items/payments and authenticated transaction/read functions. Stock and daily cashflow unchanged.
