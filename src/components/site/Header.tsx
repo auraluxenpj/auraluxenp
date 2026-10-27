@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { ChevronDown, Menu, Search, ShoppingBag, X } from "lucide-react";
 import { useCart, useSettings } from "@/lib/store";
 import { fetchCategories } from "@/lib/data";
+import brandLogo from "@/assets/auraluxe-wordmark.png.asset.json";
 
 const SHOP_LINKS = [
   { label: "New Arrivals", search: { sort: "newest" } as const },
@@ -42,10 +43,14 @@ export function Header() {
       }`}
     >
       <header className="glass flex items-center justify-between rounded-2xl px-5 py-4 sm:px-7">
-        <Link to="/" className="flex items-baseline gap-1">
-          <span className="font-display text-2xl font-semibold tracking-[0.12em]">
-            AURA<span className="text-brand">LUXE</span>
-          </span>
+        <Link to="/" aria-label="Auraluxe home" className="block shrink-0">
+          <img
+            src={brandLogo.url}
+            alt="Auraluxe — Fashion, Beauty, Lifestyle"
+            width={1080}
+            height={719}
+            className="block h-auto w-36 sm:w-44"
+          />
         </Link>
 
         <nav className="hidden items-center gap-7 text-[13px] uppercase tracking-[0.18em] text-foreground/70 lg:flex">
