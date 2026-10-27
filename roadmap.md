@@ -1,9 +1,5 @@
 # Phase 1: Secure checkout and remove COD
 
-## Supplied branding update (Oct 27)
-- [x] Apply supplied master wordmark and tagline to header/footer; preserve artwork, existing official app icons, manifest, theme, SEO and business logic.
-- [x] Verified loaded, undistorted logos on desktop/mobile, home links and mobile Shop navigation, no horizontal overflow or page errors; three manifest tests passed and automatic build OK. Not published.
-
 ## Smart Product Upload Upgrade (Oct 26)
 - [x] Inspected existing product routes (admin list/editor, CSV import/export), Supabase setup (products, product_variants, categories; Lovable Cloud active) and inventory logic (per-size variants with product.stock as sum fallback).
 - [x] Owner chose AI description & SEO + AI auto-fill details on a new quick-add page.

@@ -1,6 +1,5 @@
 import { Link } from "@tanstack/react-router";
 import { useSettings } from "@/lib/store";
-import brandLogo from "@/assets/auraluxe-wordmark.png.asset.json";
 
 export function Footer() {
   const s = useSettings();
@@ -8,16 +7,9 @@ export function Footer() {
     <footer className="glass mt-14 rounded-3xl p-8">
       <div className="flex flex-col gap-6 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <Link to="/" aria-label="Auraluxe home" className="block w-fit">
-            <img
-              src={brandLogo.url}
-              alt="Auraluxe — Fashion, Beauty, Lifestyle"
-              width={1080}
-              height={719}
-              loading="lazy"
-              className="block h-auto w-60 max-w-full"
-            />
-          </Link>
+          <span className="font-display text-2xl font-semibold tracking-[0.12em]">
+            AURA<span className="text-brand">LUXE</span>
+          </span>
           <p className="mt-2 max-w-xs text-sm text-muted-foreground">
             {s["tagline"] ?? "Ladies' fashion atelier"} · {s["address"]}
           </p>
