@@ -8,11 +8,12 @@
 - `src/assets/apple-touch-icon.png.asset.json`: supplied 180 × 180 Apple touch icon.
 - `src/routes/__root.tsx`: manifest, icon, Apple touch icon, theme and iOS home-screen head tags.
 - `src/lib/app-manifest.test.ts`: four focused configuration tests.
-- October 27 icon update: the CDN pointers and local favicon now use the owner's newer full master logo (emblem, wordmark and tagline), preserving the artwork. Circular regular/Apple icons and safely padded maskable artwork were recreated from the supplied master after temporary drafts were unavailable. The root Apple reference automatically follows its updated pointer; the favicon link uses a new version suffix. This update is not published.
+- October 27 icon update: the CDN pointers and local favicon now use the owner's newer full master logo (emblem, wordmark and tagline), preserving the artwork. Circular regular/Apple icons and safely padded maskable artwork were recreated from the supplied master after temporary drafts were unavailable. The root Apple reference automatically follows its updated pointer; the favicon link uses a new version suffix. This update was published on October 27 and verified on the live site.
 - `AGENTS.md`, `roadmap.md`: installation architecture and validation record.
 
 ## Validation
-- October 27 update: four manifest tests passed; all four new CDN icons returned HTTP 200 with expected dimensions, local favicon returned HTTP 200 at 64 × 64, root head references matched the new assets, homepage rendered without page errors, and automatic build reported OK. No publication or physical-device installation test was performed.
+- October 27 update: four manifest tests passed; all four new CDN icons returned HTTP 200 with expected dimensions, local favicon returned HTTP 200 at 64 × 64, root head references matched the new assets, homepage rendered without page errors, and automatic build reported OK. No physical-device installation test was performed.
+- October 27 live check after publishing: home and `/manifest.webmanifest` returned HTTP 200 on the custom domain; the live manifest lists the 192, 512 and maskable 512 icons and each served at exactly that pixel size; the Apple touch icon served 180 × 180 and the favicon 64 × 64; theme-color, apple-mobile-web-app title/capable/status-bar tags were present in the live page head.
 - Three tests passed. Automatic preview build reported OK.
 - Manifest and all PNG references returned HTTP 200 with expected image dimensions.
 - Chromium parsed the manifest without errors and reported no installability errors in a normal profile.
