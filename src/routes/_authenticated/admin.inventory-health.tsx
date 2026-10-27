@@ -32,7 +32,7 @@ export const Route = createFileRoute('/_authenticated/admin/inventory-health')({
 
 function HealthError({ error }: ErrorComponentProps) {
   const router = useRouter();
-  return <div role="alert" className="space-y-4 py-8"><h1 className="font-display text-3xl">Inventory check unavailable</h1><p>{error.message}</p><Button variant="outline" onClick={() => router.invalidate()}><RefreshCw />Retry</Button></div>;
+  return <div role="alert" className="space-y-4 py-8"><h1 className="font-display text-3xl">Inventory check unavailable</h1><p>{error instanceof Error ? error.message : 'Please retry the inventory check.'}</p><Button variant="outline" onClick={() => router.invalidate()}><RefreshCw />Retry</Button></div>;
 }
 
 function ProductIdentity({ product }: { product: HealthProduct }) {
