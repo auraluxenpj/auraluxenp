@@ -8,6 +8,7 @@
 - `src/assets/apple-touch-icon.png.asset.json`: supplied 180 × 180 Apple touch icon.
 - `src/routes/__root.tsx`: manifest, icon, Apple touch icon, theme and iOS home-screen head tags.
 - `src/lib/app-manifest.test.ts`: three focused configuration tests.
+- October 27 icon update: the CDN pointers and local favicon now use the owner's newer full master logo (emblem, wordmark and tagline), preserving the artwork. Circular regular/Apple icons and safely padded maskable artwork were recreated from the supplied master after temporary drafts were unavailable. The root Apple reference automatically follows its updated pointer; the favicon link uses a new version suffix. This update is not published.
 - `AGENTS.md`, `roadmap.md`: installation architecture and validation record.
 
 ## Validation
