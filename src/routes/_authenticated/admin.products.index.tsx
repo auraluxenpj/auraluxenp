@@ -67,6 +67,49 @@ function ProductsList() {
 
   const list = products.filter((p) => `${p.name} ${p.sku ?? ""}`.toLowerCase().includes(q.toLowerCase()));
 
+  // ---------- Bulk selection ----------
+  const [selected, setSelected] = useState<string[]>([]);
+  const [bulkBusy, setBulkBusy] = useState(false);
+  const allSelected = list.length > 0 && list.every((p) => selected.includes(p.id));
+
+  const toggleOne = (id: string) =>
+    setSelected((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+  const toggleAll = () => setSelected(allSelected ? [] : list.map((p) => p.id));
+
+  const bulkDelete = async () => {
+    const targets = products.filter((p) => selected.includes(p.id));
+    if (targets.length === 0) return;
+    if (!confirm(`Delete ${targets.length} product${targets.length > 1 ? "s" : ""}? This cannot be undone.`)) return;
+    setBulkBusy(true);
+    let deleted = 0;
+    const failed: string[] = [];
+    for (const p of targets) {
+      await supabase.from("product_variants").delete().eq("product_id", p.id);
+      const { error } = await supabase.from("products").delete().eq("id", p.id);
+      if (error) failed.push(p.name); else deleted++;
+    }
+    setBulkBusy(false);
+    setSelected([]);
+    if (deleted) toast.success(`${deleted} product${deleted > 1 ? "s" : ""} deleted`);
+    if (failed.length) {
+      toast.error(
+        `${failed.length} couldn't be deleted (they likely have orders). Unpublish them instead: ${failed.slice(0, 3).join(", ")}${failed.length > 3 ? "…" : ""}`,
+      );
+    }
+    refresh();
+  };
+
+  const bulkUnpublish = async () => {
+    if (selected.length === 0) return;
+    setBulkBusy(true);
+    const { error } = await supabase.from("products").update({ is_published: false }).in("id", selected);
+    setBulkBusy(false);
+    if (error) { toast.error(error.message); return; }
+    toast.success(`${selected.length} product${selected.length > 1 ? "s" : ""} unpublished`);
+    setSelected([]);
+    refresh();
+  };
+
   const exportCsv = () => {
     const headers = ["Name", "SKU", "Slug", "Category ID", "Price", "Sale Price", "Stock", "Low Stock Threshold", "Sizes", "Colours", "Fabric", "Published", "New Arrival", "Best Seller", "Featured", "Created"];
     const escape = (v: unknown) => {
@@ -80,7 +123,7 @@ function ProductsList() {
       p.created_at,
     ]);
     const csv = [headers, ...rows].map((r) => r.map(escape).join(",")).join("\n");
-    const blob = new Blob(["﻿" + csv], { type: "text/csv;charset=utf-8" });
+    const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
@@ -163,9 +206,36 @@ function ProductsList() {
       ) : null}
       <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search by name or SKU" className="w-full rounded-xl border border-border bg-card px-4 py-3 text-sm" />
       {isLoading ? <p className="text-sm text-muted-foreground">Loading…</p> : null}
+
+      {list.length > 0 ? (
+        <div className="sticky top-0 z-10 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-border bg-card px-4 py-3">
+          <label className="flex items-center gap-2 text-sm">
+            <input type="checkbox" checked={allSelected} onChange={toggleAll} className="h-4 w-4" />
+            Select all ({list.length})
+          </label>
+          {selected.length > 0 ? (
+            <div className="flex flex-wrap items-center gap-2 text-xs">
+              <span className="text-sm font-medium">{selected.length} selected</span>
+              <button onClick={() => setSelected([])} disabled={bulkBusy} className="rounded-full border border-border px-3 py-2 disabled:opacity-50">Clear</button>
+              <button onClick={bulkUnpublish} disabled={bulkBusy} className="rounded-full border border-border px-3 py-2 disabled:opacity-50">Unpublish selected</button>
+              <button onClick={bulkDelete} disabled={bulkBusy} className="rounded-full bg-destructive px-3 py-2 text-destructive-foreground disabled:opacity-50">
+                {bulkBusy ? "Working…" : "Delete selected"}
+              </button>
+            </div>
+          ) : null}
+        </div>
+      ) : null}
+
       <div className="space-y-3">
         {list.map((p) => (
           <div key={p.id} className="flex flex-wrap items-center gap-4 rounded-2xl border border-border bg-card p-3">
+            <input
+              type="checkbox"
+              checked={selected.includes(p.id)}
+              onChange={() => toggleOne(p.id)}
+              aria-label={`Select ${p.name}`}
+              className="h-4 w-4 shrink-0"
+            />
             <img src={productImage(p)} alt={p.name} className="h-16 w-14 rounded-lg object-cover" loading="lazy" />
             <div className="min-w-0 flex-1">
               <p className="truncate font-medium">{p.name}</p>
