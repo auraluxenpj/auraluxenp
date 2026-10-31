@@ -26,7 +26,11 @@ export const Route = createFileRoute("/")({
       },
       { property: "og:title", content: "Auraluxe — Premium Ladies' Fashion in Nepalgunj" },
       { property: "og:type", content: "website" },
+      { property: "og:url", content: "https://auraluxe.com.np/" },
+      { property: "og:image", content: "https://auraluxe.com.np/images/hero-auraluxe.jpg" },
+      { property: "og:image:alt", content: "Auraluxe — premium ladies' fashion from Nepalgunj" },
       { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:image", content: "https://auraluxe.com.np/images/hero-auraluxe.jpg" },
       {
         property: "og:description",
         content: "Hand-finished kurtis, co-ord sets and party wear, designed in Nepalgunj.",
