@@ -8,6 +8,31 @@ const AUTOPLAY_MS = 6000;
 function SlideImage({ banner, priority }: { banner: Banner; priority: boolean }) {
   const desktop = banner.image_url ?? "/images/hero-auraluxe.jpg";
   const mobile = (banner as Banner & { mobile_image_url?: string | null }).mobile_image_url;
+
+  // Automatic product slides (built from in-stock products) use portrait photos:
+  // show the whole photo over a blurred copy of itself instead of cropping it.
+  const isProductSlide = banner.id.startsWith("product-hero-");
+  if (isProductSlide) {
+    return (
+      <div className="relative h-full w-full overflow-hidden bg-muted">
+        <img
+          src={desktop}
+          alt=""
+          aria-hidden="true"
+          loading={priority ? "eager" : "lazy"}
+          className="absolute inset-0 h-full w-full scale-110 object-cover blur-2xl"
+        />
+        <img
+          src={desktop}
+          alt={banner.title ?? "Auraluxe product"}
+          loading={priority ? "eager" : "lazy"}
+          fetchPriority={priority ? "high" : "auto"}
+          className="relative h-full w-full object-contain sm:object-[78%_center]"
+        />
+      </div>
+    );
+  }
+
   return (
     <picture>
       {mobile ? <source media="(max-width: 767px)" srcSet={mobile} /> : null}
