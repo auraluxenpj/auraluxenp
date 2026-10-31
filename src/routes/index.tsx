@@ -18,7 +18,7 @@ import { useSettings, whatsappLink } from "@/lib/store";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Auraluxe — Premium Ladies' Fashion in Nepalgunj" },
+      { title: "Auraluxe — Redefine your beauty" },
       {
         name: "description",
         content:
