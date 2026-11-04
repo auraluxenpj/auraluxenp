@@ -26,11 +26,11 @@ export const Route = createFileRoute("/")({
       },
       { property: "og:title", content: "Auraluxe — Premium Ladies' Fashion in Nepalgunj" },
       { property: "og:type", content: "website" },
-      { property: "og:url", content: "https://auraluxe.com.np/" },
-      { property: "og:image", content: "https://auraluxe.com.np/images/hero-auraluxe.jpg" },
+      { property: "og:url", content: "https://www.auraluxe.com.np/" },
+      { property: "og:image", content: "https://www.auraluxe.com.np/images/hero-auraluxe.jpg" },
       { property: "og:image:alt", content: "Auraluxe — premium ladies' fashion from Nepalgunj" },
       { name: "twitter:card", content: "summary_large_image" },
-      { name: "twitter:image", content: "https://auraluxe.com.np/images/hero-auraluxe.jpg" },
+      { name: "twitter:image", content: "https://www.auraluxe.com.np/images/hero-auraluxe.jpg" },
       {
         property: "og:description",
         content: "Hand-finished kurtis, co-ord sets and party wear, designed in Nepalgunj.",
@@ -87,9 +87,18 @@ function Rail({ products }: { products: Product[] }) {
 
 function Home() {
   const settings = useSettings();
-  const { data: products = [] } = useQuery({ queryKey: ["products"], queryFn: fetchProducts });
-  const { data: categories = [] } = useQuery({ queryKey: ["categories"], queryFn: fetchCategories });
-  const { data: banners = [] } = useQuery({ queryKey: ["banners"], queryFn: () => fetchBanners() });
+  const { data: products = [], isLoading: productsLoading } = useQuery({
+    queryKey: ["products"],
+    queryFn: fetchProducts,
+  });
+  const { data: categories = [], isLoading: categoriesLoading } = useQuery({
+    queryKey: ["categories"],
+    queryFn: fetchCategories,
+  });
+  const { data: banners = [], isLoading: bannersLoading } = useQuery({
+    queryKey: ["banners"],
+    queryFn: () => fetchBanners(),
+  });
   const { data: testimonials = [] } = useQuery({
     queryKey: ["testimonials"],
     queryFn: fetchTestimonials,
@@ -105,16 +114,24 @@ function Home() {
     String(b.created_at ?? "").localeCompare(String(a.created_at ?? "")),
   );
 
+  // Each product appears in only ONE section (in page order), so nothing repeats
+  const used = new Set<string>();
+  const pick = (list: Product[], n = 3) => {
+    const fresh = list.filter((p) => !used.has(p.id)).slice(0, n);
+    fresh.forEach((p) => used.add(p.id));
+    return fresh;
+  };
+
   // New arrivals: flagged ones first, then topped up with the newest in-stock products
-  const newCollection = [
+  const newCollection = pick([
     ...newestFirst.filter((p) => p.is_new),
     ...newestFirst.filter((p) => !p.is_new),
-  ].slice(0, 3);
-  const trending = inStock.filter((p) => p.is_featured).slice(0, 3);
-  const bestSellers = inStock.filter((p) => p.is_bestseller).slice(0, 3);
-  const offers = inStock
-    .filter((p) => p.sale_price != null && Number(p.sale_price) > 0)
-    .slice(0, 3);
+  ]);
+  const trending = pick(inStock.filter((p) => p.is_featured));
+  const bestSellers = pick(inStock.filter((p) => p.is_bestseller));
+  const offers = pick(
+    inStock.filter((p) => p.sale_price != null && Number(p.sale_price) > 0),
+  );
 
   // Hero: admin banners if you have any, otherwise your newest in-stock products
   const productSlides: Banner[] = newestFirst.slice(0, 4).map((p, i) => ({
@@ -138,7 +155,26 @@ function Home() {
 
   return (
     <SiteLayout>
-      <HeroCarousel banners={heroBanners} />
+      {bannersLoading || (heroSlides.length === 0 && productsLoading) ? (
+        <section className="relative -mx-5 -mt-2 overflow-hidden sm:-mx-8">
+          <h1 className="sr-only">Auraluxe — Premium Ladies' Fashion in Nepalgunj</h1>
+          <div className="aspect-[3/4] w-full animate-pulse bg-muted sm:aspect-[16/9] lg:aspect-[2/1]" />
+        </section>
+      ) : (
+        <HeroCarousel banners={heroBanners} />
+      )}
+
+      {/* Placeholder while categories load, so the page below doesn't jump */}
+      {categoriesLoading ? (
+        <>
+          <SectionHeading eyebrow="Find your fit" title="Shop by Category" />
+          <section className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-4" aria-hidden="true">
+            {Array.from({ length: 8 }).map((_, i) => (
+              <div key={i} className="aspect-[4/5] w-full animate-pulse rounded-3xl bg-muted" />
+            ))}
+          </section>
+        </>
+      ) : null}
 
       {/* Shop by category */}
       {activeCategories.length > 0 ? (
@@ -181,6 +217,20 @@ function Home() {
                 </Link>
               );
             })}
+          </section>
+        </>
+      ) : null}
+
+      {productsLoading ? (
+        <>
+          <SectionHeading eyebrow="Just landed" title="New Arrivals" />
+          <section
+            className="mt-6 grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-3"
+            aria-hidden="true"
+          >
+            {Array.from({ length: 3 }).map((_, i) => (
+              <div key={i} className="aspect-[3/4] w-full animate-pulse rounded-3xl bg-muted" />
+            ))}
           </section>
         </>
       ) : null}
