@@ -12,4 +12,4 @@ Allow: /
 
 User-agent: *
 Allow: /
-Sitemap: https://auraluxe.com.np/sitemap.xml
+Sitemap: https://www.auraluxe.com.np/sitemap.xml
