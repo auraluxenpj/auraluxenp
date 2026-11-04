@@ -1,150 +1,445 @@
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
 import {
-  Outlet,
-  Link,
-  createRootRouteWithContext,
-  useRouter,
-  HeadContent,
-  type ErrorComponentProps,
-  Scripts,
-} from "@tanstack/react-router";
-import { useEffect, type ReactNode } from "react";
+  bannerIsLive,
+  fetchBanners,
+  fetchCategories,
+  fetchProducts,
+  fetchTestimonials,
+  productImage,
+  type Banner,
+  type Product,
+} from "@/lib/data";
+import { SiteLayout } from "@/components/site/SiteLayout";
+import { ProductCard } from "@/components/site/ProductCard";
+import { HeroCarousel } from "@/components/site/HeroCarousel";
+import { useSettings, whatsappLink } from "@/lib/store";
 
-import appCss from "../styles.css?url";
-import appleTouchIcon from "@/assets/apple-touch-icon.png.asset.json";
-import { reportLovableError } from "../lib/lovable-error-reporting";
-import { CartProvider } from "@/lib/store";
-import { Toaster } from "@/components/ui/sonner";
-import { supabase } from "@/integrations/supabase/client";
-
-function NotFoundComponent() {
-  return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-4">
-      <div className="max-w-md text-center">
-        <h1 className="font-display text-7xl">404</h1>
-        <h2 className="mt-4 font-display text-xl">Page not found</h2>
-        <p className="mt-2 text-sm text-muted-foreground">
-          The page you're looking for doesn't exist or has been moved.
-        </p>
-        <div className="mt-6">
-          <Link
-            to="/"
-            className="inline-flex items-center justify-center rounded-full bg-primary px-6 py-3 text-[12px] uppercase tracking-[0.18em] text-primary-foreground"
-          >
-            Go home
-          </Link>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function ErrorComponent({ error, reset }: ErrorComponentProps) {
-  console.error(error);
-  const router = useRouter();
-  useEffect(() => {
-    reportLovableError(error, { boundary: "tanstack_root_error_component" });
-  }, [error]);
-
-  return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-4">
-      <div className="max-w-md text-center">
-        <h1 className="font-display text-2xl">This page didn't load</h1>
-        <p className="mt-2 text-sm text-muted-foreground">
-          Something went wrong on our end. You can try refreshing or head back home.
-        </p>
-        <div className="mt-6 flex flex-wrap justify-center gap-2">
-          <button
-            onClick={() => {
-              router.invalidate();
-              reset();
-            }}
-            className="rounded-full bg-primary px-6 py-3 text-[12px] uppercase tracking-[0.18em] text-primary-foreground"
-          >
-            Try again
-          </button>
-          <a
-            href="/"
-            className="rounded-full border border-border bg-secondary px-6 py-3 text-[12px] uppercase tracking-[0.18em]"
-          >
-            Go home
-          </a>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
-  head: () => ({
+export const Route = createFileRoute("/")({
+  // Fetch the data the hero needs BEFORE the page renders (on the server), so the
+  // hero photo is in the first HTML and starts downloading immediately.
+  // If any fetch fails we fall back to the normal client-side loading.
+  loader: async () => {
+    const safe = <T,>(p: Promise<T>) => p.catch(() => undefined);
+    const [products, categories, banners] = await Promise.all([
+      safe(fetchProducts()),
+      safe(fetchCategories()),
+      safe(fetchBanners()),
+    ]);
+    return { products, categories, banners };
+  },
+  staleTime: 60_000,
+  head: ({ loaderData }) => ({
     meta: [
-      { charSet: "utf-8" },
-      { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { name: "theme-color", content: "#faf7ec" },
-      { name: "apple-mobile-web-app-capable", content: "yes" },
-      { name: "apple-mobile-web-app-title", content: "Auraluxe" },
-      { name: "apple-mobile-web-app-status-bar-style", content: "default" },
-      { title: "Auraluxe — Ladies' Fashion, Nepalgunj" },
+      { title: "Auraluxe — Redefine your beauty" },
       {
         name: "description",
         content:
-          "Auraluxe is a ladies' fashion label in Nepalgunj: kurtis, co-ord sets, suits, dresses and party wear, delivered across Nepal.",
+          "Shop hand-finished kurtis, co-ord sets, suits, dresses and party wear from Auraluxe, Nepalgunj. Secure QR or bank transfer payment across Nepal.",
       },
+      { property: "og:title", content: "Auraluxe — Premium Ladies' Fashion in Nepalgunj" },
       { property: "og:type", content: "website" },
+      { property: "og:url", content: "https://www.auraluxe.com.np/" },
+      { property: "og:image", content: "https://www.auraluxe.com.np/images/hero-auraluxe.jpg" },
+      { property: "og:image:alt", content: "Auraluxe — premium ladies' fashion from Nepalgunj" },
       { name: "twitter:card", content: "summary_large_image" },
-    ],
-    links: [
-      { rel: "stylesheet", href: appCss },
-      { rel: "preconnect", href: "https://fonts.googleapis.com" },
-      { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
+      { name: "twitter:image", content: "https://www.auraluxe.com.np/images/hero-auraluxe.jpg" },
       {
-        rel: "stylesheet",
-        href: "https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Jost:wght@300;400;500;600&display=swap",
+        property: "og:description",
+        content: "Hand-finished kurtis, co-ord sets and party wear, designed in Nepalgunj.",
       },
-      { rel: "icon", href: "/favicon.png?v=master-20261027", type: "image/png", sizes: "64x64" },
-      { rel: "apple-touch-icon", href: appleTouchIcon.url, sizes: "180x180" },
-      { rel: "manifest", href: "/manifest.webmanifest" },
     ],
+    links: (() => {
+      const img = heroImageFor(loaderData);
+      return img ? [{ rel: "preload", as: "image", href: img, fetchPriority: "high" } as any] : [];
+    })(),
   }),
-  shellComponent: RootShell,
-  component: RootComponent,
-  notFoundComponent: NotFoundComponent,
-  errorComponent: ErrorComponent,
+  component: Home,
 });
 
-function RootShell({ children }: { children: ReactNode }) {
+// The image that will be the first hero slide (same rules the page uses below)
+function heroImageFor(data?: { products?: Product[]; banners?: Banner[] }): string | null {
+  const heroBanner = (data?.banners ?? []).filter(bannerIsLive).find((b) => b.placement === "hero");
+  if (heroBanner) return heroBanner.image_url ?? null;
+  const newest = (data?.products ?? [])
+    .filter((p) => p.is_published && Number(p.stock) > 0)
+    .sort((a, b) => String(b.created_at ?? "").localeCompare(String(a.created_at ?? "")))[0];
+  return newest ? productImage(newest) : null;
+}
+
+const FALLBACK_HERO: Banner = {
+  id: "default-hero",
+  title: "The season's silhouette, cut for comfort.",
+  subtitle:
+    "Hand-finished kurtis, co-ord sets and party wear in breathable georgette and cotton — designed in Nepalgunj, delivered to your door.",
+  image_url: "/images/hero-auraluxe.jpg",
+  mobile_image_url: null,
+  button_text: "Shop New In",
+  button_link: "/shop",
+  placement: "hero",
+  sort_order: 0,
+  is_active: true,
+  starts_at: null,
+  ends_at: null,
+  created_at: "",
+};
+
+function SectionHeading({ eyebrow, title }: { eyebrow: string; title: string }) {
   return (
-    <html lang="en">
-      <head>
-        <HeadContent />
-      </head>
-      <body>
-        {children}
-        <Scripts />
-      </body>
-    </html>
+    <div className="mt-16 flex items-end justify-between">
+      <div>
+        <p className="eyebrow">{eyebrow}</p>
+        <h2 className="mt-2 font-display text-4xl">{title}</h2>
+      </div>
+      <Link
+        to="/shop"
+        className="hidden text-[13px] uppercase tracking-[0.18em] text-foreground/60 underline decoration-accent decoration-2 underline-offset-4 hover:text-brand sm:block"
+      >
+        View all
+      </Link>
+    </div>
   );
 }
 
-function RootComponent() {
-  const { queryClient } = Route.useRouteContext();
-  const router = useRouter();
+function Rail({ products }: { products: Product[] }) {
+  if (products.length === 0) return null;
+  return (
+    <section className="mt-6 grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-3">
+      {products.map((p) => (
+        <ProductCard key={p.id} product={p} />
+      ))}
+    </section>
+  );
+}
 
-  useEffect(() => {
-    const { data } = supabase.auth.onAuthStateChange((event) => {
-      if (event !== "SIGNED_IN" && event !== "SIGNED_OUT" && event !== "USER_UPDATED") return;
-      router.invalidate();
-      if (event !== "SIGNED_OUT") queryClient.invalidateQueries();
-    });
-    return () => data.subscription.unsubscribe();
-  }, [router, queryClient]);
+function Home() {
+  const settings = useSettings();
+  const initial = Route.useLoaderData();
+  const { data: products = [], isLoading: productsLoading } = useQuery({
+    queryKey: ["products"],
+    queryFn: fetchProducts,
+    initialData: initial?.products,
+    staleTime: 60_000,
+  });
+  const { data: categories = [], isLoading: categoriesLoading } = useQuery({
+    queryKey: ["categories"],
+    queryFn: fetchCategories,
+    initialData: initial?.categories,
+    staleTime: 60_000,
+  });
+  const { data: banners = [], isLoading: bannersLoading } = useQuery({
+    queryKey: ["banners"],
+    queryFn: () => fetchBanners(),
+    initialData: initial?.banners,
+    staleTime: 60_000,
+  });
+  const { data: testimonials = [] } = useQuery({
+    queryKey: ["testimonials"],
+    queryFn: fetchTestimonials,
+  });
+
+  const live = banners.filter(bannerIsLive);
+  const heroSlides = live.filter((b) => b.placement === "hero");
+  const promo = live.filter((b) => b.placement === "promo")[0];
+
+  // Only products that are published AND actually in stock
+  const inStock = products.filter((p) => p.is_published && Number(p.stock) > 0);
+  const newestFirst = [...inStock].sort((a, b) =>
+    String(b.created_at ?? "").localeCompare(String(a.created_at ?? "")),
+  );
+
+  // Each product appears in only ONE section (in page order), so nothing repeats
+  const used = new Set<string>();
+  const pick = (list: Product[], n = 3) => {
+    const fresh = list.filter((p) => !used.has(p.id)).slice(0, n);
+    fresh.forEach((p) => used.add(p.id));
+    return fresh;
+  };
+
+  // New arrivals: flagged ones first, then topped up with the newest in-stock products
+  const newCollection = pick([
+    ...newestFirst.filter((p) => p.is_new),
+    ...newestFirst.filter((p) => !p.is_new),
+  ]);
+  const trending = pick(inStock.filter((p) => p.is_featured));
+  const bestSellers = pick(inStock.filter((p) => p.is_bestseller));
+  const offers = pick(
+    inStock.filter((p) => p.sale_price != null && Number(p.sale_price) > 0),
+  );
+
+  // Hero: admin banners if you have any, otherwise your newest in-stock products
+  const productSlides: Banner[] = newestFirst.slice(0, 4).map((p, i) => ({
+    ...FALLBACK_HERO,
+    id: `product-hero-${p.id}`,
+    title: p.name,
+    subtitle: "Now in stock — limited pieces, delivered across Nepal.",
+    image_url: productImage(p),
+    button_text: "Shop now",
+    button_link: "/shop",
+    sort_order: i,
+  }));
+  const heroBanners =
+    heroSlides.length > 0 ? heroSlides : productSlides.length > 0 ? productSlides : [FALLBACK_HERO];
+
+  const activeCategories = categories.filter((c) => c.is_active).slice(0, 8);
+  const categoryImage = (categoryId: string, fallback?: string | null) =>
+    fallback ??
+    inStock.find((p) => p.category_id === categoryId)?.images?.[0] ??
+    null;
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <CartProvider>
-        <Outlet />
-        <Toaster position="top-center" />
-      </CartProvider>
-    </QueryClientProvider>
+    <SiteLayout>
+      {bannersLoading || (heroSlides.length === 0 && productsLoading) ? (
+        <section className="relative -mx-5 -mt-2 overflow-hidden sm:-mx-8">
+          <h1 className="sr-only">Auraluxe — Premium Ladies' Fashion in Nepalgunj</h1>
+          <div className="aspect-[3/4] w-full animate-pulse bg-muted sm:aspect-[16/9] lg:aspect-[2/1]" />
+        </section>
+      ) : (
+        <HeroCarousel banners={heroBanners} />
+      )}
+
+      {/* Placeholder while categories load, so the page below doesn't jump */}
+      {categoriesLoading ? (
+        <>
+          <SectionHeading eyebrow="Find your fit" title="Shop by Category" />
+          <section className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-4" aria-hidden="true">
+            {Array.from({ length: 8 }).map((_, i) => (
+              <div key={i} className="aspect-[4/5] w-full animate-pulse rounded-3xl bg-muted" />
+            ))}
+          </section>
+        </>
+      ) : null}
+
+      {/* Shop by category */}
+      {activeCategories.length > 0 ? (
+        <>
+          <SectionHeading eyebrow="Find your fit" title="Shop by Category" />
+          <section className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-4">
+            {activeCategories.map((c) => {
+              const img = categoryImage(c.id, c.image_url);
+              return (
+                <Link
+                  key={c.id}
+                  to="/shop"
+                  search={{ category: c.slug }}
+                  className="group glass relative overflow-hidden rounded-3xl transition hover:-translate-y-1"
+                >
+                  <div className="aspect-[4/5] w-full overflow-hidden bg-muted">
+                    {img ? (
+                      <img
+                        src={img}
+                        alt={c.name}
+                        loading="lazy"
+                        width={768}
+                        height={960}
+                        className="h-full w-full object-cover transition duration-500 group-hover:scale-105 motion-reduce:transition-none motion-reduce:group-hover:scale-100"
+                      />
+                    ) : (
+                      <div className="grid h-full w-full place-items-center bg-gradient-to-br from-brand/20 via-secondary to-accent/30">
+                        <span className="font-display text-2xl text-primary">{c.name}</span>
+                      </div>
+                    )}
+                  </div>
+                  <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-ink/70 to-transparent p-4 pt-10">
+                    <div className="flex items-center justify-between">
+                      <span className="font-display text-lg text-primary-foreground drop-shadow">
+                        {c.name}
+                      </span>
+                      <span className="text-primary-foreground/90 transition group-hover:translate-x-1">→</span>
+                    </div>
+                  </div>
+                </Link>
+              );
+            })}
+          </section>
+        </>
+      ) : null}
+
+      {productsLoading ? (
+        <>
+          <SectionHeading eyebrow="Just landed" title="New Arrivals" />
+          <section
+            className="mt-6 grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-3"
+            aria-hidden="true"
+          >
+            {Array.from({ length: 3 }).map((_, i) => (
+              <div key={i} className="aspect-[3/4] w-full animate-pulse rounded-3xl bg-muted" />
+            ))}
+          </section>
+        </>
+      ) : null}
+
+      {newCollection.length > 0 ? (
+        <>
+          <SectionHeading eyebrow="Just landed" title="New Arrivals" />
+          <Rail products={newCollection} />
+        </>
+      ) : null}
+
+      {/* Promotional campaign banner */}
+      {promo ? (
+        <section className="glass-strong mt-16 overflow-hidden rounded-3xl">
+          <div className="grid md:grid-cols-2">
+            {promo.image_url ? (
+              <img
+                src={promo.image_url}
+                alt={promo.title ?? "Auraluxe promotion"}
+                loading="lazy"
+                width={1024}
+                height={768}
+                className="h-full max-h-96 w-full object-cover"
+              />
+            ) : null}
+            <div className="flex flex-col justify-center p-8 sm:p-12">
+              <p className="eyebrow">Limited offer</p>
+              {promo.title ? <h2 className="mt-3 font-display text-4xl">{promo.title}</h2> : null}
+              {promo.subtitle ? (
+                <p className="mt-3 text-[15px] text-muted-foreground">{promo.subtitle}</p>
+              ) : null}
+              {promo.button_link ? (
+                <Link
+                  to={promo.button_link as "/shop"}
+                  className="mt-6 inline-block w-fit rounded-full bg-primary px-7 py-3.5 text-[13px] uppercase tracking-[0.18em] text-primary-foreground transition hover:bg-brand"
+                >
+                  {promo.button_text ?? "Shop now"}
+                </Link>
+              ) : null}
+            </div>
+          </div>
+        </section>
+      ) : null}
+
+      {trending.length > 0 ? (
+        <>
+          <SectionHeading eyebrow="Loved right now" title="Trending Now" />
+          <Rail products={trending} />
+        </>
+      ) : null}
+
+      {bestSellers.length > 0 ? (
+        <>
+          <SectionHeading eyebrow="Most wanted" title="Best Sellers" />
+          <Rail products={bestSellers} />
+        </>
+      ) : null}
+
+      {offers.length > 0 ? (
+        <>
+          <SectionHeading eyebrow="Reduced this week" title="Special Offers" />
+          <Rail products={offers} />
+        </>
+      ) : null}
+
+      {/* Editorial tiles */}
+      <section className="mt-16 grid gap-5 md:grid-cols-3">
+        <Link to="/about" className="group glass relative overflow-hidden rounded-3xl p-8 transition hover:-translate-y-1">
+          <p className="eyebrow">Our story</p>
+          <h3 className="mt-3 font-display text-3xl">Designed in Nepalgunj</h3>
+          <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
+            The Auraluxe atelier, our fabrics, and the hands behind every piece.
+          </p>
+          <span className="mt-5 inline-block text-[12px] uppercase tracking-[0.18em] text-brand transition group-hover:translate-x-1">
+            Read more →
+          </span>
+        </Link>
+        <Link
+          to="/shop"
+          search={{ sort: "newest" }}
+          className="group glass relative overflow-hidden rounded-3xl p-8 transition hover:-translate-y-1"
+        >
+          <p className="eyebrow">The edit</p>
+          <h3 className="mt-3 font-display text-3xl">New-season arrivals</h3>
+          <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
+            Fresh silhouettes and festive pieces, added as they leave the studio.
+          </p>
+          <span className="mt-5 inline-block text-[12px] uppercase tracking-[0.18em] text-brand transition group-hover:translate-x-1">
+            Shop new in →
+          </span>
+        </Link>
+        <Link to="/contact" className="group glass relative overflow-hidden rounded-3xl p-8 transition hover:-translate-y-1">
+          <p className="eyebrow">Visit us</p>
+          <h3 className="mt-3 font-display text-3xl">The Nepalgunj store</h3>
+          <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
+            {settings["address"] ?? "Come try your favourites in person."}
+          </p>
+          <span className="mt-5 inline-block text-[12px] uppercase tracking-[0.18em] text-brand transition group-hover:translate-x-1">
+            Directions & hours →
+          </span>
+        </Link>
+      </section>
+
+      {/* Testimonials */}
+      {testimonials.length > 0 ? (
+        <>
+          <SectionHeading eyebrow="In their words" title="Customer Stories" />
+          <section className="mt-6 grid gap-5 sm:grid-cols-3">
+            {testimonials.slice(0, 3).map((t) => (
+              <blockquote key={t.id} className="glass rounded-3xl p-6">
+                <p className="font-display text-xl leading-snug">“{t.body}”</p>
+                <footer className="mt-4 text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
+                  {t.author_name}
+                  {t.location ? ` · ${t.location}` : ""}
+                </footer>
+              </blockquote>
+            ))}
+          </section>
+        </>
+      ) : null}
+
+      {/* Social + contact CTA */}
+      <section className="glass-strong mt-16 grid gap-8 rounded-3xl p-8 sm:p-12 md:grid-cols-2">
+        <div>
+          <p className="eyebrow">Follow along</p>
+          <h2 className="mt-3 font-display text-4xl">The Auraluxe edit, daily</h2>
+          <p className="mt-3 max-w-sm text-[15px] text-muted-foreground">
+            Styling notes, new arrivals and early access on Instagram and TikTok.
+          </p>
+          <div className="mt-6 flex flex-wrap gap-3">
+            {settings["instagram"] ? (
+              <a
+                href={settings["instagram"]}
+                target="_blank"
+                rel="noreferrer"
+                className="rounded-full border border-brand/30 bg-secondary px-6 py-3 text-[12px] uppercase tracking-[0.18em] text-primary"
+              >
+                Instagram
+              </a>
+            ) : null}
+            {settings["tiktok"] ? (
+              <a
+                href={settings["tiktok"]}
+                target="_blank"
+                rel="noreferrer"
+                className="rounded-full border border-brand/30 bg-secondary px-6 py-3 text-[12px] uppercase tracking-[0.18em] text-primary"
+              >
+                TikTok
+              </a>
+            ) : null}
+          </div>
+        </div>
+        <div className="flex flex-col justify-center gap-3">
+          <p className="text-[15px] text-muted-foreground">
+            Prefer to order by message? Send us the piece you like on WhatsApp and we'll reserve it.
+          </p>
+          <a
+            href={whatsappLink(
+              settings["whatsapp"] ?? "",
+              "Hello Auraluxe! I'd like to place an order.",
+            )}
+            target="_blank"
+            rel="noreferrer"
+            className="rounded-full bg-primary px-7 py-3.5 text-center text-[13px] uppercase tracking-[0.18em] text-primary-foreground transition hover:bg-brand"
+          >
+            Order on WhatsApp
+          </a>
+          <Link
+            to="/contact"
+            className="rounded-full border border-brand/30 bg-secondary px-7 py-3.5 text-center text-[13px] uppercase tracking-[0.18em] text-primary"
+          >
+            Visit the store
+          </Link>
+        </div>
+      </section>
+    </SiteLayout>
   );
 }
