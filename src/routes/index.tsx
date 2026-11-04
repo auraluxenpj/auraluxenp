@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
   bannerIsLive,
@@ -16,7 +17,20 @@ import { HeroCarousel } from "@/components/site/HeroCarousel";
 import { useSettings, whatsappLink } from "@/lib/store";
 
 export const Route = createFileRoute("/")({
-  head: () => ({
+  // Fetch the data the hero needs BEFORE the page renders (on the server), so the
+  // hero photo is in the first HTML and starts downloading immediately.
+  // If any fetch fails we fall back to the normal client-side loading.
+  loader: async () => {
+    const safe = <T,>(p: Promise<T>) => p.catch(() => undefined);
+    const [products, categories, banners] = await Promise.all([
+      safe(fetchProducts()),
+      safe(fetchCategories()),
+      safe(fetchBanners()),
+    ]);
+    return { products, categories, banners };
+  },
+  staleTime: 60_000,
+  head: ({ loaderData }) => ({
     meta: [
       { title: "Auraluxe — Redefine your beauty" },
       {
@@ -36,9 +50,23 @@ export const Route = createFileRoute("/")({
         content: "Hand-finished kurtis, co-ord sets and party wear, designed in Nepalgunj.",
       },
     ],
+    links: (() => {
+      const img = heroImageFor(loaderData);
+      return img ? [{ rel: "preload", as: "image", href: img, fetchPriority: "high" } as any] : [];
+    })(),
   }),
   component: Home,
 });
+
+// The image that will be the first hero slide (same rules the page uses below)
+function heroImageFor(data?: { products?: Product[]; banners?: Banner[] }): string | null {
+  const heroBanner = (data?.banners ?? []).filter(bannerIsLive).find((b) => b.placement === "hero");
+  if (heroBanner) return heroBanner.image_url ?? null;
+  const newest = (data?.products ?? [])
+    .filter((p) => p.is_published && Number(p.stock) > 0)
+    .sort((a, b) => String(b.created_at ?? "").localeCompare(String(a.created_at ?? "")))[0];
+  return newest ? productImage(newest) : null;
+}
 
 const FALLBACK_HERO: Banner = {
   id: "default-hero",
@@ -85,19 +113,122 @@ function Rail({ products }: { products: Product[] }) {
   );
 }
 
+// Category tile whose picture comes from the in-stock products of that category
+// and gently cycles through them (only while the tile is on screen).
+function CategoryTile({
+  name,
+  slug,
+  images,
+  offset,
+}: {
+  name: string;
+  slug: string;
+  images: string[];
+  offset: number;
+}) {
+  const count = images.length;
+  const imagesKey = images.join("|");
+  const boxRef = useRef<HTMLDivElement>(null);
+  const activeRef = useRef(0);
+  const [active, setActive] = useState(0);
+  const [started, setStarted] = useState(false);
+  const [inView, setInView] = useState(false);
+
+  useEffect(() => {
+    const el = boxRef.current;
+    if (!el || typeof IntersectionObserver === "undefined") {
+      setInView(true);
+      return;
+    }
+    const io = new IntersectionObserver(([entry]) => setInView(entry.isIntersecting));
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
+
+  useEffect(() => {
+    if (count < 2 || !inView) return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    let interval: number | undefined;
+    const startTimer = window.setTimeout(() => {
+      setStarted(true);
+      interval = window.setInterval(() => {
+        const next = (activeRef.current + 1) % count;
+        const img = new Image();
+        img.onload = () => {
+          activeRef.current = next;
+          setActive(next);
+        };
+        img.src = images[next];
+      }, 5000);
+    }, 2000 + offset * 700);
+    return () => {
+      window.clearTimeout(startTimer);
+      if (interval) window.clearInterval(interval);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [count, imagesKey, offset, inView]);
+
+  const shown = count > 0 ? active % count : 0;
+  const visible = started ? images : images.slice(0, 1);
+
+  return (
+    <Link
+      to="/shop"
+      search={{ category: slug }}
+      className="group glass relative overflow-hidden rounded-3xl transition hover:-translate-y-1"
+    >
+      <div ref={boxRef} className="relative aspect-[4/5] w-full overflow-hidden bg-muted">
+        {count > 0 ? (
+          visible.map((src, i) => (
+            <img
+              key={src}
+              src={src}
+              alt={i === shown ? name : ""}
+              aria-hidden={i !== shown}
+              loading="lazy"
+              width={768}
+              height={960}
+              className={`absolute inset-0 h-full w-full object-cover transition-[opacity,transform] duration-700 group-hover:scale-105 motion-reduce:transition-none motion-reduce:group-hover:scale-100 ${
+                i === shown ? "opacity-100" : "opacity-0"
+              }`}
+            />
+          ))
+        ) : (
+          <div className="grid h-full w-full place-items-center bg-gradient-to-br from-brand/20 via-secondary to-accent/30">
+            <span className="font-display text-2xl text-primary">{name}</span>
+          </div>
+        )}
+      </div>
+      <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-ink/70 to-transparent p-4 pt-10">
+        <div className="flex items-center justify-between">
+          <span className="font-display text-lg text-primary-foreground drop-shadow">{name}</span>
+          <span className="text-primary-foreground/90 transition group-hover:translate-x-1">→</span>
+        </div>
+      </div>
+    </Link>
+  );
+}
+
 function Home() {
   const settings = useSettings();
+  const initial = Route.useLoaderData();
   const { data: products = [], isLoading: productsLoading } = useQuery({
     queryKey: ["products"],
     queryFn: fetchProducts,
+    initialData: initial?.products,
+    staleTime: 60_000,
   });
   const { data: categories = [], isLoading: categoriesLoading } = useQuery({
     queryKey: ["categories"],
     queryFn: fetchCategories,
+    initialData: initial?.categories,
+    staleTime: 60_000,
   });
   const { data: banners = [], isLoading: bannersLoading } = useQuery({
     queryKey: ["banners"],
     queryFn: () => fetchBanners(),
+    initialData: initial?.banners,
+    staleTime: 60_000,
   });
   const { data: testimonials = [] } = useQuery({
     queryKey: ["testimonials"],
@@ -148,10 +279,17 @@ function Home() {
     heroSlides.length > 0 ? heroSlides : productSlides.length > 0 ? productSlides : [FALLBACK_HERO];
 
   const activeCategories = categories.filter((c) => c.is_active).slice(0, 8);
-  const categoryImage = (categoryId: string, fallback?: string | null) =>
-    fallback ??
-    inStock.find((p) => p.category_id === categoryId)?.images?.[0] ??
-    null;
+  // Category pictures: newest in-stock products of that category (up to 3),
+  // falling back to the image set in admin, then to a plain coloured tile.
+  const categoryImages = (categoryId: string, fallback?: string | null): string[] => {
+    const own = newestFirst
+      .filter((p) => p.category_id === categoryId)
+      .map((p) => productImage(p))
+      .filter(Boolean);
+    const unique = Array.from(new Set(own)).slice(0, 3);
+    if (unique.length > 0) return unique;
+    return fallback ? [fallback] : [];
+  };
 
   return (
     <SiteLayout>
@@ -181,42 +319,15 @@ function Home() {
         <>
           <SectionHeading eyebrow="Find your fit" title="Shop by Category" />
           <section className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-4">
-            {activeCategories.map((c) => {
-              const img = categoryImage(c.id, c.image_url);
-              return (
-                <Link
-                  key={c.id}
-                  to="/shop"
-                  search={{ category: c.slug }}
-                  className="group glass relative overflow-hidden rounded-3xl transition hover:-translate-y-1"
-                >
-                  <div className="aspect-[4/5] w-full overflow-hidden bg-muted">
-                    {img ? (
-                      <img
-                        src={img}
-                        alt={c.name}
-                        loading="lazy"
-                        width={768}
-                        height={960}
-                        className="h-full w-full object-cover transition duration-500 group-hover:scale-105 motion-reduce:transition-none motion-reduce:group-hover:scale-100"
-                      />
-                    ) : (
-                      <div className="grid h-full w-full place-items-center bg-gradient-to-br from-brand/20 via-secondary to-accent/30">
-                        <span className="font-display text-2xl text-primary">{c.name}</span>
-                      </div>
-                    )}
-                  </div>
-                  <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-ink/70 to-transparent p-4 pt-10">
-                    <div className="flex items-center justify-between">
-                      <span className="font-display text-lg text-primary-foreground drop-shadow">
-                        {c.name}
-                      </span>
-                      <span className="text-primary-foreground/90 transition group-hover:translate-x-1">→</span>
-                    </div>
-                  </div>
-                </Link>
-              );
-            })}
+            {activeCategories.map((c, i) => (
+              <CategoryTile
+                key={c.id}
+                name={c.name}
+                slug={c.slug}
+                images={categoryImages(c.id, c.image_url)}
+                offset={i}
+              />
+            ))}
           </section>
         </>
       ) : null}
