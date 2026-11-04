@@ -162,6 +162,27 @@ function StylistPage() {
         </section>
       ) : null}
 
+      <section aria-labelledby="stylist-how" className="mt-14 grid gap-6 sm:grid-cols-3">
+        <h2 id="stylist-how" className="font-display text-2xl sm:col-span-3 sm:text-3xl">How the AI Stylist works</h2>
+        <div>
+          <h3 className="text-sm font-medium">1. Describe what you need</h3>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Share the occasion — a wedding, festival, office day or family gathering — the look you like, and an optional budget in rupees.
+          </p>
+        </div>
+        <div>
+          <h3 className="text-sm font-medium">2. Get picks from our live collection</h3>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Suggestions only come from published, in-stock AURALUXE pieces such as kurtis, palazzo sets, co-ords and sarees, each with a short reason it suits you.
+          </p>
+        </div>
+        <div>
+          <h3 className="text-sm font-medium">3. Choose size and colour, then shop</h3>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Pick your size and colour on each suggestion and add one or all of them to your bag. Prefer to talk to us? Use the WhatsApp button for help from our Nepalgunj store.
+          </p>
+        </div>
+      </section>
     </main>
   );
 }
