@@ -32,6 +32,7 @@ import { Route as AuthenticatedAdminOrdersRouteImport } from './routes/_authenti
 import { Route as AuthenticatedAdminPosRouteImport } from './routes/_authenticated/admin.pos'
 import { Route as AuthenticatedAdminPurchasesRouteImport } from './routes/_authenticated/admin.purchases'
 import { Route as AuthenticatedAdminSettingsRouteImport } from './routes/_authenticated/admin.settings'
+import { Route as ApiPublicInventorySyncRouteImport } from './routes/api.public.inventory-sync'
 import { Route as ShopProductSlugRouteImport } from './routes/shop.product.$slug'
 import { Route as AuthenticatedAdminKhataIndexRouteImport } from './routes/_authenticated/admin.khata.index'
 import { Route as AuthenticatedAdminKhataIdRouteImport } from './routes/_authenticated/admin.khata.$id'
@@ -167,6 +168,11 @@ const AuthenticatedAdminSettingsRoute =
     path: '/settings',
     getParentRoute: () => AuthenticatedAdminRoute,
   } as any)
+const ApiPublicInventorySyncRoute = ApiPublicInventorySyncRouteImport.update({
+  id: '/api/public/inventory-sync',
+  path: '/api/public/inventory-sync',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ShopProductSlugRoute = ShopProductSlugRouteImport.update({
   id: '/shop/product/$slug',
   path: '/shop/product/$slug',
@@ -261,6 +267,7 @@ export interface FileRoutesByFullPath {
   '/admin/pos': typeof AuthenticatedAdminPosRouteWithChildren
   '/admin/purchases': typeof AuthenticatedAdminPurchasesRouteWithChildren
   '/admin/settings': typeof AuthenticatedAdminSettingsRoute
+  '/api/public/inventory-sync': typeof ApiPublicInventorySyncRoute
   '/shop/product/$slug': typeof ShopProductSlugRoute
   '/admin/': typeof AuthenticatedAdminIndexRoute
   '/admin/khata/$id': typeof AuthenticatedAdminKhataIdRoute
@@ -293,6 +300,7 @@ export interface FileRoutesByTo {
   '/admin/inventory-health': typeof AuthenticatedAdminInventoryHealthRoute
   '/admin/orders': typeof AuthenticatedAdminOrdersRoute
   '/admin/settings': typeof AuthenticatedAdminSettingsRoute
+  '/api/public/inventory-sync': typeof ApiPublicInventorySyncRoute
   '/shop/product/$slug': typeof ShopProductSlugRoute
   '/admin': typeof AuthenticatedAdminIndexRoute
   '/admin/khata/$id': typeof AuthenticatedAdminKhataIdRoute
@@ -331,6 +339,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/pos': typeof AuthenticatedAdminPosRouteWithChildren
   '/_authenticated/admin/purchases': typeof AuthenticatedAdminPurchasesRouteWithChildren
   '/_authenticated/admin/settings': typeof AuthenticatedAdminSettingsRoute
+  '/api/public/inventory-sync': typeof ApiPublicInventorySyncRoute
   '/shop/product/$slug': typeof ShopProductSlugRoute
   '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
   '/_authenticated/admin/khata/$id': typeof AuthenticatedAdminKhataIdRoute
@@ -369,6 +378,7 @@ export interface FileRouteTypes {
     | '/admin/pos'
     | '/admin/purchases'
     | '/admin/settings'
+    | '/api/public/inventory-sync'
     | '/shop/product/$slug'
     | '/admin/'
     | '/admin/khata/$id'
@@ -401,6 +411,7 @@ export interface FileRouteTypes {
     | '/admin/inventory-health'
     | '/admin/orders'
     | '/admin/settings'
+    | '/api/public/inventory-sync'
     | '/shop/product/$slug'
     | '/admin'
     | '/admin/khata/$id'
@@ -438,6 +449,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/pos'
     | '/_authenticated/admin/purchases'
     | '/_authenticated/admin/settings'
+    | '/api/public/inventory-sync'
     | '/shop/product/$slug'
     | '/_authenticated/admin/'
     | '/_authenticated/admin/khata/$id'
@@ -465,6 +477,7 @@ export interface RootRouteChildren {
   TrackRoute: typeof TrackRoute
   PagesSlugRoute: typeof PagesSlugRoute
   ShopIndexRoute: typeof ShopIndexRoute
+  ApiPublicInventorySyncRoute: typeof ApiPublicInventorySyncRoute
   ShopProductSlugRoute: typeof ShopProductSlugRoute
 }
 
@@ -630,6 +643,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/admin/settings'
       preLoaderRoute: typeof AuthenticatedAdminSettingsRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/api/public/inventory-sync': {
+      id: '/api/public/inventory-sync'
+      path: '/api/public/inventory-sync'
+      fullPath: '/api/public/inventory-sync'
+      preLoaderRoute: typeof ApiPublicInventorySyncRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/shop/product/$slug': {
       id: '/shop/product/$slug'
@@ -833,6 +853,7 @@ const rootRouteChildren: RootRouteChildren = {
   TrackRoute: TrackRoute,
   PagesSlugRoute: PagesSlugRoute,
   ShopIndexRoute: ShopIndexRoute,
+  ApiPublicInventorySyncRoute: ApiPublicInventorySyncRoute,
   ShopProductSlugRoute: ShopProductSlugRoute,
 }
 export const routeTree = rootRouteImport
