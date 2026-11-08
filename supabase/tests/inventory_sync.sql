@@ -60,6 +60,18 @@ BEGIN
  ASSERT r->1->>'result'='no-match' AND r->2->>'result'='no-match','ambiguous and unknown SKUs are skipped';
  ASSERT (SELECT stock FROM public.products WHERE id=p3)=5,'ambiguous product untouched';
 
+ -- Late reader: an order lands after the acknowledgement, and the caller reads that new stock as "expected".
+ PERFORM public.inv_sync_ack(ARRAY['AL-S-200']);
+ UPDATE public.products SET stock=2 WHERE id=p2;
+ r:=public.inv_sync_push('[{"sku":"AL-S-200","stock":3,"expected":2}]');
+ ASSERT r->0->>'result'='changed' AND (SELECT stock FROM public.products WHERE id=p2)=2,'order placed after acknowledgement is not overwritten even if expected was read late';
+ PERFORM public.inv_sync_ack(ARRAY['AL-S-200']); PERFORM public.inv_sync_recorded(ARRAY[(SELECT id FROM public.inventory_sync_acks WHERE sku='al-s-200' AND status='pending')]);
+ r:=public.inv_sync_push('[{"sku":"AL-S-200","stock":3,"expected":2}]');
+ ASSERT r->0->>'result'='applied','push works again once the sale has been acknowledged and recorded';
+ -- A SKU that was never acknowledged has no agreed baseline, so it is not pushed.
+ INSERT INTO public.products(id,name,sku,stock) VALUES(gen_random_uuid(),'Fresh','AL-N-400',4);
+ r:=public.inv_sync_push('[{"sku":"AL-N-400","stock":9,"expected":4}]');
+ ASSERT r->0->>'result'='changed','never-acknowledged SKU is skipped';
  -- Bad input is rejected as a whole.
  denied:=false; BEGIN PERFORM public.inv_sync_push('[{"sku":"AL-S-200","stock":-1,"expected":3}]'); EXCEPTION WHEN OTHERS THEN denied:=true; END; ASSERT denied,'negative stock rejected';
  denied:=false; BEGIN PERFORM public.inv_sync_push('{"sku":"x"}'); EXCEPTION WHEN OTHERS THEN denied:=true; END; ASSERT denied,'non-array rejected';
