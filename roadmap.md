@@ -3,6 +3,7 @@
 ## Automatic shared stock with BizSathi (Nov 12)
 - [x] Inspect both apps' existing manual sync, size matching and stock writers; identify absence of live sync history and unresolved catalogue exceptions.
 - [x] Implementation plan approved; prepared a disconnected versioned request contract and safety-rule tests. Exact SQL review/application remains gated by recovery/isolation and migration-history reconciliation.
+- [x] 13 new protocol tests and 14 existing sync/size-stock tests pass (27 total); automatic build OK. No new endpoints, migrations, jobs or live stock changes; two-app operation remains unverified.
 - [ ] Reconcile migration history: inspection found core SQL hash mismatch/unmatched row and missing recorded rows for sync migrations; no safe automatic repair available.
 - [ ] Verify fresh recovery evidence and isolated test environment; confirm fulfilment branch and reviewed opening balances/mapping.
 - [ ] Implement authoritative Auraluxe inventory, immutable movements, idempotent operations and guarded stock writers.
