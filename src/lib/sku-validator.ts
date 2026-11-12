@@ -1,5 +1,9 @@
 export function normalizeSKU(value: unknown): string {
-  return String(value ?? "").trim().toUpperCase();
+  return String(value ?? "")
+    .trim()
+    .toUpperCase()
+    .replace(/\s+/g, "")
+    .replace(/-+/g, "-");
 }
 
 export function validateSKU(value: unknown, options?: { allowEmpty?: boolean }): {
@@ -11,7 +15,11 @@ export function validateSKU(value: unknown, options?: { allowEmpty?: boolean }):
 
   if (!normalized) {
     if (options?.allowEmpty) {
-      return { valid: true, normalized, error: undefined };
+      return {
+        valid: true,
+        normalized,
+        error: undefined,
+      };
     }
 
     return {
