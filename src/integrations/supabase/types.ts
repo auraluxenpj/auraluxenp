@@ -800,6 +800,7 @@ export type Database = {
           created_at: string
           description: string | null
           fabric: string | null
+          model_code: string | null
           id: string
           images: string[]
           is_bestseller: boolean
@@ -825,6 +826,7 @@ export type Database = {
           created_at?: string
           description?: string | null
           fabric?: string | null
+          model_code?: string | null
           id?: string
           images?: string[]
           is_bestseller?: boolean
@@ -850,6 +852,7 @@ export type Database = {
           created_at?: string
           description?: string | null
           fabric?: string | null
+          model_code?: string | null
           id?: string
           images?: string[]
           is_bestseller?: boolean

@@ -27,7 +27,7 @@ export function parseCsv(text: string): string[][] {
 
 const norm = (h: string) => h.toLowerCase().replace(/[^a-z]/g, "");
 const ALIASES: Record<string, string> = {
-  name: "name", sku: "sku", slug: "slug", categoryid: "category_id", category: "category",
+  name: "name", sku: "sku", modelcode: "model_code", model: "model_code", slug: "slug", categoryid: "category_id", category: "category",
   price: "price", saleprice: "sale_price", stock: "stock", lowstockthreshold: "low_stock_threshold",
   sizes: "sizes", colours: "colors", colors: "colors", fabric: "fabric", description: "description",
   images: "images", published: "is_published", newarrival: "is_new", bestseller: "is_bestseller", featured: "is_featured",
@@ -65,4 +65,34 @@ export function mapRows(rows: string[][], categories: { id: string; name: string
     if (data.name && !data.slug) data.slug = slugify(String(data.name));
     return { line, data };
   });
+}
+
+// Decides which existing product a sheet row refers to. SKU first, then slug, then model code.
+// A SKU or model code that points at several products is "ambiguous" and the row is skipped, never guessed.
+export type MatchResult =
+  | { kind: "match"; product: { id: string } & Record<string, any>; by: "sku" | "slug" | "model_code" }
+  | { kind: "ambiguous"; by: "sku" | "model_code"; count: number }
+  | { kind: "none" };
+
+const key = (v: unknown) => String(v ?? "").trim().toLowerCase();
+
+export function matchProduct(
+  products: ({ id: string; sku?: string | null; slug?: string | null; model_code?: string | null } & Record<string, any>)[],
+  d: { sku?: string; slug?: string; model_code?: string },
+): MatchResult {
+  if (d.sku) {
+    const hits = products.filter((p) => key(p.sku) === key(d.sku));
+    if (hits.length === 1) return { kind: "match", product: hits[0]!, by: "sku" };
+    if (hits.length > 1) return { kind: "ambiguous", by: "sku", count: hits.length };
+  }
+  if (d.slug) {
+    const hits = products.filter((p) => key(p.slug) === key(d.slug));
+    if (hits.length === 1) return { kind: "match", product: hits[0]!, by: "slug" };
+  }
+  if (d.model_code) {
+    const hits = products.filter((p) => p.model_code && key(p.model_code) === key(d.model_code));
+    if (hits.length === 1) return { kind: "match", product: hits[0]!, by: "model_code" };
+    if (hits.length > 1) return { kind: "ambiguous", by: "model_code", count: hits.length };
+  }
+  return { kind: "none" };
 }

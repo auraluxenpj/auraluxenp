@@ -31,7 +31,7 @@ const schema = z.object({
 });
 
 type Form = {
-  name: string; slug: string; sku: string; description: string; fabric: string; category_id: string;
+  name: string; slug: string; sku: string; model_code: string; description: string; fabric: string; category_id: string;
   price: string; sale_price: string; stock: string; low_stock_threshold: string;
   sizes: string; colors: string; images: string; size_chart: string;
   is_new: boolean; is_bestseller: boolean; is_featured: boolean; is_published: boolean;
@@ -39,7 +39,7 @@ type Form = {
 };
 
 const EMPTY: Form = {
-  name: "", slug: "", sku: "", description: "", fabric: "", category_id: "",
+  name: "", slug: "", sku: "", model_code: "", description: "", fabric: "", category_id: "",
   price: "", sale_price: "", stock: "0", low_stock_threshold: "5",
   sizes: "S, M, L, XL", colors: "", images: "", size_chart: "",
   is_new: true, is_bestseller: false, is_featured: false, is_published: true,
@@ -101,7 +101,7 @@ function ProductEditor() {
     setSkuSuffix(parts.suffix);
     setSkuKindTouched(true);
     setF({
-      name: product.name, slug: product.slug, sku: product.sku ?? "", description: product.description ?? "",
+      name: product.name, slug: product.slug, sku: product.sku ?? "", model_code: product.model_code ?? "", description: product.description ?? "",
       fabric: product.fabric ?? "", category_id: product.category_id ?? "",
       price: String(product.price), sale_price: product.sale_price != null ? String(product.sale_price) : "",
       stock: String(product.stock), low_stock_threshold: String(product.low_stock_threshold),
@@ -132,7 +132,7 @@ function ProductEditor() {
     if (!parsed.success) { toast.error(parsed.error.issues[0]?.message ?? "Check the form"); return; }
     const row = {
       ...parsed.data,
-      sku, description: f.description.trim() || null, fabric: f.fabric.trim() || null,
+      sku, model_code: f.model_code.trim().slice(0, 64) || null, description: f.description.trim() || null, fabric: f.fabric.trim() || null,
       category_id: f.category_id || null, low_stock_threshold: Number(f.low_stock_threshold) || 0,
       sizes: list(f.sizes), colors: list(f.colors), images: list(f.images),
       size_chart: f.size_chart.trim() || null, is_new: f.is_new, is_bestseller: f.is_bestseller,
@@ -208,6 +208,7 @@ function ProductEditor() {
           </label>
           <p className="text-xs leading-relaxed text-muted-foreground">{PHOTO_DISCLAIMER}</p>
           <div className="grid gap-4 sm:grid-cols-2">
+            <label className={label}>Model code (optional)<input className={input} value={f.model_code} maxLength={64} onChange={(e) => set("model_code", e.target.value)} /></label>
             <label className={label}>Fabric<input className={input} value={f.fabric} onChange={(e) => set("fabric", e.target.value)} /></label>
             <label className={label}>Category
               <select className={input} value={f.category_id} onChange={(e) => set("category_id", e.target.value)}>

@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRef, useState } from "react";
-import { mapRows, parseCsv } from "@/lib/csv-import";
+import { mapRows, matchProduct, parseCsv } from "@/lib/csv-import";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { fetchAllProducts, productImage, type Product } from "@/lib/data";
@@ -111,13 +111,13 @@ function ProductsList() {
   };
 
   const exportCsv = () => {
-    const headers = ["Name", "SKU", "Slug", "Category ID", "Price", "Sale Price", "Stock", "Low Stock Threshold", "Sizes", "Colours", "Fabric", "Published", "New Arrival", "Best Seller", "Featured", "Created"];
+    const headers = ["Name", "SKU", "Model Code", "Slug", "Category ID", "Price", "Sale Price", "Stock", "Low Stock Threshold", "Sizes", "Colours", "Fabric", "Published", "New Arrival", "Best Seller", "Featured", "Created"];
     const escape = (v: unknown) => {
       const s = v == null ? "" : String(v);
       return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
     };
     const rows = products.map((p) => [
-      p.name, p.sku, p.slug, p.category_id, p.price, p.sale_price, p.stock, p.low_stock_threshold,
+      p.name, p.sku, p.model_code, p.slug, p.category_id, p.price, p.sale_price, p.stock, p.low_stock_threshold,
       (p.sizes ?? []).join(" | "), (p.colors ?? []).join(" | "), p.fabric,
       p.is_published ? "Yes" : "No", p.is_new ? "Yes" : "No", p.is_bestseller ? "Yes" : "No", p.is_featured ? "Yes" : "No",
       p.created_at,
@@ -149,7 +149,12 @@ function ProductsList() {
       for (const r of rows) {
         if (r.error) { errors.push(`Row ${r.line}: ${r.error}`); continue; }
         const d: any = r.data;
-        const match = products.find((p) => (d.sku && p.sku === d.sku) || (d.slug && p.slug === d.slug));
+        const found = matchProduct(products, d);
+        if (found.kind === "ambiguous") {
+          errors.push(`Row ${r.line}: skipped, that ${found.by === "sku" ? "SKU" : "model code"} matches ${found.count} products. Add the exact SKU for the one you mean`);
+          continue;
+        }
+        const match = found.kind === "match" ? found.product : undefined;
         if ((!match || (d.sku && d.sku !== match.sku)) && (!d.sku || !isProductSku(d.sku))) {
           errors.push(`Row ${r.line}: use AL-garment type-final identifier, e.g. AL-KURTI-001`);
           continue;
@@ -196,7 +201,7 @@ function ProductsList() {
         </div>
       </div>
       <p className="text-xs text-muted-foreground">
-        Import tip: export first, edit in Excel, then import. Rows matching an existing SKU (or slug) are updated; others become new products (need Name and Price). Separate sizes/colours/image links with "|". Category can be a name like "Kurtis".
+        Import tip: export first, edit in Excel, then import. Rows matching an existing SKU (or slug, or Model Code) are updated; others become new products (need Name and Price). Separate sizes/colours/image links with "|". Category can be a name like "Kurtis".
       </p>
       {report ? (
         <div className="rounded-2xl border border-border bg-card p-4 text-sm">
