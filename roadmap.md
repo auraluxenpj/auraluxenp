@@ -1,8 +1,8 @@
 # Phase 1: Secure checkout and remove COD
 
 ## Remove business and accounting tools (Nov 12)
-- [ ] Remove POS Billing, Customer Khata, Expenses and Purchases navigation and redirect their former pages to the admin dashboard; preserve records, storefront accounts and other store features.
-- [ ] Verify retired-page redirects, remaining admin navigation and a clean build without publishing.
+- [x] Remove POS Billing, Customer Khata, Expenses and Purchases navigation and redirect their former pages to the admin dashboard; preserve records, storefront accounts and other store features.
+- [x] Five tests pass; signed-in checks verify nine former URLs redirect to Dashboard, Products navigation remains available, desktop/mobile navigation excludes the tools and no page errors occur. Latest automatic build OK; not published.
 
 ## App icon update (Oct 27)
 - [x] Recreated the unavailable temporary full-master-logo drafts from the supplied master, uploaded four CDN pointers, and updated manifest/Apple/favicon references without publishing or changing website branding.
