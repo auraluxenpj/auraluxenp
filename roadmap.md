@@ -1,5 +1,9 @@
 # Phase 1: Secure checkout and remove COD
 
+## Remove business and accounting tools (Nov 12)
+- [ ] Remove POS Billing, Customer Khata, Expenses and Purchases navigation and redirect their former pages to the admin dashboard; preserve records, storefront accounts and other store features.
+- [ ] Verify retired-page redirects, remaining admin navigation and a clean build without publishing.
+
 ## App icon update (Oct 27)
 - [x] Recreated the unavailable temporary full-master-logo drafts from the supplied master, uploaded four CDN pointers, and updated manifest/Apple/favicon references without publishing or changing website branding.
 - [x] Four manifest tests pass; all four CDN icons return HTTP 200 at 192/512/512/180px, local favicon returns HTTP 200 at 64px, homepage has no page errors, and automatic build reports OK. Physical-device installation remains unverified because real devices are unavailable.
