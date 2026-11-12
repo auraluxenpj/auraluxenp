@@ -1,3 +1,4 @@
+import { normalizeSKU } from "./sku-validator";
 // CSV parsing + row → product mapping for the admin bulk import.
 export function parseCsv(text: string): string[][] {
   const rows: string[][] = [];
@@ -38,6 +39,10 @@ export type ImportRow = { line: number; data: any; error?: string };
 const slugify = (s: string) => s.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 const bool = (v: string) => /^(yes|y|true|1)$/i.test(v.trim());
 const list = (v: string) => v.split(/[|;]/).map((x) => x.trim()).filter(Boolean);
+// Sizes and colours are often typed as "M, L, XL", so commas separate them too (image links keep | and ; only).
+const shortList = (v: string) => v.split(/[|;,]/).map((x) => x.trim()).filter(Boolean);
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const plain = (v: string) => v.toLowerCase().replace(/[^a-z0-9]/g, "");
 
 export function mapRows(rows: string[][], categories: { id: string; name: string; slug: string }[]): ImportRow[] {
   if (rows.length < 2) return [];
@@ -51,13 +56,19 @@ export function mapRows(rows: string[][], categories: { id: string; name: string
       if (v === "") return;
       if (["price", "sale_price"].includes(k)) data[k] = Number(v.replace(/[^0-9.]/g, ""));
       else if (["stock", "low_stock_threshold"].includes(k)) data[k] = Math.round(Number(v));
-      else if (["sizes", "colors", "images"].includes(k)) data[k] = list(v);
+      else if (["sizes", "colors"].includes(k)) data[k] = shortList(v);
+      else if (k === "images") data[k] = list(v);
+      else if (k === "sku") data[k] = normalizeSKU(v);
+      else if (k === "model_code") data[k] = v.length > 64 ? (data._badModel = v) && v : v;
       else if (k.startsWith("is_")) data[k] = bool(v);
-      else if (k === "category") {
-        const c = categories.find((c) => c.name.toLowerCase() === v.toLowerCase() || c.slug === v.toLowerCase());
+      else if (k === "category_id" && UUID.test(v)) data.category_id = v;
+      else if (k === "category" || k === "category_id") {
+        // A category can be given by name or slug in either column ("Kurti set 3 Piece"); spacing, case and punctuation are ignored.
+        const c = categories.find((c) => c.name.toLowerCase() === v.toLowerCase() || c.slug === v.toLowerCase()) ?? categories.find((c) => plain(c.name) === plain(v) || plain(c.slug) === plain(v));
         if (c) data.category_id = c.id; else data._badCategory = v;
       } else data[k] = v;
     });
+    if (data._badModel) return { line, data, error: "Model code is longer than 64 characters" };
     if (data._badCategory) return { line, data, error: `Unknown category "${data._badCategory}"` };
     for (const k of ["price", "sale_price", "stock", "low_stock_threshold"])
       if (k in data && (!Number.isFinite(data[k] as number) || (data[k] as number) < 0)) return { line, data, error: `Invalid ${k.replace(/_/g, " ")}` };

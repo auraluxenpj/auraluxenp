@@ -9,7 +9,7 @@ export function normalizeSKU(value: unknown): string {
 export function validateSKU(value: unknown, options?: { allowEmpty?: boolean }): {
   valid: boolean;
   normalized: string;
-  error?: string;
+  error?: string | undefined;
 } {
   const normalized = normalizeSKU(value);
 
