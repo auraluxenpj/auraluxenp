@@ -2,7 +2,8 @@
 
 ## Automatic shared stock with BizSathi (Nov 12)
 - [x] Inspect both apps' existing manual sync, size matching and stock writers; identify absence of live sync history and unresolved catalogue exceptions.
-- [ ] Review implementation plan and proposed schema/security changes before applying them to the shared live backend.
+- [x] Implementation plan approved; prepared a disconnected versioned request contract and safety-rule tests. Exact SQL review/application remains gated by recovery/isolation and migration-history reconciliation.
+- [ ] Reconcile migration history: inspection found core SQL hash mismatch/unmatched row and missing recorded rows for sync migrations; no safe automatic repair available.
 - [ ] Verify fresh recovery evidence and isolated test environment; confirm fulfilment branch and reviewed opening balances/mapping.
 - [ ] Implement authoritative Auraluxe inventory, immutable movements, idempotent operations and guarded stock writers.
 - [ ] Integrate BizSathi reservations, durable posting/recovery and automatic balance updates in the BizSathi project; blocked here because cross-project snapshots are read-only.
