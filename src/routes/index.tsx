@@ -59,7 +59,7 @@ export const Route = createFileRoute("/")({
 });
 
 // The image that will be the first hero slide (same rules the page uses below)
-function heroImageFor(data?: { products?: Product[]; banners?: Banner[] }): string | null {
+function heroImageFor(data?: { products?: Product[] | undefined; banners?: Banner[] | undefined }): string | null {
   const heroBanner = (data?.banners ?? []).filter(bannerIsLive).find((b) => b.placement === "hero");
   if (heroBanner) return heroBanner.image_url ?? null;
   const newest = (data?.products ?? [])
@@ -140,7 +140,7 @@ function CategoryTile({
       setInView(true);
       return;
     }
-    const io = new IntersectionObserver(([entry]) => setInView(entry.isIntersecting));
+    const io = new IntersectionObserver(([entry]) => setInView(entry?.isIntersecting ?? false));
     io.observe(el);
     return () => io.disconnect();
   }, []);
@@ -153,12 +153,14 @@ function CategoryTile({
       setStarted(true);
       interval = window.setInterval(() => {
         const next = (activeRef.current + 1) % count;
+        const src = images[next];
+        if (!src) return;
         const img = new Image();
         img.onload = () => {
           activeRef.current = next;
           setActive(next);
         };
-        img.src = images[next];
+        img.src = src;
       }, 5000);
     }, 2000 + offset * 700);
     return () => {
