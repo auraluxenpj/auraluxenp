@@ -1,0 +1,240 @@
+diff --git a/drizzle/migrations/0017_product_model_code.sql b/drizzle/migrations/0017_product_model_code.sql
+new file mode 100644
+index 0000000..be6f0d7
+--- /dev/null
++++ b/drizzle/migrations/0017_product_model_code.sql
+@@ -0,0 +1,7 @@
++-- 0017: optional model code on products, used with the SKU to match stock between the website and BizSathi.
++-- Additive and safe to re-run: one nullable column and one non-unique index. Nothing existing is changed.
++-- Not unique on purpose: size/colour variants can share a model code.
++ALTER TABLE public.products ADD COLUMN IF NOT EXISTS model_code text;
++ALTER TABLE public.products DROP CONSTRAINT IF EXISTS products_model_code_clean;
++ALTER TABLE public.products ADD CONSTRAINT products_model_code_clean CHECK (model_code IS NULL OR (model_code = btrim(model_code) AND length(model_code) BETWEEN 1 AND 64));
++CREATE INDEX IF NOT EXISTS products_model_code_idx ON public.products (lower(model_code)) WHERE model_code IS NOT NULL;
+diff --git a/src/integrations/supabase/types.ts b/src/integrations/supabase/types.ts
+index 28faf10..a3694cd 100644
+--- a/src/integrations/supabase/types.ts
++++ b/src/integrations/supabase/types.ts
+@@ -800,6 +800,7 @@ export type Database = {
+           created_at: string
+           description: string | null
+           fabric: string | null
++          model_code: string | null
+           id: string
+           images: string[]
+           is_bestseller: boolean
+@@ -825,6 +826,7 @@ export type Database = {
+           created_at?: string
+           description?: string | null
+           fabric?: string | null
++          model_code?: string | null
+           id?: string
+           images?: string[]
+           is_bestseller?: boolean
+@@ -850,6 +852,7 @@ export type Database = {
+           created_at?: string
+           description?: string | null
+           fabric?: string | null
++          model_code?: string | null
+           id?: string
+           images?: string[]
+           is_bestseller?: boolean
+diff --git a/src/lib/csv-import.test.ts b/src/lib/csv-import.test.ts
+index b8cec70..e498c3f 100644
+--- a/src/lib/csv-import.test.ts
++++ b/src/lib/csv-import.test.ts
+@@ -1,6 +1,6 @@
+ // @ts-nocheck
+ import { describe, expect, it } from "vitest";
+-import { mapRows, parseCsv } from "./csv-import";
++import { mapRows, matchProduct, parseCsv } from "./csv-import";
+ 
+ const cats = [{ id: "c1", name: "Kurtis", slug: "kurtis" }];
+ 
+@@ -18,3 +18,39 @@ describe("csv import", () => {
+     expect(rows[1].error).toMatch(/Hats/);
+   });
+ });
++
++describe("model code", () => {
++  const products = [
++    { id: "1", sku: "AL-KURTI-001", slug: "a", model_code: "M100" },
++    { id: "2", sku: "AL-KURTI-002", slug: "b", model_code: "M100" },
++    { id: "3", sku: "AL-PW-678", slug: "c", model_code: null },
++    { id: "4", sku: "AL-PW-678", slug: "d", model_code: null },
++    { id: "5", sku: "AL-TOP-001", slug: "e", model_code: "M200" },
++  ];
++  it("reads the Model Code column and trims it", () => {
++    const [r] = mapRows(parseCsv("Name,SKU,Model Code,Price\nA,AL-1, M100 ,10"), cats);
++    expect(r.data.model_code).toBe("M100");
++  });
++  it("old sheets without the column still map the same", () => {
++    const [r] = mapRows(parseCsv("Name,SKU,Price\nA,AL-1,10"), cats);
++    expect("model_code" in r.data).toBe(false);
++  });
++  it("matches by SKU, ignoring case and spaces", () => {
++    expect(matchProduct(products, { sku: " al-top-001 " })).toMatchObject({ kind: "match", by: "sku", product: { id: "5" } });
++  });
++  it("matches by model code when it is unique", () => {
++    expect(matchProduct(products, { model_code: "m200" })).toMatchObject({ kind: "match", by: "model_code", product: { id: "5" } });
++  });
++  it("skips a model code shared by several products", () => {
++    expect(matchProduct(products, { model_code: "M100" })).toEqual({ kind: "ambiguous", by: "model_code", count: 2 });
++  });
++  it("lets the SKU resolve a shared model code", () => {
++    expect(matchProduct(products, { sku: "AL-KURTI-002", model_code: "M100" })).toMatchObject({ kind: "match", product: { id: "2" } });
++  });
++  it("skips a duplicated SKU instead of guessing", () => {
++    expect(matchProduct(products, { sku: "AL-PW-678" })).toEqual({ kind: "ambiguous", by: "sku", count: 2 });
++  });
++  it("returns none when nothing matches", () => {
++    expect(matchProduct(products, { sku: "NOPE", model_code: "ZZZ" })).toEqual({ kind: "none" });
++  });
++});
+diff --git a/src/lib/csv-import.ts b/src/lib/csv-import.ts
+index 922e4b7..e9785fd 100644
+--- a/src/lib/csv-import.ts
++++ b/src/lib/csv-import.ts
+@@ -27,7 +27,7 @@ export function parseCsv(text: string): string[][] {
+ 
+ const norm = (h: string) => h.toLowerCase().replace(/[^a-z]/g, "");
+ const ALIASES: Record<string, string> = {
+-  name: "name", sku: "sku", slug: "slug", categoryid: "category_id", category: "category",
++  name: "name", sku: "sku", modelcode: "model_code", model: "model_code", slug: "slug", categoryid: "category_id", category: "category",
+   price: "price", saleprice: "sale_price", stock: "stock", lowstockthreshold: "low_stock_threshold",
+   sizes: "sizes", colours: "colors", colors: "colors", fabric: "fabric", description: "description",
+   images: "images", published: "is_published", newarrival: "is_new", bestseller: "is_bestseller", featured: "is_featured",
+@@ -66,3 +66,33 @@ export function mapRows(rows: string[][], categories: { id: string; name: string
+     return { line, data };
+   });
+ }
++
++// Decides which existing product a sheet row refers to. SKU first, then slug, then model code.
++// A SKU or model code that points at several products is "ambiguous" and the row is skipped, never guessed.
++export type MatchResult =
++  | { kind: "match"; product: { id: string } & Record<string, any>; by: "sku" | "slug" | "model_code" }
++  | { kind: "ambiguous"; by: "sku" | "model_code"; count: number }
++  | { kind: "none" };
++
++const key = (v: unknown) => String(v ?? "").trim().toLowerCase();
++
++export function matchProduct(
++  products: ({ id: string; sku?: string | null; slug?: string | null; model_code?: string | null } & Record<string, any>)[],
++  d: { sku?: string; slug?: string; model_code?: string },
++): MatchResult {
++  if (d.sku) {
++    const hits = products.filter((p) => key(p.sku) === key(d.sku));
++    if (hits.length === 1) return { kind: "match", product: hits[0]!, by: "sku" };
++    if (hits.length > 1) return { kind: "ambiguous", by: "sku", count: hits.length };
++  }
++  if (d.slug) {
++    const hits = products.filter((p) => key(p.slug) === key(d.slug));
++    if (hits.length === 1) return { kind: "match", product: hits[0]!, by: "slug" };
++  }
++  if (d.model_code) {
++    const hits = products.filter((p) => p.model_code && key(p.model_code) === key(d.model_code));
++    if (hits.length === 1) return { kind: "match", product: hits[0]!, by: "model_code" };
++    if (hits.length > 1) return { kind: "ambiguous", by: "model_code", count: hits.length };
++  }
++  return { kind: "none" };
++}
+diff --git a/src/routes/_authenticated/admin.products.$id.tsx b/src/routes/_authenticated/admin.products.$id.tsx
+index 6553017..c6a3aaa 100644
+--- a/src/routes/_authenticated/admin.products.$id.tsx
++++ b/src/routes/_authenticated/admin.products.$id.tsx
+@@ -31,7 +31,7 @@ const schema = z.object({
+ });
+ 
+ type Form = {
+-  name: string; slug: string; sku: string; description: string; fabric: string; category_id: string;
++  name: string; slug: string; sku: string; model_code: string; description: string; fabric: string; category_id: string;
+   price: string; sale_price: string; stock: string; low_stock_threshold: string;
+   sizes: string; colors: string; images: string; size_chart: string;
+   is_new: boolean; is_bestseller: boolean; is_featured: boolean; is_published: boolean;
+@@ -39,7 +39,7 @@ type Form = {
+ };
+ 
+ const EMPTY: Form = {
+-  name: "", slug: "", sku: "", description: "", fabric: "", category_id: "",
++  name: "", slug: "", sku: "", model_code: "", description: "", fabric: "", category_id: "",
+   price: "", sale_price: "", stock: "0", low_stock_threshold: "5",
+   sizes: "S, M, L, XL", colors: "", images: "", size_chart: "",
+   is_new: true, is_bestseller: false, is_featured: false, is_published: true,
+@@ -101,7 +101,7 @@ function ProductEditor() {
+     setSkuSuffix(parts.suffix);
+     setSkuKindTouched(true);
+     setF({
+-      name: product.name, slug: product.slug, sku: product.sku ?? "", description: product.description ?? "",
++      name: product.name, slug: product.slug, sku: product.sku ?? "", model_code: product.model_code ?? "", description: product.description ?? "",
+       fabric: product.fabric ?? "", category_id: product.category_id ?? "",
+       price: String(product.price), sale_price: product.sale_price != null ? String(product.sale_price) : "",
+       stock: String(product.stock), low_stock_threshold: String(product.low_stock_threshold),
+@@ -132,7 +132,7 @@ function ProductEditor() {
+     if (!parsed.success) { toast.error(parsed.error.issues[0]?.message ?? "Check the form"); return; }
+     const row = {
+       ...parsed.data,
+-      sku, description: f.description.trim() || null, fabric: f.fabric.trim() || null,
++      sku, model_code: f.model_code.trim().slice(0, 64) || null, description: f.description.trim() || null, fabric: f.fabric.trim() || null,
+       category_id: f.category_id || null, low_stock_threshold: Number(f.low_stock_threshold) || 0,
+       sizes: list(f.sizes), colors: list(f.colors), images: list(f.images),
+       size_chart: f.size_chart.trim() || null, is_new: f.is_new, is_bestseller: f.is_bestseller,
+@@ -208,6 +208,7 @@ function ProductEditor() {
+           </label>
+           <p className="text-xs leading-relaxed text-muted-foreground">{PHOTO_DISCLAIMER}</p>
+           <div className="grid gap-4 sm:grid-cols-2">
++            <label className={label}>Model code (optional)<input className={input} value={f.model_code} maxLength={64} onChange={(e) => set("model_code", e.target.value)} /></label>
+             <label className={label}>Fabric<input className={input} value={f.fabric} onChange={(e) => set("fabric", e.target.value)} /></label>
+             <label className={label}>Category
+               <select className={input} value={f.category_id} onChange={(e) => set("category_id", e.target.value)}>
+diff --git a/src/routes/_authenticated/admin.products.index.tsx b/src/routes/_authenticated/admin.products.index.tsx
+index 66fbed8..7087525 100644
+--- a/src/routes/_authenticated/admin.products.index.tsx
++++ b/src/routes/_authenticated/admin.products.index.tsx
+@@ -1,7 +1,7 @@
+ import { createFileRoute, Link } from "@tanstack/react-router";
+ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+ import { useRef, useState } from "react";
+-import { mapRows, parseCsv } from "@/lib/csv-import";
++import { mapRows, matchProduct, parseCsv } from "@/lib/csv-import";
+ import { toast } from "sonner";
+ import { supabase } from "@/integrations/supabase/client";
+ import { fetchAllProducts, productImage, type Product } from "@/lib/data";
+@@ -111,13 +111,13 @@ function ProductsList() {
+   };
+ 
+   const exportCsv = () => {
+-    const headers = ["Name", "SKU", "Slug", "Category ID", "Price", "Sale Price", "Stock", "Low Stock Threshold", "Sizes", "Colours", "Fabric", "Published", "New Arrival", "Best Seller", "Featured", "Created"];
++    const headers = ["Name", "SKU", "Model Code", "Slug", "Category ID", "Price", "Sale Price", "Stock", "Low Stock Threshold", "Sizes", "Colours", "Fabric", "Published", "New Arrival", "Best Seller", "Featured", "Created"];
+     const escape = (v: unknown) => {
+       const s = v == null ? "" : String(v);
+       return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+     };
+     const rows = products.map((p) => [
+-      p.name, p.sku, p.slug, p.category_id, p.price, p.sale_price, p.stock, p.low_stock_threshold,
++      p.name, p.sku, p.model_code, p.slug, p.category_id, p.price, p.sale_price, p.stock, p.low_stock_threshold,
+       (p.sizes ?? []).join(" | "), (p.colors ?? []).join(" | "), p.fabric,
+       p.is_published ? "Yes" : "No", p.is_new ? "Yes" : "No", p.is_bestseller ? "Yes" : "No", p.is_featured ? "Yes" : "No",
+       p.created_at,
+@@ -149,7 +149,12 @@ function ProductsList() {
+       for (const r of rows) {
+         if (r.error) { errors.push(`Row ${r.line}: ${r.error}`); continue; }
+         const d: any = r.data;
+-        const match = products.find((p) => (d.sku && p.sku === d.sku) || (d.slug && p.slug === d.slug));
++        const found = matchProduct(products, d);
++        if (found.kind === "ambiguous") {
++          errors.push(`Row ${r.line}: skipped, that ${found.by === "sku" ? "SKU" : "model code"} matches ${found.count} products. Add the exact SKU for the one you mean`);
++          continue;
++        }
++        const match = found.kind === "match" ? found.product : undefined;
+         if ((!match || (d.sku && d.sku !== match.sku)) && (!d.sku || !isProductSku(d.sku))) {
+           errors.push(`Row ${r.line}: use AL-garment type-final identifier, e.g. AL-KURTI-001`);
+           continue;
+@@ -196,7 +201,7 @@ function ProductsList() {
+         </div>
+       </div>
+       <p className="text-xs text-muted-foreground">
+-        Import tip: export first, edit in Excel, then import. Rows matching an existing SKU (or slug) are updated; others become new products (need Name and Price). Separate sizes/colours/image links with "|". Category can be a name like "Kurtis".
++        Import tip: export first, edit in Excel, then import. Rows matching an existing SKU (or slug, or Model Code) are updated; others become new products (need Name and Price). Separate sizes/colours/image links with "|". Category can be a name like "Kurtis".
+       </p>
+       {report ? (
+         <div className="rounded-2xl border border-border bg-card p-4 text-sm">
