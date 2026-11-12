@@ -1,5 +1,13 @@
 # Phase 1: Secure checkout and remove COD
 
+## Automatic shared stock with BizSathi (Nov 12)
+- [x] Inspect both apps' existing manual sync, size matching and stock writers; identify absence of live sync history and unresolved catalogue exceptions.
+- [ ] Review implementation plan and proposed schema/security changes before applying them to the shared live backend.
+- [ ] Verify fresh recovery evidence and isolated test environment; confirm fulfilment branch and reviewed opening balances/mapping.
+- [ ] Implement authoritative Auraluxe inventory, immutable movements, idempotent operations and guarded stock writers.
+- [ ] Integrate BizSathi reservations, durable posting/recovery and automatic balance updates in the BizSathi project; blocked here because cross-project snapshots are read-only.
+- [ ] Test concurrent sales, retries, outages and both apps end-to-end before owner-approved activation/publication.
+
 ## Remove business and accounting tools (Nov 12)
 - [x] Remove POS Billing, Customer Khata, Expenses and Purchases navigation and redirect their former pages to the admin dashboard; preserve records, storefront accounts and other store features.
 - [x] Five tests pass; signed-in checks verify nine former URLs redirect to Dashboard, Products navigation remains available, desktop/mobile navigation excludes the tools and no page errors occur. Latest automatic build OK; not published.
