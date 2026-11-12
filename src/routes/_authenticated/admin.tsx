@@ -1,7 +1,8 @@
-import { createFileRoute, Link, Outlet, useNavigate, useRouterState } from "@tanstack/react-router";
+import { createFileRoute, Link, Outlet, redirect, useNavigate } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
+import { isRetiredBusinessPage } from "@/lib/retired-business-pages";
 
 export const Route = createFileRoute("/_authenticated/admin")({
   head: () => ({
@@ -15,10 +16,10 @@ export const Route = createFileRoute("/_authenticated/admin")({
       { name: "robots", content: "noindex" },
     ],
   }),
-  beforeLoad: async ({ context }) => {
+  beforeLoad: async ({ context, location }) => {
+    if (isRetiredBusinessPage(location.pathname)) throw redirect({ to: "/admin", replace: true });
     const { data } = await supabase.rpc("has_role", { _user_id: context.user.id, _role: "admin" });
-    const { data: isPosUser } = await supabase.rpc("can_use_pos");
-    return { isAdmin: !!data, isPosUser: !!isPosUser };
+    return { isAdmin: !!data };
   },
   component: AdminLayout,
 });
@@ -31,17 +32,11 @@ const NAV = [
   { to: "/admin/banners", label: "Banners" },
   { to: "/admin/inventory", label: "Inventory" },
   { to: "/admin/inventory-health", label: "Inventory Health" },
-  { to: "/admin/pos", label: "POS Billing" },
-  { to: "/admin/khata", label: "Customer Khata" },
-  { to: "/admin/expenses", label: "Expenses" },
-  { to: "/admin/purchases", label: "Purchases" },
   { to: "/admin/settings", label: "Settings" },
 ] as const;
 
 function AdminLayout() {
-  const { isAdmin, isPosUser, user } = Route.useRouteContext();
-  const pathname = useRouterState({ select: s => s.location.pathname });
-  const isPosPage = pathname === "/admin/pos" || pathname.startsWith("/admin/pos/");
+  const { isAdmin, user } = Route.useRouteContext();
   const navigate = useNavigate();
   const qc = useQueryClient();
 
@@ -60,7 +55,7 @@ function AdminLayout() {
             AURA<span className="text-brand">LUXE</span>
           </Link>
           <nav className="flex w-full flex-wrap gap-1 text-sm sm:w-auto">
-            {NAV.filter(n => isAdmin || (isPosUser && n.to === "/admin/pos")).map((n) => (
+            {(isAdmin ? NAV : []).map((n) => (
               <Link key={n.to} to={n.to} activeOptions={{ exact: n.to === "/admin" }} className="rounded-full px-4 py-2 text-muted-foreground" activeProps={{ className: "bg-secondary text-foreground" }}>
                 {n.label}
               </Link>
@@ -73,7 +68,7 @@ function AdminLayout() {
         </div>
       </header>
       <main className="mx-auto max-w-6xl px-5 py-8">
-        {isAdmin || (isPosUser && isPosPage) ? (
+        {isAdmin ? (
           <Outlet />
         ) : (
           <div className="rounded-2xl border border-border p-8 text-center">

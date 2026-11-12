@@ -206,6 +206,75 @@ export type Database = {
           },
         ]
       }
+      inventory_sync_acks: {
+        Row: {
+          created_at: string
+          delta: number
+          id: string
+          recorded_at: string | null
+          sku: string
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          delta: number
+          id?: string
+          recorded_at?: string | null
+          sku: string
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          delta?: number
+          id?: string
+          recorded_at?: string | null
+          sku?: string
+          status?: string
+        }
+        Relationships: []
+      }
+      inventory_sync_log: {
+        Row: {
+          after_stock: number
+          before_stock: number
+          created_at: string
+          id: number
+          sku: string
+        }
+        Insert: {
+          after_stock: number
+          before_stock: number
+          created_at?: string
+          id?: never
+          sku: string
+        }
+        Update: {
+          after_stock?: number
+          before_stock?: number
+          created_at?: string
+          id?: never
+          sku?: string
+        }
+        Relationships: []
+      }
+      inventory_sync_state: {
+        Row: {
+          last_stock: number
+          sku: string
+          updated_at: string
+        }
+        Insert: {
+          last_stock: number
+          sku: string
+          updated_at?: string
+        }
+        Update: {
+          last_stock?: number
+          sku?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       order_items: {
         Row: {
           color: string | null
@@ -1132,6 +1201,19 @@ export type Database = {
         }
         Returns: boolean
       }
+      inv_sync_ack: { Args: { _skus: string[] }; Returns: Json }
+      inv_sync_find: {
+        Args: { _lock: boolean; _sku: string }
+        Returns: {
+          kind: string
+          product_id: string
+          stock: number
+          variant_id: string
+        }[]
+      }
+      inv_sync_push: { Args: { _items: Json }; Returns: Json }
+      inv_sync_recorded: { Args: { _ids: string[] }; Returns: number }
+      inv_sync_state: { Args: { _skus: string[] }; Returns: Json }
       place_order: {
         Args: {
           p_checkout_key: string
