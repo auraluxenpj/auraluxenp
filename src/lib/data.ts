@@ -97,9 +97,7 @@ export async function fetchPage(slug: string): Promise<Page | null> {
   return data;
 }
 
-export function effectivePrice(p: Pick<Product, "price" | "sale_price">): number {
-  return p.sale_price != null && Number(p.sale_price) > 0 ? Number(p.sale_price) : Number(p.price);
-}
+export { effectivePrice, hasDiscount } from "./pricing";
 
 export function bannerIsLive(b: Banner): boolean {
   if (!b.is_active) return false;

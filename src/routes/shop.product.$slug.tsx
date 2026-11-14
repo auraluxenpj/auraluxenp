@@ -6,6 +6,7 @@ import { SiteLayout } from "@/components/site/SiteLayout";
 import { ProductCard } from "@/components/site/ProductCard";
 import {
   effectivePrice,
+  hasDiscount as productHasDiscount,
   fetchProductBySlug,
   fetchProducts,
   fetchVariantsForProduct,
@@ -124,7 +125,7 @@ function ProductDetail() {
 
   const d = derived;
   const price = effectivePrice(product);
-  const hasDiscount = product.sale_price != null && Number(product.sale_price) > 0;
+  const hasDiscount = productHasDiscount(product);
   const images = product.images?.length ? product.images : [productImage(product)];
   const comboEmpty = d.comboStock != null && d.comboStock <= 0 && (d.sizeTotalStock ?? 0) > 0;
   const outOfStock =

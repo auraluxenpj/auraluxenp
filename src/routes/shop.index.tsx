@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { SiteLayout } from "@/components/site/SiteLayout";
 import { ProductCard } from "@/components/site/ProductCard";
-import { effectivePrice, fetchCategories, fetchProducts } from "@/lib/data";
+import { effectivePrice, fetchCategories, fetchProducts, hasDiscount } from "@/lib/data";
 import { useMoney } from "@/lib/store";
 
 type ShopSearch = {
@@ -79,7 +79,7 @@ function Shop() {
   const filtered = useMemo(() => {
     let list = [...products];
     if (search.category === "sale") {
-      list = list.filter((p) => p.sale_price != null && Number(p.sale_price) > 0);
+      list = list.filter(hasDiscount);
     } else if (search.category === "new-arrivals") {
       list = list.filter((p) => p.is_new);
     } else if (categoryId) {

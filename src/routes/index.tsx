@@ -7,6 +7,7 @@ import {
   fetchCategories,
   fetchProducts,
   fetchTestimonials,
+  hasDiscount,
   productImage,
   type Banner,
   type Product,
@@ -263,7 +264,7 @@ function Home() {
   const trending = pick(inStock.filter((p) => p.is_featured));
   const bestSellers = pick(inStock.filter((p) => p.is_bestseller));
   const offers = pick(
-    inStock.filter((p) => p.sale_price != null && Number(p.sale_price) > 0),
+    inStock.filter(hasDiscount),
   );
 
   // Hero: admin banners if you have any, otherwise your newest in-stock products

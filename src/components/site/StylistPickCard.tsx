@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { ShoppingBag } from "lucide-react";
 import { toast } from "sonner";
-import { effectivePrice, productImage, type Product } from "@/lib/data";
+import { effectivePrice, hasDiscount, productImage, type Product } from "@/lib/data";
 import { useCart, useMoney } from "@/lib/store";
 import { stylistCartItem } from "@/lib/stylist-cart";
 
@@ -18,7 +18,7 @@ export function StylistPickCard({
   const money = useMoney();
   const { add } = useCart();
   const price = effectivePrice(product);
-  const hasDiscount = product.sale_price != null && Number(product.sale_price) > 0;
+  const discounted = hasDiscount(product);
   const outOfStock = product.stock <= 0;
   const sizes = product.sizes ?? [];
   const colors = product.colors ?? [];
@@ -62,7 +62,7 @@ export function StylistPickCard({
           height={1280}
           className="aspect-[4/5] w-full rounded-xl bg-muted object-cover sm:rounded-2xl"
         />
-        {hasDiscount ? (
+        {discounted ? (
           <span className="absolute left-2 top-2 rounded-full bg-accent/90 px-2 py-0.5 text-[9px] uppercase tracking-[0.18em] text-accent-foreground backdrop-blur sm:left-3 sm:top-3 sm:px-3 sm:py-1 sm:text-[10px]">
             -{Math.round((1 - Number(product.sale_price) / Number(product.price)) * 100)}%
           </span>
@@ -77,7 +77,7 @@ export function StylistPickCard({
         </h3>
         <p className="mt-1 text-sm text-primary sm:text-base">
           {money(price)}
-          {hasDiscount ? (
+          {discounted ? (
             <span className="ml-1.5 text-[10px] text-muted-foreground line-through sm:text-xs">
               {money(Number(product.price))}
             </span>
