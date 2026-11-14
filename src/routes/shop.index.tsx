@@ -52,6 +52,11 @@ function Shop() {
   const money = useMoney();
   const [query, setQuery] = useState(search.q ?? "");
 
+  // Keep the visible search field in sync with browser back/forward navigation.
+  useEffect(() => {
+    setQuery(search.q ?? "");
+  }, [search.q]);
+
   const { data: products = [], isLoading } = useQuery({
     queryKey: ["products"],
     queryFn: fetchProducts,
@@ -174,13 +179,21 @@ function Shop() {
         </form>
 
         <div className="mt-4 flex flex-wrap gap-2">
-          <button
-            type="button"
-            onClick={() => update({ category: undefined })}
-            className={`rounded-full px-4 py-2 text-[12px] uppercase tracking-[0.15em] ${!search.category ? "bg-primary text-primary-foreground" : "glass text-foreground/70"}`}
-          >
-            All
-          </button>
+          {[
+            { label: "All", value: undefined },
+            { label: "New arrivals", value: "new-arrivals" },
+            { label: "Sale", value: "sale" },
+          ].map((item) => (
+            <button
+              key={item.label}
+              type="button"
+              onClick={() => update({ category: item.value })}
+              aria-pressed={(search.category ?? undefined) === item.value}
+              className={`rounded-full px-4 py-2 text-[12px] uppercase tracking-[0.15em] ${(search.category ?? undefined) === item.value ? "bg-primary text-primary-foreground" : "glass text-foreground/70"}`}
+            >
+              {item.label}
+            </button>
+          ))}
           {categories
             .filter((c) => c.is_active)
             .map((c) => (
@@ -257,6 +270,23 @@ function Shop() {
             />
           </label>
         </div>
+        {(search.q || search.category || search.size || search.color || search.max || search.stock) ? (
+          <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-border/60 pt-4">
+            <p className="text-xs text-muted-foreground" aria-live="polite">
+              Filters are active — {filtered.length} matching pieces
+            </p>
+            <button
+              type="button"
+              onClick={() => {
+                setQuery("");
+                navigate({ search: {} });
+              }}
+              className="rounded-full border border-brand/30 px-4 py-2 text-[11px] uppercase tracking-[0.15em] text-primary transition hover:bg-secondary"
+            >
+              Clear all filters
+            </button>
+          </div>
+        ) : null}
       </div>
 
       <p className="mt-6 text-[12px] uppercase tracking-[0.18em] text-muted-foreground">
