@@ -97,8 +97,14 @@ export async function fetchPage(slug: string): Promise<Page | null> {
   return data;
 }
 
+export function hasDiscount(p: Pick<Product, "price" | "sale_price">): boolean {
+  const sale = Number(p.sale_price);
+  const regular = Number(p.price);
+  return p.sale_price != null && Number.isFinite(sale) && Number.isFinite(regular) && sale > 0 && regular > 0 && sale < regular;
+}
+
 export function effectivePrice(p: Pick<Product, "price" | "sale_price">): number {
-  return p.sale_price != null && Number(p.sale_price) > 0 ? Number(p.sale_price) : Number(p.price);
+  return hasDiscount(p) ? Number(p.sale_price) : Number(p.price);
 }
 
 export function bannerIsLive(b: Banner): boolean {
