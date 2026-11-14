@@ -97,15 +97,7 @@ export async function fetchPage(slug: string): Promise<Page | null> {
   return data;
 }
 
-export function hasDiscount(p: Pick<Product, "price" | "sale_price">): boolean {
-  const sale = Number(p.sale_price);
-  const regular = Number(p.price);
-  return p.sale_price != null && Number.isFinite(sale) && Number.isFinite(regular) && sale > 0 && regular > 0 && sale < regular;
-}
-
-export function effectivePrice(p: Pick<Product, "price" | "sale_price">): number {
-  return hasDiscount(p) ? Number(p.sale_price) : Number(p.price);
-}
+export { effectivePrice, hasDiscount } from "./pricing";
 
 export function bannerIsLive(b: Banner): boolean {
   if (!b.is_active) return false;
