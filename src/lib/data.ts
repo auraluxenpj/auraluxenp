@@ -2,6 +2,29 @@ import { supabase } from "@/integrations/supabase/client";
 import type { Tables } from "@/integrations/supabase/types";
 
 export type Product = Tables<"products">;
+
+// Small, public-facing product shape used by storefront listings. Keep full
+// product records for admin and product-detail queries where they are needed.
+export type StorefrontProduct = Pick<
+  Product,
+  | "id"
+  | "name"
+  | "slug"
+  | "category_id"
+  | "price"
+  | "sale_price"
+  | "stock"
+  | "sizes"
+  | "colors"
+  | "images"
+  | "fabric"
+  | "description"
+  | "is_new"
+  | "is_featured"
+  | "is_bestseller"
+  | "is_published"
+  | "created_at"
+>;
 export type Category = Tables<"categories">;
 export type Banner = Tables<"banners">;
 export type Review = Tables<"reviews">;
@@ -38,10 +61,12 @@ export async function fetchCategories(): Promise<Category[]> {
   return data ?? [];
 }
 
-export async function fetchProducts(): Promise<Product[]> {
+export async function fetchProducts(): Promise<StorefrontProduct[]> {
   const { data, error } = await supabase
     .from("products")
-    .select("*")
+    .select(
+      "id, name, slug, category_id, price, sale_price, stock, sizes, colors, images, fabric, description, is_new, is_featured, is_bestseller, is_published, created_at",
+    )
     .eq("is_published", true)
     .order("created_at", { ascending: false });
   if (error) throw error;

@@ -1,4 +1,4 @@
-import type { Product } from "./data";
+import type { StorefrontProduct } from "./data";
 
 /**
  * Returns the option labels the shopper still has to choose before an item
@@ -6,7 +6,7 @@ import type { Product } from "./data";
  * that choice — it is applied automatically.
  */
 export function requiredOptionLabels(
-  product: Product,
+  product: StorefrontProduct,
   size: string | null,
   color: string | null,
 ): string[] {

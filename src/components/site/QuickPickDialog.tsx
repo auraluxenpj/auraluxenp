@@ -7,7 +7,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { effectivePrice, productImage, type Product } from "@/lib/data";
+import { effectivePrice, productImage, type StorefrontProduct } from "@/lib/data";
 import { requiredOptionLabels } from "@/lib/product-options";
 import { useCart, useMoney } from "@/lib/store";
 
@@ -27,7 +27,7 @@ export function QuickPickDialog({
   open,
   onOpenChange,
 }: {
-  product: Product;
+  product: StorefrontProduct;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
