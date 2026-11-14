@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "@tanstack/react-router";
-import { effectivePrice, productImage, type Product } from "@/lib/data";
+import { effectivePrice, hasDiscount, productImage, type Product } from "@/lib/data";
 import { useCart, useMoney } from "@/lib/store";
 import { toast } from "sonner";
 import { QuickPickDialog } from "@/components/site/QuickPickDialog";
@@ -9,7 +9,7 @@ export function ProductCard({ product }: { product: Product }) {
   const money = useMoney();
   const { add } = useCart();
   const price = effectivePrice(product);
-  const hasDiscount = product.sale_price != null && Number(product.sale_price) > 0;
+  const discounted = hasDiscount(product);
   const outOfStock = product.stock <= 0;
   const [picking, setPicking] = useState(false);
 
@@ -21,7 +21,7 @@ export function ProductCard({ product }: { product: Product }) {
     ? "New"
     : product.is_bestseller
       ? "Best Seller"
-      : hasDiscount
+      : discounted
         ? `-${Math.round((1 - Number(product.sale_price) / Number(product.price)) * 100)}%`
         : null;
 
@@ -70,7 +70,7 @@ export function ProductCard({ product }: { product: Product }) {
           </h3>
           <div className="shrink-0 text-right">
             <span className="font-display text-sm text-primary sm:text-lg">{money(price)}</span>
-            {hasDiscount ? (
+            {discounted ? (
               <span className="ml-1.5 text-[10px] text-muted-foreground line-through sm:text-xs">
                 {money(Number(product.price))}
               </span>
