@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import {
   Dialog,
@@ -39,6 +39,13 @@ export function QuickPickDialog({
   const [size, setSize] = useState<string | null>(null);
   const [color, setColor] = useState<string | null>(null);
 
+  useEffect(() => {
+    if (open) {
+      setSize(null);
+      setColor(null);
+    }
+  }, [open, product.id]);
+
   const missing = requiredOptionLabels(product, size, color);
   const canAdd = missing.length === 0;
 
@@ -64,7 +71,7 @@ export function QuickPickDialog({
         <DialogHeader>
           <DialogTitle className="font-display text-lg">Choose your options</DialogTitle>
           <DialogDescription>
-            Pick a size and colour before this piece goes into your bag.
+            Choose the available options before adding this piece to your bag.
           </DialogDescription>
         </DialogHeader>
 
@@ -89,7 +96,7 @@ export function QuickPickDialog({
             <p className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground">Size</p>
             <div className="mt-2 flex flex-wrap gap-2">
               {sizes.map((s) => (
-                <button key={s} type="button" aria-pressed={size === s} onClick={() => setSize(s)} className={pill(size === s)}>
+                <button key={s} type="button" aria-pressed={size === s} onClick={() => setSize(s)} className={`${pill(size === s)} min-h-11`}>
                   {s}
                 </button>
               ))}
@@ -102,7 +109,7 @@ export function QuickPickDialog({
             <p className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground">Colour</p>
             <div className="mt-2 flex flex-wrap gap-2">
               {colors.map((c) => (
-                <button key={c} type="button" aria-pressed={color === c} onClick={() => setColor(c)} className={pill(color === c)}>
+                <button key={c} type="button" aria-pressed={color === c} onClick={() => setColor(c)} className={`${pill(color === c)} min-h-11`}>
                   {c}
                 </button>
               ))}
