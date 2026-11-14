@@ -213,7 +213,7 @@ function ProductDetail() {
           {images.length > 1 ? (
             <div className="mt-3 grid grid-cols-4 gap-3">
               {images.map((img, i) => (
-                <button key={img + i} type="button" onClick={() => goTo(i)}>
+                <button key={img + i} type="button" onClick={() => goTo(i)} aria-label={`Show image ${i + 1} of ${images.length}`} aria-current={i === active ? "true" : undefined}>
                   <img
                     src={img}
                     alt={`${product.name} view ${i + 1}`}
@@ -267,6 +267,7 @@ function ProductDetail() {
                       key={s}
                       type="button"
                       disabled={soldOut}
+                      aria-pressed={d.effectiveSize === s}
                       onClick={() => setSize(s)}
                       className={`flex min-w-[4.5rem] flex-col items-center rounded-full px-5 py-2 text-[12px] uppercase tracking-[0.15em] ${
                         d.effectiveSize === s
@@ -304,6 +305,7 @@ function ProductDetail() {
                   <button
                     key={c}
                     type="button"
+                    aria-pressed={d.effectiveColor === c}
                     onClick={() => setColor(c)}
                     className={`rounded-full px-5 py-2.5 text-[12px] uppercase tracking-[0.15em] ${
                       color === c
@@ -326,15 +328,19 @@ function ProductDetail() {
             <div className="glass flex items-center rounded-full">
               <button
                 type="button"
-                className="px-4 py-2"
+                aria-label="Decrease quantity"
+                disabled={d.qty <= 1}
+                className="px-4 py-2 disabled:cursor-not-allowed disabled:opacity-40"
                 onClick={() => setQuantity((q) => Math.max(1, Math.min(q, d.maxQty ?? q) - 1))}
               >
                 −
               </button>
-              <span className="w-8 text-center text-sm">{d.qty}</span>
+              <span className="w-8 text-center text-sm" aria-live="polite" aria-atomic="true">{d.qty}</span>
               <button
                 type="button"
-                className="px-4 py-2"
+                aria-label="Increase quantity"
+                disabled={d.maxQty != null && d.qty >= d.maxQty}
+                className="px-4 py-2 disabled:cursor-not-allowed disabled:opacity-40"
                 onClick={() =>
                   setQuantity((q) => Math.min(d.maxQty ?? Number.POSITIVE_INFINITY, Math.max(q, 1) + 1))
                 }
