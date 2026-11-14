@@ -1,4 +1,4 @@
-# Auraluxe Elegance Builder
+# Auraluxe Redefine your beauty
 
 Build a modern, premium, mobile-first e-commerce website for **AURALUXE**, a ladies' fashion brand based in Nepalgunj.
 
