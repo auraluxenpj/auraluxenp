@@ -10,7 +10,7 @@ import {
   hasDiscount,
   productImage,
   type Banner,
-  type Product,
+  type StorefrontProduct,
 } from "@/lib/data";
 import { SiteLayout } from "@/components/site/SiteLayout";
 import { ProductCard } from "@/components/site/ProductCard";
@@ -60,7 +60,7 @@ export const Route = createFileRoute("/")({
 });
 
 // The image that will be the first hero slide (same rules the page uses below)
-function heroImageFor(data?: { products?: Product[] | undefined; banners?: Banner[] | undefined }): string | null {
+function heroImageFor(data?: { products?: StorefrontProduct[] | undefined; banners?: Banner[] | undefined }): string | null {
   const heroBanner = (data?.banners ?? []).filter(bannerIsLive).find((b) => b.placement === "hero");
   if (heroBanner) return heroBanner.image_url ?? null;
   const newest = (data?.products ?? [])
@@ -103,7 +103,7 @@ function SectionHeading({ eyebrow, title }: { eyebrow: string; title: string }) 
   );
 }
 
-function Rail({ products }: { products: Product[] }) {
+function Rail({ products }: { products: StorefrontProduct[] }) {
   if (products.length === 0) return null;
   return (
     <section className="mt-6 grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-3">
@@ -250,7 +250,7 @@ function Home() {
 
   // Each product appears in only ONE section (in page order), so nothing repeats
   const used = new Set<string>();
-  const pick = (list: Product[], n = 3) => {
+  const pick = (list: StorefrontProduct[], n = 3) => {
     const fresh = list.filter((p) => !used.has(p.id)).slice(0, n);
     fresh.forEach((p) => used.add(p.id));
     return fresh;
