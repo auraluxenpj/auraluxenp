@@ -1,11 +1,11 @@
 import { useState } from "react";
 import { Link } from "@tanstack/react-router";
-import { effectivePrice, hasDiscount, productImage, type Product } from "@/lib/data";
+import { effectivePrice, hasDiscount, productImage, type StorefrontProduct } from "@/lib/data";
 import { useCart, useMoney } from "@/lib/store";
 import { toast } from "sonner";
 import { QuickPickDialog } from "@/components/site/QuickPickDialog";
 
-export function ProductCard({ product }: { product: Product }) {
+export function ProductCard({ product }: { product: StorefrontProduct }) {
   const money = useMoney();
   const { add } = useCart();
   const price = effectivePrice(product);
