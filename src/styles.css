@@ -306,3 +306,23 @@ main .glass:not(article):not(a.group) {
     transition: none;
   }
 }
+
+
+/* Nepali storefront typography and Nepal-inspired accent details. */
+:root { --font-nepali: "Noto Sans Devanagari", "Nirmala UI", sans-serif; }
+html[data-language="ne"] body,
+html[data-language="ne"] button,
+html[data-language="ne"] input,
+html[data-language="ne"] textarea,
+html[data-language="ne"] select {
+  font-family: var(--font-nepali), var(--font-body);
+}
+html[data-language="ne"] h1,
+html[data-language="ne"] h2,
+html[data-language="ne"] h3,
+html[data-language="ne"] h4 {
+  font-family: var(--font-nepali), var(--font-display);
+  line-height: 1.35;
+  letter-spacing: 0;
+}
+header.glass { border-top: 2px solid oklch(0.48 0.12 25 / 72%); }
