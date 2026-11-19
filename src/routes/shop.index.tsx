@@ -380,7 +380,7 @@ function Shop() {
         </p>
       </div>
 
-      <section className="mt-5 grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-3">
+      <section className="auraluxe-product-grid mt-5 grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-4 2xl:grid-cols-5">
         {visible.map((p) => (
           <ProductCard key={p.id} product={p} fallbackImage={categoryFallbackImage} />
         ))}
