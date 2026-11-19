@@ -90,7 +90,15 @@ function Shop() {
     [products],
   );
 
+  const activeCategories = categories.filter((c) => c.is_active);
   const categoryId = categories.find((c) => c.slug === search.category)?.id;
+  const categoryFallbackImage = search.category
+    ? (() => {
+        const index = activeCategories.findIndex((c) => c.slug === search.category);
+        const category = activeCategories[index];
+        return category?.image_url || DUMMY_CATEGORY_IMAGES[(index >= 0 ? index : 0) % DUMMY_CATEGORY_IMAGES.length];
+      })()
+    : undefined;
 
   const filtered = useMemo(() => {
     let list = [...products];
@@ -374,7 +382,7 @@ function Shop() {
 
       <section className="mt-5 grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-3">
         {visible.map((p) => (
-          <ProductCard key={p.id} product={p} />
+          <ProductCard key={p.id} product={p} fallbackImage={categoryFallbackImage} />
         ))}
       </section>
 
