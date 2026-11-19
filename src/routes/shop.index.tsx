@@ -351,7 +351,7 @@ function Shop() {
             />
           </label>
         </div>
-        {(search.q || search.category || search.size || search.color || search.max || search.stock) ? (
+        {(search.q || search.category || search.size || search.color || search.fabric || search.max || search.stock) ? (
           <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-border/60 pt-4">
             <p className="text-xs text-muted-foreground" aria-live="polite">
               Filters are active — {filtered.length} matching pieces
