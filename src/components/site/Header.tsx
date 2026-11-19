@@ -14,7 +14,13 @@ const STORY_LINKS = [
   { label: "Our Story", to: "/about" },
   { label: "Visit Our Store", to: "/contact" },
 ] as const;
-const OCCASION_LINKS = ["Festive Edit", "Wedding Guest", "Everyday Elegance", "Office Wear", "Party Wear"];
+const OCCASION_LINKS = [
+  { label: "Festive Edit", query: "festive" },
+  { label: "Wedding Guest", query: "wedding" },
+  { label: "Everyday Elegance", query: "everyday" },
+  { label: "Office Wear", query: "office" },
+  { label: "Party Wear", query: "party" },
+];
 
 export function Header() {
   const { count } = useCart();
@@ -82,7 +88,7 @@ export function Header() {
                   <div>
                     <p className="auraluxe-kicker mb-4">{activeMenu === "women" ? "Shop by category" : "Shop the edit"}</p>
                     <div className="grid grid-cols-2 gap-x-6 gap-y-3">
-                      {(activeMenu === "women" ? activeCategories : OCCASION_LINKS.map((name) => ({ id: name, name, slug: name.toLowerCase().replaceAll(" ", "-") }))).map((c) => (
+                      {(activeMenu === "women" ? activeCategories : OCCASION_LINKS.map((item) => ({ id: item.label, name: item.label, slug: item.query }))).map((c) => (
                         <Link key={c.id} to="/shop" search={{ category: c.slug }} onClick={closeMenus} className="auraluxe-mega-link">{c.name}</Link>
                       ))}
                       {activeMenu === "women" ? ["Kurti Sets", "Short Kurtis", "Sarees", "Dresses", "Bags & Accessories"].map((name) => (
@@ -132,7 +138,7 @@ export function Header() {
             {mobileShopOpen ? activeCategories.map((c) => <Link key={c.id} to="/shop" search={{ category: c.slug }} onClick={closeMenus}>{c.name}</Link>) : null}
             {QUICK_LINKS.map((item) => <Link key={item.label} to="/shop" search={item.search} onClick={closeMenus}>{item.label}</Link>)}
             <button type="button" onClick={() => setMobileOccasionOpen((v) => !v)} aria-expanded={mobileOccasionOpen}>Shop by occasion <ChevronDown className={`size-4 transition ${mobileOccasionOpen ? "rotate-180" : ""}`} /></button>
-            {mobileOccasionOpen ? OCCASION_LINKS.map((name) => <Link key={name} to="/shop" onClick={closeMenus}>{name}</Link>) : null}
+            {mobileOccasionOpen ? OCCASION_LINKS.map((item) => <Link key={item.label} to="/shop" search={{ q: item.query }} onClick={closeMenus}>{item.label}</Link>) : null}
             <Link to="/auth" onClick={closeMenus}>My account</Link>
             {STORY_LINKS.map((item) => <Link key={item.label} to={item.to} onClick={closeMenus}>{item.label}</Link>)}
           </nav>
