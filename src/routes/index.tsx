@@ -16,6 +16,7 @@ import { SiteLayout } from "@/components/site/SiteLayout";
 import { ProductCard } from "@/components/site/ProductCard";
 import { HeroCarousel } from "@/components/site/HeroCarousel";
 import { useSettings, whatsappLink } from "@/lib/store";
+import { useI18n } from "@/lib/i18n";
 
 export const Route = createFileRoute("/")({
   // Fetch the data the hero needs BEFORE the page renders (on the server), so the
@@ -214,6 +215,7 @@ function CategoryTile({
 
 function Home() {
   const settings = useSettings();
+  const { t } = useI18n();
   const initial = Route.useLoaderData();
   const { data: products = [], isLoading: productsLoading } = useQuery({
     queryKey: ["products"],
@@ -308,7 +310,7 @@ function Home() {
       {/* Placeholder while categories load, so the page below doesn't jump */}
       {categoriesLoading ? (
         <>
-          <SectionHeading eyebrow="Find your fit" title="Shop by Category" />
+          <SectionHeading eyebrow={t("findYourFit")} title={t("shopByCategory")} />
           <section className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-4" aria-hidden="true">
             {Array.from({ length: 8 }).map((_, i) => (
               <div key={i} className="aspect-[4/5] w-full animate-pulse rounded-3xl bg-muted" />
@@ -320,7 +322,7 @@ function Home() {
       {/* Shop by category */}
       {activeCategories.length > 0 ? (
         <>
-          <SectionHeading eyebrow="Find your fit" title="Shop by Category" />
+          <SectionHeading eyebrow={t("findYourFit")} title={t("shopByCategory")} />
           <section className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-4">
             {activeCategories.map((c, i) => (
               <CategoryTile
@@ -337,7 +339,7 @@ function Home() {
 
       {productsLoading ? (
         <>
-          <SectionHeading eyebrow="Just landed" title="New Arrivals" />
+          <SectionHeading eyebrow={t("justLanded")} title={t("newArrivals")} />
           <section
             className="mt-6 grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-3"
             aria-hidden="true"
@@ -351,7 +353,7 @@ function Home() {
 
       {newCollection.length > 0 ? (
         <>
-          <SectionHeading eyebrow="Just landed" title="New Arrivals" />
+          <SectionHeading eyebrow={t("justLanded")} title={t("newArrivals")} />
           <Rail products={newCollection} />
         </>
       ) : null}
@@ -391,21 +393,21 @@ function Home() {
 
       {trending.length > 0 ? (
         <>
-          <SectionHeading eyebrow="Loved right now" title="Trending Now" />
+          <SectionHeading eyebrow="Loved right now" title={t("trending")} />
           <Rail products={trending} />
         </>
       ) : null}
 
       {bestSellers.length > 0 ? (
         <>
-          <SectionHeading eyebrow="Most wanted" title="Best Sellers" />
+          <SectionHeading eyebrow="Most wanted" title={t("bestSellers")} />
           <Rail products={bestSellers} />
         </>
       ) : null}
 
       {offers.length > 0 ? (
         <>
-          <SectionHeading eyebrow="Reduced this week" title="Special Offers" />
+          <SectionHeading eyebrow="Reduced this week" title={t("specialOffers")} />
           <Rail products={offers} />
         </>
       ) : null}
@@ -413,8 +415,8 @@ function Home() {
       {/* Editorial tiles */}
       <section className="mt-16 grid gap-5 md:grid-cols-3">
         <Link to="/about" className="group glass relative overflow-hidden rounded-3xl p-8 transition hover:-translate-y-1">
-          <p className="eyebrow">Our story</p>
-          <h3 className="mt-3 font-display text-3xl">Designed in Nepalgunj</h3>
+          <p className="eyebrow">{t("ourStory")}</p>
+          <h3 className="mt-3 font-display text-3xl">{t("designedNepalgunj")}</h3>
           <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
             The Auraluxe atelier, our fabrics, and the hands behind every piece.
           </p>
@@ -437,8 +439,8 @@ function Home() {
           </span>
         </Link>
         <Link to="/contact" className="group glass relative overflow-hidden rounded-3xl p-8 transition hover:-translate-y-1">
-          <p className="eyebrow">Visit us</p>
-          <h3 className="mt-3 font-display text-3xl">The Nepalgunj store</h3>
+          <p className="eyebrow">{t("visitUs")}</p>
+          <h3 className="mt-3 font-display text-3xl">{t("nepalgunjStore")}</h3>
           <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
             {settings["address"] ?? "Come try your favourites in person."}
           </p>
@@ -451,7 +453,7 @@ function Home() {
       {/* Testimonials */}
       {testimonials.length > 0 ? (
         <>
-          <SectionHeading eyebrow="In their words" title="Customer Stories" />
+          <SectionHeading eyebrow="In their words" title={t("customerStories")} />
           <section className="mt-6 grid gap-5 sm:grid-cols-3">
             {testimonials.slice(0, 3).map((t) => (
               <blockquote key={t.id} className="glass rounded-3xl p-6">
@@ -469,7 +471,7 @@ function Home() {
       {/* Social + contact CTA */}
       <section className="glass-strong mt-16 grid gap-8 rounded-3xl p-8 sm:p-12 md:grid-cols-2">
         <div>
-          <p className="eyebrow">Follow along</p>
+          <p className="eyebrow">{t("followAlong")}</p>
           <h2 className="mt-3 font-display text-4xl">The Auraluxe edit, daily</h2>
           <p className="mt-3 max-w-sm text-[15px] text-muted-foreground">
             Styling notes, new arrivals and early access on Instagram and TikTok.
