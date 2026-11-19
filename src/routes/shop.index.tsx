@@ -46,6 +46,17 @@ export const Route = createFileRoute("/shop/")({
 
 const PER_PAGE = 9;
 
+const DUMMY_CATEGORY_IMAGES = [
+  "https://images.unsplash.com/photo-1617627143750-d86bc21e42bb?auto=format&fit=crop&w=720&q=82",
+  "https://images.unsplash.com/photo-1583391733956-6c78276477e3?auto=format&fit=crop&w=720&q=82",
+  "https://images.unsplash.com/photo-1594633312681-425c7b97ccd1?auto=format&fit=crop&w=720&q=82",
+  "https://images.unsplash.com/photo-1585487000160-6ebcfceb0d03?auto=format&fit=crop&w=720&q=82",
+  "https://images.unsplash.com/photo-1595777457583-95e059d581b8?auto=format&fit=crop&w=720&q=82",
+  "https://images.unsplash.com/photo-1609357605129-26f69add5d6e?auto=format&fit=crop&w=720&q=82",
+  "https://images.unsplash.com/photo-1612336307429-8a898d10e223?auto=format&fit=crop&w=720&q=82",
+  "https://images.unsplash.com/photo-1617019114583-affb34d1b3cd?auto=format&fit=crop&w=720&q=82",
+];
+
 function Shop() {
   const search = Route.useSearch();
   const navigate = useNavigate({ from: "/shop/" });
@@ -176,6 +187,43 @@ function Shop() {
           {search.category ? <><span>/</span><span className="text-[#762b3b]">{categories.find((c) => c.slug === search.category)?.name}</span></> : null}
         </div>
       </div>
+
+      {/* Visual category discovery — temporary editorial imagery until the catalogue is fully photographed. */}
+      {categories.some((c) => c.is_active) ? (
+        <section className="mt-8" aria-label="Shop by category">
+          <div className="mb-4 flex items-end justify-between gap-3">
+            <div>
+              <p className="auraluxe-kicker">Explore the edit</p>
+              <h2 className="mt-2 font-display text-2xl text-[#422d2a] sm:text-3xl">Shop by category</h2>
+            </div>
+            <span className="text-[10px] uppercase tracking-[.16em] text-stone-500">Find your look</span>
+          </div>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+            {categories.filter((c) => c.is_active).map((c, i) => (
+              <Link
+                key={c.id}
+                to="/shop"
+                search={{ category: c.slug }}
+                className="group relative aspect-[4/5] overflow-hidden rounded-sm bg-[#eee5dc]"
+              >
+                <img
+                  src={c.image_url || DUMMY_CATEGORY_IMAGES[i % DUMMY_CATEGORY_IMAGES.length]}
+                  alt={c.name}
+                  loading="lazy"
+                  width={720}
+                  height={900}
+                  className="h-full w-full object-cover transition duration-700 group-hover:scale-105"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-[#241713]/75 via-transparent to-transparent" />
+                <div className="absolute inset-x-0 bottom-0 flex items-end justify-between p-3 sm:p-4">
+                  <span className="font-display text-lg text-white sm:text-xl">{c.name}</span>
+                  <span className="text-sm text-white/90">↗</span>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </section>
+      ) : null}
 
       {/* Search + filters */}
       <div className="auraluxe-filter-panel mt-7 rounded-sm border border-[#e9dfd5] bg-[#fffdf9] p-4 shadow-sm sm:p-6">
