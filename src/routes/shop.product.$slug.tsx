@@ -228,7 +228,7 @@ function ProductDetail() {
           ) : null}
         </div>
 
-        <div className="glass rounded-3xl p-6 sm:p-8">
+        <div className="auraluxe-product-buybox glass rounded-3xl p-6 sm:p-8 lg:sticky lg:top-28 lg:self-start">
           <p className="eyebrow">{product.fabric}</p>
           <h1 className="mt-2 font-display text-4xl leading-tight">{product.name}</h1>
 
@@ -399,11 +399,11 @@ function ProductDetail() {
             Ask on WhatsApp
           </a>
 
-          <div className="mt-7 border-t border-border pt-6">
+          <div className="auraluxe-product-details mt-7 border-t border-border pt-6">
             {product.description ? <p className="whitespace-pre-line text-[15px] leading-relaxed text-muted-foreground">{product.description}</p> : null}
             <p className="mt-4 text-xs leading-relaxed text-muted-foreground">{PHOTO_DISCLAIMER}</p>
           </div>
-          <WomensSizeGuide customChart={product.size_chart} />
+          <div className="mt-6 grid grid-cols-2 gap-2 border-t border-border pt-5 text-center sm:grid-cols-4 lg:grid-cols-2 2xl:grid-cols-4">\n            <div className="auraluxe-service-item"><span>✓</span><small>Quality checked</small></div>\n            <div className="auraluxe-service-item"><span>↗</span><small>Secure checkout</small></div>\n            <div className="auraluxe-service-item"><span>⌂</span><small>Delivery across Nepal</small></div>\n            <div className="auraluxe-service-item"><span>♡</span><small>Personal assistance</small></div>\n          </div>\n          <WomensSizeGuide customChart={product.size_chart} />
         </div>
       </section>
 
