@@ -89,7 +89,7 @@ export function Header() {
                     <p className="auraluxe-kicker mb-4">{activeMenu === "women" ? "Shop by category" : "Shop the edit"}</p>
                     <div className="grid grid-cols-2 gap-x-6 gap-y-3">
                       {(activeMenu === "women" ? activeCategories : OCCASION_LINKS.map((item) => ({ id: item.label, name: item.label, slug: item.query }))).map((c) => (
-                        <Link key={c.id} to="/shop" search={{ category: c.slug }} onClick={closeMenus} className="auraluxe-mega-link">{c.name}</Link>
+                        <Link key={c.id} to="/shop" search={activeMenu === "women" ? { category: c.slug } : { q: c.slug }} onClick={closeMenus} className="auraluxe-mega-link">{c.name}</Link>
                       ))}
                       {activeMenu === "women" ? ["Kurti Sets", "Short Kurtis", "Sarees", "Dresses", "Bags & Accessories"].map((name) => (
                         <Link key={name} to="/shop" onClick={closeMenus} className="auraluxe-mega-link">{name}</Link>
