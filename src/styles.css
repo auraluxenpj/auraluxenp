@@ -306,3 +306,50 @@ main .glass:not(article):not(a.group) {
     transition: none;
   }
 }
+
+
+/* Auraluxe editorial storefront: BIBA-informed merchandising patterns, original brand styling. */
+.auraluxe-announcement {
+  background: #762b3b;
+  color: #fffaf4;
+  font-size: 10px;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  gap: .65rem;
+}
+.auraluxe-header-wrap {
+  background: rgba(255,253,249,.97);
+  border-bottom: 1px solid #e9e1d8;
+  backdrop-filter: blur(16px);
+}
+.auraluxe-header { max-width: 1440px; margin: 0 auto; }
+.auraluxe-wordmark { color: #54202d; text-decoration: none; }
+.auraluxe-wordmark > span { font-family: var(--font-body); font-size: 25px; font-weight: 600; letter-spacing: .19em; }
+.auraluxe-wordmark small { margin-top: 5px; color: #9b7c6c; font-size: 7px; letter-spacing: .22em; }
+.auraluxe-nav-link {
+  color: #433a35;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: .13em;
+  text-transform: uppercase;
+  transition: color .18s ease;
+}
+.auraluxe-nav-link:hover, .auraluxe-mega-link:hover { color: #8b3448; }
+.auraluxe-kicker { color: #9a6b54; font-size: 9px; font-weight: 600; letter-spacing: .2em; text-transform: uppercase; }
+.auraluxe-mega-link { display: block; color: #514740; font-size: 13px; transition: color .18s ease; }
+.auraluxe-icon-link {
+  display: grid; width: 38px; height: 38px; place-items: center; border-radius: 50%;
+  color: #4d3934; transition: background .18s ease, color .18s ease;
+}
+.auraluxe-icon-link:hover { background: #f2e9e2; color: #762b3b; }
+.auraluxe-mobile-nav {
+  display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 0;
+  border-top: 1px solid #eee5dd; padding: 8px 0 14px;
+}
+.auraluxe-mobile-nav a { padding: 12px 8px; border-bottom: 1px solid #f0e9e3; color: #514740; font-size: 11px; letter-spacing: .09em; text-transform: uppercase; }
+@media (max-width: 639px) {
+  .auraluxe-announcement { min-height: 30px; font-size: 8px; letter-spacing: .08em; }
+  .auraluxe-header { min-height: 66px; }
+  .auraluxe-wordmark > span { font-size: 21px; }
+  .auraluxe-wordmark small { font-size: 6px; }
+}

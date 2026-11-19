@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { SiteLayout } from "@/components/site/SiteLayout";
@@ -46,6 +46,17 @@ export const Route = createFileRoute("/shop/")({
 
 const PER_PAGE = 9;
 
+const DUMMY_CATEGORY_IMAGES = [
+  "https://images.unsplash.com/photo-1617627143750-d86bc21e42bb?auto=format&fit=crop&w=720&q=82",
+  "https://images.unsplash.com/photo-1583391733956-6c78276477e3?auto=format&fit=crop&w=720&q=82",
+  "https://images.unsplash.com/photo-1594633312681-425c7b97ccd1?auto=format&fit=crop&w=720&q=82",
+  "https://images.unsplash.com/photo-1585487000160-6ebcfceb0d03?auto=format&fit=crop&w=720&q=82",
+  "https://images.unsplash.com/photo-1595777457583-95e059d581b8?auto=format&fit=crop&w=720&q=82",
+  "https://images.unsplash.com/photo-1609357605129-26f69add5d6e?auto=format&fit=crop&w=720&q=82",
+  "https://images.unsplash.com/photo-1612336307429-8a898d10e223?auto=format&fit=crop&w=720&q=82",
+  "https://images.unsplash.com/photo-1617019114583-affb34d1b3cd?auto=format&fit=crop&w=720&q=82",
+];
+
 function Shop() {
   const search = Route.useSearch();
   const navigate = useNavigate({ from: "/shop/" });
@@ -79,7 +90,15 @@ function Shop() {
     [products],
   );
 
+  const activeCategories = categories.filter((c) => c.is_active);
   const categoryId = categories.find((c) => c.slug === search.category)?.id;
+  const categoryFallbackImage = search.category
+    ? (() => {
+        const index = activeCategories.findIndex((c) => c.slug === search.category);
+        const category = activeCategories[index];
+        return category?.image_url || DUMMY_CATEGORY_IMAGES[(index >= 0 ? index : 0) % DUMMY_CATEGORY_IMAGES.length];
+      })()
+    : undefined;
 
   const filtered = useMemo(() => {
     let list = [...products];
@@ -113,6 +132,19 @@ function Shop() {
         break;
       case "name":
         list.sort((a, b) => a.name.localeCompare(b.name));
+        break;
+      case "bestsellers":
+        list.sort((a, b) => Number(b.is_bestseller) - Number(a.is_bestseller));
+        break;
+      case "popular":
+        list.sort((a, b) => Number(b.is_featured) - Number(a.is_featured));
+        break;
+      case "discount":
+        list.sort((a, b) => {
+          const discountA = Number(a.price) > 0 ? 1 - effectivePrice(a) / Number(a.price) : 0;
+          const discountB = Number(b.price) > 0 ? 1 - effectivePrice(b) / Number(b.price) : 0;
+          return discountB - discountA;
+        });
         break;
       default:
         list.sort((a, b) => (a.created_at < b.created_at ? 1 : -1));
@@ -150,13 +182,59 @@ function Shop() {
 
   return (
     <SiteLayout>
-      <div className="mt-10">
-        <p className="eyebrow">The collection</p>
-        <h1 className="mt-2 font-display text-5xl">Shop Auraluxe</h1>
+      <div className="auraluxe-collection-intro mt-8 sm:mt-12">
+        <p className="auraluxe-kicker">The Auraluxe edit</p>
+        <h1 className="mt-3 font-display text-4xl leading-tight text-[#422d2a] sm:text-6xl">
+          {search.category ? categories.find((c) => c.slug === search.category)?.name ?? "The Collection" : "Discover your style"}
+        </h1>
+        <p className="mt-3 max-w-2xl text-sm leading-6 text-stone-500 sm:text-base">
+          Thoughtfully chosen ethnic wear for everyday moments, celebrations and everything in between.
+        </p>
+        <div className="mt-5 flex flex-wrap gap-2 text-[10px] uppercase tracking-[.16em] text-stone-500">
+          <span>Home</span><span>/</span><span className="text-[#762b3b]">Shop</span>
+          {search.category ? <><span>/</span><span className="text-[#762b3b]">{categories.find((c) => c.slug === search.category)?.name}</span></> : null}
+        </div>
       </div>
 
+      {/* Visual category discovery — temporary editorial imagery until the catalogue is fully photographed. */}
+      {categories.some((c) => c.is_active) ? (
+        <section className="mt-8" aria-label="Shop by category">
+          <div className="mb-4 flex items-end justify-between gap-3">
+            <div>
+              <p className="auraluxe-kicker">Explore the edit</p>
+              <h2 className="mt-2 font-display text-2xl text-[#422d2a] sm:text-3xl">Shop by category</h2>
+            </div>
+            <span className="text-[10px] uppercase tracking-[.16em] text-stone-500">Find your look</span>
+          </div>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+            {categories.filter((c) => c.is_active).map((c, i) => (
+              <Link
+                key={c.id}
+                to="/shop"
+                search={{ category: c.slug }}
+                className="group relative aspect-[4/5] overflow-hidden rounded-sm bg-[#eee5dc]"
+              >
+                <img
+                  src={c.image_url || DUMMY_CATEGORY_IMAGES[i % DUMMY_CATEGORY_IMAGES.length]}
+                  alt={c.name}
+                  loading="lazy"
+                  width={720}
+                  height={900}
+                  className="h-full w-full object-cover transition duration-700 group-hover:scale-105"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-[#241713]/75 via-transparent to-transparent" />
+                <div className="absolute inset-x-0 bottom-0 flex items-end justify-between p-3 sm:p-4">
+                  <span className="font-display text-lg text-white sm:text-xl">{c.name}</span>
+                  <span className="text-sm text-white/90">↗</span>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </section>
+      ) : null}
+
       {/* Search + filters */}
-      <div className="glass mt-6 rounded-3xl p-5">
+      <div className="auraluxe-filter-panel mt-7 rounded-sm border border-[#e9dfd5] bg-[#fffdf9] p-4 shadow-sm sm:p-6">
         <form
           onSubmit={(e) => {
             e.preventDefault();
@@ -214,7 +292,10 @@ function Shop() {
             value={search.sort ?? "newest"}
             onChange={(e) => update({ sort: e.target.value })}
           >
-            <option value="newest">Sort: Newest</option>
+            <option value="newest">Sort: New arrivals</option>
+            <option value="bestsellers">Bestsellers</option>
+            <option value="popular">Featured</option>
+            <option value="discount">Biggest discount</option>
             <option value="price-asc">Price: Low to high</option>
             <option value="price-desc">Price: High to low</option>
             <option value="name">Name A–Z</option>
@@ -289,13 +370,19 @@ function Shop() {
         ) : null}
       </div>
 
-      <p className="mt-6 text-[12px] uppercase tracking-[0.18em] text-muted-foreground">
-        {isLoading ? "Loading…" : `${filtered.length} pieces`}
-      </p>
+      <div className="mt-8 flex flex-wrap items-end justify-between gap-3 border-b border-[#e8ded5] pb-4">
+        <div>
+          <p className="auraluxe-kicker">Curated for you</p>
+          <h2 className="mt-2 font-display text-2xl text-[#422d2a] sm:text-3xl">The collection</h2>
+        </div>
+        <p className="text-[11px] uppercase tracking-[.15em] text-stone-500" aria-live="polite">
+          {isLoading ? "Loading collection…" : String(filtered.length) + " pieces"}
+        </p>
+      </div>
 
-      <section className="mt-4 grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-3">
+      <section className="mt-5 grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-3">
         {visible.map((p) => (
-          <ProductCard key={p.id} product={p} />
+          <ProductCard key={p.id} product={p} fallbackImage={categoryFallbackImage} />
         ))}
       </section>
 

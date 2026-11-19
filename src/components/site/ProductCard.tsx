@@ -5,10 +5,17 @@ import { useCart, useMoney } from "@/lib/store";
 import { toast } from "sonner";
 import { QuickPickDialog } from "@/components/site/QuickPickDialog";
 
-export function ProductCard({ product }: { product: StorefrontProduct }) {
+export function ProductCard({
+  product,
+  fallbackImage,
+}: {
+  product: StorefrontProduct;
+  fallbackImage?: string;
+}) {
   const money = useMoney();
   const { add } = useCart();
   const price = effectivePrice(product);
+  const cardImage = product.images?.[0] ?? fallbackImage ?? productImage(product);
   const discounted = hasDiscount(product);
   const outOfStock = product.stock <= 0;
   const [picking, setPicking] = useState(false);
@@ -27,7 +34,7 @@ export function ProductCard({ product }: { product: StorefrontProduct }) {
       productId: product.id,
       slug: product.slug,
       name: product.name,
-      image: productImage(product),
+      image: cardImage,
       price,
       size: product.sizes?.[0] ?? null,
       color: product.colors?.[0] ?? null,
@@ -40,7 +47,7 @@ export function ProductCard({ product }: { product: StorefrontProduct }) {
     <article className="group glass rounded-2xl p-2 transition hover:-translate-y-1 sm:rounded-3xl sm:p-3">
       <Link to="/shop/product/$slug" params={{ slug: product.slug }} className="relative block">
         <img
-          src={productImage(product)}
+          src={cardImage}
           alt={product.name}
           loading="lazy"
           decoding="async"
