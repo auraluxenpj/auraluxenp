@@ -141,5 +141,8 @@ export function slugify(value: string): string {
 }
 
 export function productImage(p: Pick<Product, "images">): string {
-  return p.images?.[0] ?? "/images/placeholder-product.jpg";
+  return (
+    p.images?.[0] ??
+    "https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=1000&q=82"
+  );
 }
