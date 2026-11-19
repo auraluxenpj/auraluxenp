@@ -1,91 +1,146 @@
-import { Link } from "@tanstack/react-router";
-import { useState } from "react";
+import { Link, useNavigate } from "@tanstack/react-router";
+import { useState, type FormEvent } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { ChevronDown, Menu, Search, ShoppingBag, UserRound, X } from "lucide-react";
+import { ChevronDown, Menu, Search, ShoppingBag, UserRound, X, ArrowUpRight } from "lucide-react";
 import { useCart } from "@/lib/store";
 import { fetchCategories } from "@/lib/data";
 
 const QUICK_LINKS = [
-  { label: "New In", search: { sort: "newest" } as const },
+  { label: "New Arrivals", search: { sort: "newest" } as const },
   { label: "Best Sellers", search: { sort: "bestsellers" } as const },
   { label: "Sale", search: { category: "sale" } as const },
 ];
-const PLAIN_LINKS = [
+const STORY_LINKS = [
   { label: "Our Story", to: "/about" },
-  { label: "Visit Us", to: "/contact" },
+  { label: "Visit Our Store", to: "/contact" },
 ] as const;
+const OCCASION_LINKS = [
+  { label: "Festive Edit", query: "festive" },
+  { label: "Wedding Guest", query: "wedding" },
+  { label: "Everyday Elegance", query: "everyday" },
+  { label: "Office Wear", query: "office" },
+  { label: "Party Wear", query: "party" },
+];
 
 export function Header() {
   const { count } = useCart();
-  const [open, setOpen] = useState(false);
-  const [shopOpen, setShopOpen] = useState(false);
+  const navigate = useNavigate();
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const [activeMenu, setActiveMenu] = useState<string | null>(null);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [mobileShopOpen, setMobileShopOpen] = useState(false);
+  const [mobileOccasionOpen, setMobileOccasionOpen] = useState(false);
   const { data: categories = [] } = useQuery({ queryKey: ["categories"], queryFn: fetchCategories });
   const activeCategories = categories.filter((c) => c.is_active);
 
+  const submitSearch = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const q = searchTerm.trim();
+    setSearchOpen(false);
+    setMobileOpen(false);
+    if (q) navigate({ to: "/shop", search: { q } });
+  };
+
+  const closeMenus = () => {
+    setActiveMenu(null);
+    setMobileOpen(false);
+  };
+
   return (
     <>
-      <div className="auraluxe-announcement -mx-5 mb-0 flex min-h-8 items-center justify-center px-3 text-center sm:-mx-8">
-        <span>Discover the latest Auraluxe edit</span>
+      <div className="auraluxe-announcement -mx-5 mb-0 flex min-h-8 items-center justify-center px-3 text-center sm:-mx-8 lg:-mx-12 2xl:-mx-16">
+        <span>Complimentary delivery on qualifying orders</span>
         <span className="hidden sm:inline">·</span>
-        <span className="hidden sm:inline">Thoughtfully curated ethnic wear, from Nepalgunj</span>
+        <span className="hidden sm:inline">A considered wardrobe, curated in Nepalgunj</span>
       </div>
-      <div className="auraluxe-header-wrap sticky top-0 z-40 -mx-5 px-5 sm:-mx-8 sm:px-8">
+      <div className="auraluxe-header-wrap sticky top-0 z-40 -mx-5 px-5 sm:-mx-8 sm:px-8 lg:-mx-12 lg:px-12 2xl:-mx-16 2xl:px-16">
         <header className="auraluxe-header relative flex min-h-[76px] items-center justify-between gap-3">
-          <Link to="/" className="auraluxe-wordmark flex shrink-0 flex-col leading-none" aria-label="Auraluxe home">
+          <Link to="/" onClick={closeMenus} className="auraluxe-wordmark flex shrink-0 flex-col leading-none" aria-label="Auraluxe home">
             <span>AURALUXE</span>
             <small>THE ART OF EVERYDAY ELEGANCE</small>
           </Link>
 
-          <nav className="hidden items-center gap-6 xl:flex" aria-label="Main navigation">
-            <div className="auraluxe-nav-group relative" onMouseEnter={() => setShopOpen(true)} onMouseLeave={() => setShopOpen(false)}>
-              <Link to="/shop" className="auraluxe-nav-link flex items-center gap-1.5">Shop <ChevronDown className="size-3" /></Link>
-              {shopOpen ? (
-                <div className="auraluxe-mega absolute left-1/2 top-full z-50 w-[min(760px,85vw)] -translate-x-1/2 pt-4">
-                  <div className="grid grid-cols-[1.2fr_2fr] gap-8 rounded-sm border border-stone-200 bg-[#fffdf9] p-8 shadow-2xl">
-                    <div className="border-r border-stone-200 pr-7">
-                      <p className="auraluxe-kicker">Explore Auraluxe</p>
-                      <h3 className="mt-3 font-display text-3xl text-stone-800">Find your next favourite.</h3>
-                      <p className="mt-3 text-sm leading-6 text-stone-500">Considered silhouettes and thoughtful details for every occasion.</p>
-                      <Link to="/shop" onClick={() => setShopOpen(false)} className="mt-5 inline-block border-b border-[#762b3b] pb-1 text-xs uppercase tracking-[.18em] text-[#762b3b]">Shop everything →</Link>
+          <nav className="hidden items-center gap-6 xl:flex" aria-label="Main navigation" onMouseLeave={() => setActiveMenu(null)}>
+            <div className="auraluxe-nav-group relative" onMouseEnter={() => setActiveMenu("women")}>
+              <button type="button" className="auraluxe-nav-link flex items-center gap-1.5" aria-expanded={activeMenu === "women"} onClick={() => setActiveMenu(activeMenu === "women" ? null : "women")}>
+                Women <ChevronDown className="size-3" />
+              </button>
+            </div>
+            <Link to="/shop" search={{ sort: "newest" }} className="auraluxe-nav-link">New In</Link>
+            <div className="auraluxe-nav-group relative" onMouseEnter={() => setActiveMenu("occasion")}>
+              <button type="button" className="auraluxe-nav-link flex items-center gap-1.5" aria-expanded={activeMenu === "occasion"} onClick={() => setActiveMenu(activeMenu === "occasion" ? null : "occasion")}>
+                Collections <ChevronDown className="size-3" />
+              </button>
+            </div>
+            <Link to="/shop" search={{ category: "sale" }} className="auraluxe-nav-link">Sale</Link>
+            <Link to="/about" className="auraluxe-nav-link">Our Story</Link>
+
+            {activeMenu ? (
+              <div className="auraluxe-mega absolute left-1/2 top-full z-50 w-[min(1080px,92vw)] -translate-x-1/2 pt-3" onMouseEnter={() => setActiveMenu(activeMenu)}>
+                <div className="grid grid-cols-[1fr_2fr_1.15fr] gap-8 border border-[#e9e1d8] bg-[#fffdf9] p-8 shadow-2xl">
+                  <div className="border-r border-[#e9e1d8] pr-7">
+                    <p className="auraluxe-kicker">{activeMenu === "women" ? "The Auraluxe wardrobe" : "Curated moments"}</p>
+                    <h3 className="mt-3 font-display text-3xl leading-tight text-[#422d2a]">{activeMenu === "women" ? "Find your signature style." : "Dress for every occasion."}</h3>
+                    <p className="mt-3 text-sm leading-6 text-stone-500">Thoughtful pieces, beautiful details and easy elegance for the moments that matter.</p>
+                    <Link to="/shop" onClick={closeMenus} className="mt-5 inline-flex items-center gap-2 border-b border-[#762b3b] pb-1 text-xs uppercase tracking-[.18em] text-[#762b3b]">Explore all <ArrowUpRight className="size-3" /></Link>
+                  </div>
+                  <div>
+                    <p className="auraluxe-kicker mb-4">{activeMenu === "women" ? "Shop by category" : "Shop the edit"}</p>
+                    <div className="grid grid-cols-2 gap-x-6 gap-y-3">
+                      {(activeMenu === "women" ? activeCategories : OCCASION_LINKS.map((item) => ({ id: item.label, name: item.label, slug: item.query }))).map((c) => (
+                        <Link key={c.id} to="/shop" search={activeMenu === "women" ? { category: c.slug } : { q: c.slug }} onClick={closeMenus} className="auraluxe-mega-link">{c.name}</Link>
+                      ))}
+                      {activeMenu === "women" ? ["Kurti Sets", "Short Kurtis", "Sarees", "Dresses", "Bags & Accessories"].map((name) => (
+                        <Link key={name} to="/shop" onClick={closeMenus} className="auraluxe-mega-link">{name}</Link>
+                      )) : null}
                     </div>
-                    <div>
-                      <p className="auraluxe-kicker mb-4">Shop by category</p>
-                      <div className="grid grid-cols-2 gap-x-5 gap-y-3">
-                        {activeCategories.map((c) => (
-                          <Link key={c.id} to="/shop" search={{ category: c.slug }} onClick={() => setShopOpen(false)} className="auraluxe-mega-link">{c.name}</Link>
-                        ))}
-                        {["Kurti Sets", "Sarees", "Dresses", "Bags & Accessories"].map((name) => (
-                          <Link key={name} to="/shop" onClick={() => setShopOpen(false)} className="auraluxe-mega-link">{name}</Link>
-                        ))}
-                      </div>
+                  </div>
+                  <div className="relative min-h-[220px] overflow-hidden bg-[#efe5dc]">
+                    <img src="https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=800&q=85" alt="Auraluxe ethnic fashion collection" loading="lazy" className="absolute inset-0 h-full w-full object-cover" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-[#2d1918]/70 to-transparent" />
+                    <div className="absolute inset-x-0 bottom-0 p-5 text-white">
+                      <p className="text-[9px] uppercase tracking-[.22em]">Auraluxe edit</p>
+                      <p className="mt-2 font-display text-2xl">Made for your moments</p>
+                      <Link to="/shop" onClick={closeMenus} className="mt-3 inline-block border-b border-white/80 pb-1 text-[10px] uppercase tracking-[.18em]">Discover now</Link>
                     </div>
                   </div>
                 </div>
-              ) : null}
-            </div>
-            {QUICK_LINKS.map((item) => <Link key={item.label} to="/shop" search={item.search} className="auraluxe-nav-link">{item.label}</Link>)}
-            {PLAIN_LINKS.map((item) => <Link key={item.label} to={item.to} className="auraluxe-nav-link">{item.label}</Link>)}
+              </div>
+            ) : null}
           </nav>
 
           <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
-            <Link to="/shop" aria-label="Search products" className="auraluxe-icon-link"><Search className="size-[18px]" /></Link>
+            <button type="button" aria-label="Search products" aria-expanded={searchOpen} onClick={() => setSearchOpen((v) => !v)} className="auraluxe-icon-link"><Search className="size-[18px]" /></button>
             <Link to="/auth" aria-label="My account" className="auraluxe-icon-link hidden sm:grid"><UserRound className="size-[18px]" /></Link>
             <Link to="/cart" aria-label={`Shopping bag, ${count} items`} className="auraluxe-icon-link relative">
               <ShoppingBag className="size-[18px]" />
               {count > 0 ? <span className="absolute -right-1 -top-1 grid size-[17px] place-items-center rounded-full bg-[#762b3b] text-[9px] text-white">{count}</span> : null}
             </Link>
-            <button type="button" aria-label="Menu" aria-expanded={open} onClick={() => setOpen((v) => !v)} className="auraluxe-icon-link xl:hidden">
-              {open ? <X className="size-[18px]" /> : <Menu className="size-[18px]" />}
+            <button type="button" aria-label="Menu" aria-expanded={mobileOpen} onClick={() => setMobileOpen((v) => !v)} className="auraluxe-icon-link xl:hidden">
+              {mobileOpen ? <X className="size-[18px]" /> : <Menu className="size-[18px]" />}
             </button>
           </div>
         </header>
-        {open ? (
+
+        {searchOpen ? (
+          <form onSubmit={submitSearch} className="auraluxe-search-panel flex items-center gap-3 border-t border-[#eee5dd] py-4">
+            <Search className="size-4 shrink-0 text-[#8b6a5e]" />
+            <input autoFocus value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} placeholder="Search kurtis, suit sets, sarees…" className="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-stone-400" aria-label="Search products" />
+            <button type="submit" className="text-[10px] font-semibold uppercase tracking-[.18em] text-[#762b3b]">Search</button>
+            <button type="button" aria-label="Close search" onClick={() => setSearchOpen(false)} className="auraluxe-icon-link"><X className="size-4" /></button>
+          </form>
+        ) : null}
+
+        {mobileOpen ? (
           <nav className="auraluxe-mobile-nav xl:hidden" aria-label="Mobile navigation">
-            <Link to="/shop" onClick={() => setOpen(false)}>Shop all</Link>
-            {QUICK_LINKS.map((item) => <Link key={item.label} to="/shop" search={item.search} onClick={() => setOpen(false)}>{item.label}</Link>)}
-            {activeCategories.map((c) => <Link key={c.id} to="/shop" search={{ category: c.slug }} onClick={() => setOpen(false)}>{c.name}</Link>)}
-            <Link to="/auth" onClick={() => setOpen(false)}>My account</Link>
-            {PLAIN_LINKS.map((item) => <Link key={item.label} to={item.to} onClick={() => setOpen(false)}>{item.label}</Link>)}
+            <button type="button" onClick={() => setMobileShopOpen((v) => !v)} aria-expanded={mobileShopOpen}>Shop by category <ChevronDown className={`size-4 transition ${mobileShopOpen ? "rotate-180" : ""}`} /></button>
+            {mobileShopOpen ? activeCategories.map((c) => <Link key={c.id} to="/shop" search={{ category: c.slug }} onClick={closeMenus}>{c.name}</Link>) : null}
+            {QUICK_LINKS.map((item) => <Link key={item.label} to="/shop" search={item.search} onClick={closeMenus}>{item.label}</Link>)}
+            <button type="button" onClick={() => setMobileOccasionOpen((v) => !v)} aria-expanded={mobileOccasionOpen}>Shop by occasion <ChevronDown className={`size-4 transition ${mobileOccasionOpen ? "rotate-180" : ""}`} /></button>
+            {mobileOccasionOpen ? OCCASION_LINKS.map((item) => <Link key={item.label} to="/shop" search={{ q: item.query }} onClick={closeMenus}>{item.label}</Link>) : null}
+            <Link to="/auth" onClick={closeMenus}>My account</Link>
+            {STORY_LINKS.map((item) => <Link key={item.label} to={item.to} onClick={closeMenus}>{item.label}</Link>)}
           </nav>
         ) : null}
       </div>

@@ -12,6 +12,7 @@ type ShopSearch = {
   sort?: string | undefined;
   size?: string | undefined;
   color?: string | undefined;
+  fabric?: string | undefined;
   max?: number | undefined;
   stock?: string | undefined;
 };
@@ -23,6 +24,7 @@ export const Route = createFileRoute("/shop/")({
     sort: typeof search["sort"] === "string" ? search["sort"] : undefined,
     size: typeof search["size"] === "string" ? search["size"] : undefined,
     color: typeof search["color"] === "string" ? search["color"] : undefined,
+    fabric: typeof search["fabric"] === "string" ? search["fabric"] : undefined,
     max: search["max"] != null ? Number(search["max"]) : undefined,
     stock: typeof search["stock"] === "string" ? search["stock"] : undefined,
   }),
@@ -85,6 +87,10 @@ function Shop() {
     () => Array.from(new Set(products.flatMap((p) => p.colors ?? []))).sort(),
     [products],
   );
+  const fabrics = useMemo(
+    () => Array.from(new Set(products.map((p) => p.fabric).filter((v): v is string => Boolean(v)))).sort(),
+    [products],
+  );
   const maxPrice = useMemo(
     () => Math.max(10000, ...products.map((p) => Number(p.price))),
     [products],
@@ -120,6 +126,7 @@ function Shop() {
     }
     if (search.size) list = list.filter((p) => (p.sizes ?? []).includes(search.size!));
     if (search.color) list = list.filter((p) => (p.colors ?? []).includes(search.color!));
+    if (search.fabric) list = list.filter((p) => p.fabric === search.fabric);
     if (search.max) list = list.filter((p) => effectivePrice(p) <= search.max!);
     if (search.stock === "in") list = list.filter((p) => p.stock > 0);
 
@@ -329,6 +336,15 @@ function Shop() {
 
           <select
             className={selectClass}
+            value={search.fabric ?? ""}
+            onChange={(e) => update({ fabric: e.target.value || undefined })}
+          >
+            <option value="">All fabrics</option>
+            {fabrics.map((fabric) => <option key={fabric} value={fabric}>{fabric}</option>)}
+          </select>
+
+          <select
+            className={selectClass}
             value={search.stock ?? ""}
             onChange={(e) => update({ stock: e.target.value || undefined })}
           >
@@ -351,7 +367,7 @@ function Shop() {
             />
           </label>
         </div>
-        {(search.q || search.category || search.size || search.color || search.max || search.stock) ? (
+        {(search.q || search.category || search.size || search.color || search.fabric || search.max || search.stock) ? (
           <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-border/60 pt-4">
             <p className="text-xs text-muted-foreground" aria-live="polite">
               Filters are active — {filtered.length} matching pieces
@@ -380,7 +396,7 @@ function Shop() {
         </p>
       </div>
 
-      <section className="mt-5 grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-3">
+      <section className="auraluxe-product-grid mt-5 grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-4 2xl:grid-cols-5">
         {visible.map((p) => (
           <ProductCard key={p.id} product={p} fallbackImage={categoryFallbackImage} />
         ))}

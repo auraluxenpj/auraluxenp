@@ -322,7 +322,7 @@ main .glass:not(article):not(a.group) {
   border-bottom: 1px solid #e9e1d8;
   backdrop-filter: blur(16px);
 }
-.auraluxe-header { max-width: 1440px; margin: 0 auto; }
+.auraluxe-header { width: 100%; max-width: none; margin: 0 auto; }
 .auraluxe-wordmark { color: #54202d; text-decoration: none; }
 .auraluxe-wordmark > span { font-family: var(--font-body); font-size: 25px; font-weight: 600; letter-spacing: .19em; }
 .auraluxe-wordmark small { margin-top: 5px; color: #9b7c6c; font-size: 7px; letter-spacing: .22em; }
@@ -352,4 +352,34 @@ main .glass:not(article):not(a.group) {
   .auraluxe-header { min-height: 66px; }
   .auraluxe-wordmark > span { font-size: 21px; }
   .auraluxe-wordmark small { font-size: 6px; }
+}
+
+
+/* Expanded BIBA-informed storefront patterns, expressed in Auraluxe's own identity. */
+.auraluxe-header-wrap { box-shadow: 0 5px 22px -20px rgba(50, 28, 24, .35); }
+.auraluxe-mega { animation: auraluxe-menu-in .16s ease-out both; }
+@keyframes auraluxe-menu-in { from { opacity: 0; transform: translate(-50%, 6px); } to { opacity: 1; transform: translate(-50%, 0); } }
+.auraluxe-mega-link { padding: 3px 0; }
+.auraluxe-mega-link:hover { padding-left: 3px; }
+.auraluxe-search-panel input { min-height: 42px; }
+.auraluxe-mobile-nav button {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 13px 8px; border-bottom: 1px solid #f0e9e3; color: #514740;
+  font-size: 11px; letter-spacing: .09em; text-align: left; text-transform: uppercase;
+}
+.auraluxe-mobile-nav a { display: flex; align-items: center; min-height: 42px; }
+.auraluxe-product-grid article { min-width: 0; }
+.auraluxe-product-grid article > a > img { aspect-ratio: 3 / 4; object-fit: cover; }
+.auraluxe-product-buybox { border-radius: .65rem; background: #fffdf9; box-shadow: 0 12px 38px -30px rgba(60, 31, 28, .35); }
+.auraluxe-product-buybox .eyebrow { letter-spacing: .2em; }
+.auraluxe-service-item { display: flex; min-height: 58px; flex-direction: column; align-items: center; justify-content: center; gap: 4px; border: 1px solid #eee5dd; background: #fffaf5; padding: 8px 4px; }
+.auraluxe-service-item span { color: #762b3b; font-size: 15px; line-height: 1; }
+.auraluxe-service-item small { color: #76675f; font-size: 9px; letter-spacing: .07em; text-transform: uppercase; }
+@media (min-width: 1024px) {
+  .auraluxe-product-buybox { max-height: calc(100vh - 8rem); overflow-y: auto; scrollbar-width: thin; }
+  .auraluxe-filter-panel { border-radius: .6rem; }
+}
+@media (max-width: 639px) {
+  .auraluxe-product-buybox { border-radius: .55rem; padding: 1.1rem; }
+  .auraluxe-service-item small { font-size: 8px; }
 }
