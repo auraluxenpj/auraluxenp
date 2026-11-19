@@ -1,5 +1,5 @@
 import { Link, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { useState, type FormEvent } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { ChevronDown, Menu, Search, ShoppingBag, UserRound, X, ArrowUpRight } from "lucide-react";
 import { useCart } from "@/lib/store";
@@ -28,7 +28,7 @@ export function Header() {
   const { data: categories = [] } = useQuery({ queryKey: ["categories"], queryFn: fetchCategories });
   const activeCategories = categories.filter((c) => c.is_active);
 
-  const submitSearch = (event: React.FormEvent<HTMLFormElement>) => {
+  const submitSearch = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const q = searchTerm.trim();
     setSearchOpen(false);
