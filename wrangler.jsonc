@@ -3,6 +3,7 @@
   "name": "auraluxe-storefront-preview",
   "compatibility_date": "2026-11-19",
   "previews": {},
+  "preview_urls": true,
   "observability": {
     "enabled": true
   }
