@@ -7,7 +7,7 @@ import { fetchCategories } from "@/lib/data";
 
 const QUICK_LINKS = [
   { label: "New In", search: { sort: "newest" } as const },
-  { label: "Best Sellers", search: { sort: "popular" } as const },
+  { label: "Best Sellers", search: { sort: "bestsellers" } as const },
   { label: "Sale", search: { category: "sale" } as const },
 ];
 const PLAIN_LINKS = [
@@ -25,7 +25,7 @@ export function Header() {
   return (
     <>
       <div className="auraluxe-announcement -mx-5 mb-0 flex min-h-8 items-center justify-center px-3 text-center sm:-mx-8">
-        <span>Complimentary delivery on orders above NPR 3,000</span>
+        <span>Discover the latest Auraluxe edit</span>
         <span className="hidden sm:inline">·</span>
         <span className="hidden sm:inline">Thoughtfully curated ethnic wear, from Nepalgunj</span>
       </div>
