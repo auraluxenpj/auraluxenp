@@ -53,7 +53,7 @@ export const Route = createFileRoute("/")({
     ],
     links: (() => {
       const img = heroImageFor(loaderData);
-      return img ? [{ rel: "preload", as: "image", href: img, fetchPriority: "high" } as any] : [];
+      return img ? [{ rel: "preload", as: "image", href: img }] : [];
     })(),
   }),
   component: Home,
