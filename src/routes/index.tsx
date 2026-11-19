@@ -74,7 +74,7 @@ const FALLBACK_HERO: Banner = {
   title: "The season's silhouette, cut for comfort.",
   subtitle:
     "Hand-finished kurtis, co-ord sets and party wear in breathable georgette and cotton — designed in Nepalgunj, delivered to your door.",
-  image_url: "/images/hero-auraluxe.jpg",
+  image_url: "https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=2200&q=88",
   mobile_image_url: null,
   button_text: "Shop New In",
   button_link: "/shop",
@@ -127,7 +127,7 @@ function CategoryTile({
   images: string[];
   offset: number;
 }) {
-  const count = images.length;
+  const DUMMY_CATEGORY_IMAGES = [\n  "https://images.unsplash.com/photo-1617627143750-d86bc21e42bb?auto=format&fit=crop&w=900&q=82",\n  "https://images.unsplash.com/photo-1583391733956-6c78276477e3?auto=format&fit=crop&w=900&q=82",\n  "https://images.unsplash.com/photo-1594633312681-425c7b97ccd1?auto=format&fit=crop&w=900&q=82",\n  "https://images.unsplash.com/photo-1585487000160-6ebcfceb0d03?auto=format&fit=crop&w=900&q=82",\n  "https://images.unsplash.com/photo-1595777457583-95e059d581b8?auto=format&fit=crop&w=900&q=82",\n  "https://images.unsplash.com/photo-1609357605129-26f69add5d6e?auto=format&fit=crop&w=900&q=82",\n  "https://images.unsplash.com/photo-1612336307429-8a898d10e223?auto=format&fit=crop&w=900&q=82",\n  "https://images.unsplash.com/photo-1617019114583-affb34d1b3cd?auto=format&fit=crop&w=900&q=82",\n];\n\nconst count = images.length;
   const imagesKey = images.join("|");
   const boxRef = useRef<HTMLDivElement>(null);
   const activeRef = useRef(0);
@@ -284,14 +284,14 @@ function Home() {
   const activeCategories = categories.filter((c) => c.is_active).slice(0, 8);
   // Category pictures: newest in-stock products of that category (up to 3),
   // falling back to the image set in admin, then to a plain coloured tile.
-  const categoryImages = (categoryId: string, fallback?: string | null): string[] => {
+  const categoryImages = (categoryId: string, fallback: string | null | undefined, offset: number): string[] => {
     const own = newestFirst
       .filter((p) => p.category_id === categoryId)
       .map((p) => productImage(p))
       .filter(Boolean);
     const unique = Array.from(new Set(own)).slice(0, 3);
     if (unique.length > 0) return unique;
-    return fallback ? [fallback] : [];
+    return fallback ? [fallback] : [DUMMY_CATEGORY_IMAGES[offset % DUMMY_CATEGORY_IMAGES.length]];
   };
 
   return (
@@ -327,7 +327,7 @@ function Home() {
                 key={c.id}
                 name={c.name}
                 slug={c.slug}
-                images={categoryImages(c.id, c.image_url)}
+                images={categoryImages(c.id, c.image_url, i)}
                 offset={i}
               />
             ))}
