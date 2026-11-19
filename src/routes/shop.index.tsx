@@ -114,6 +114,19 @@ function Shop() {
       case "name":
         list.sort((a, b) => a.name.localeCompare(b.name));
         break;
+      case "bestsellers":
+        list.sort((a, b) => Number(b.is_bestseller) - Number(a.is_bestseller));
+        break;
+      case "popular":
+        list.sort((a, b) => Number(b.is_featured) - Number(a.is_featured));
+        break;
+      case "discount":
+        list.sort((a, b) => {
+          const discountA = Number(a.price) > 0 ? 1 - effectivePrice(a) / Number(a.price) : 0;
+          const discountB = Number(b.price) > 0 ? 1 - effectivePrice(b) / Number(b.price) : 0;
+          return discountB - discountA;
+        });
+        break;
       default:
         list.sort((a, b) => (a.created_at < b.created_at ? 1 : -1));
     }
@@ -150,13 +163,22 @@ function Shop() {
 
   return (
     <SiteLayout>
-      <div className="mt-10">
-        <p className="eyebrow">The collection</p>
-        <h1 className="mt-2 font-display text-5xl">Shop Auraluxe</h1>
+      <div className="auraluxe-collection-intro mt-8 sm:mt-12">
+        <p className="auraluxe-kicker">The Auraluxe edit</p>
+        <h1 className="mt-3 font-display text-4xl leading-tight text-[#422d2a] sm:text-6xl">
+          {search.category ? categories.find((c) => c.slug === search.category)?.name ?? "The Collection" : "Discover your style"}
+        </h1>
+        <p className="mt-3 max-w-2xl text-sm leading-6 text-stone-500 sm:text-base">
+          Thoughtfully chosen ethnic wear for everyday moments, celebrations and everything in between.
+        </p>
+        <div className="mt-5 flex flex-wrap gap-2 text-[10px] uppercase tracking-[.16em] text-stone-500">
+          <span>Home</span><span>/</span><span className="text-[#762b3b]">Shop</span>
+          {search.category ? <><span>/</span><span className="text-[#762b3b]">{categories.find((c) => c.slug === search.category)?.name}</span></> : null}
+        </div>
       </div>
 
       {/* Search + filters */}
-      <div className="glass mt-6 rounded-3xl p-5">
+      <div className="auraluxe-filter-panel mt-7 rounded-sm border border-[#e9dfd5] bg-[#fffdf9] p-4 shadow-sm sm:p-6">
         <form
           onSubmit={(e) => {
             e.preventDefault();
@@ -214,7 +236,10 @@ function Shop() {
             value={search.sort ?? "newest"}
             onChange={(e) => update({ sort: e.target.value })}
           >
-            <option value="newest">Sort: Newest</option>
+            <option value="newest">Sort: New arrivals</option>
+            <option value="bestsellers">Bestsellers</option>
+            <option value="popular">Featured</option>
+            <option value="discount">Biggest discount</option>
             <option value="price-asc">Price: Low to high</option>
             <option value="price-desc">Price: High to low</option>
             <option value="name">Name A–Z</option>
@@ -289,11 +314,17 @@ function Shop() {
         ) : null}
       </div>
 
-      <p className="mt-6 text-[12px] uppercase tracking-[0.18em] text-muted-foreground">
-        {isLoading ? "Loading…" : `${filtered.length} pieces`}
-      </p>
+      <div className="mt-8 flex flex-wrap items-end justify-between gap-3 border-b border-[#e8ded5] pb-4">
+        <div>
+          <p className="auraluxe-kicker">Curated for you</p>
+          <h2 className="mt-2 font-display text-2xl text-[#422d2a] sm:text-3xl">The collection</h2>
+        </div>
+        <p className="text-[11px] uppercase tracking-[.15em] text-stone-500" aria-live="polite">
+          {isLoading ? "Loading collection…" : String(filtered.length) + " pieces"}
+        </p>
+      </div>
 
-      <section className="mt-4 grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-3">
+      <section className="mt-5 grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-3">
         {visible.map((p) => (
           <ProductCard key={p.id} product={p} />
         ))}
