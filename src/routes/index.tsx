@@ -309,7 +309,7 @@ function Home() {
   return (
     <SiteLayout>
       {bannersLoading || (heroSlides.length === 0 && productsLoading) ? (
-        <section className="relative -mx-5 -mt-2 overflow-hidden sm:-mx-8">
+        <section className="relative -mx-5 -mt-2 overflow-hidden sm:-mx-8 lg:-mx-12 2xl:-mx-16">
           <h1 className="sr-only">Auraluxe — Premium Ladies' Fashion in Nepalgunj</h1>
           <div className="aspect-[3/4] w-full animate-pulse bg-muted sm:aspect-[16/9] lg:aspect-[2/1]" />
         </section>
