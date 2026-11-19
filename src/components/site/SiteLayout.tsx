@@ -17,7 +17,7 @@ export function SiteLayout({ children }: { children: ReactNode }) {
       <div className="fixed -right-20 top-1/3 -z-10 h-[28rem] w-[28rem] rounded-full bg-accent/30 blur-3xl" aria-hidden />
       <div className="fixed bottom-0 left-1/3 -z-10 h-80 w-80 rounded-full bg-brand-deep/15 blur-3xl" aria-hidden />
 
-      <div className="relative mx-auto max-w-6xl px-5 pb-32 sm:px-8 md:pb-16">
+      <div className="relative w-full px-5 pb-32 sm:px-8 lg:px-12 2xl:px-16 md:pb-16">
         <Header />
         <main>{children}</main>
         <Footer />
