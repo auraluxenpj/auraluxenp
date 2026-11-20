@@ -343,7 +343,7 @@ function Home() {
             {activeCategories.map((c, i) => (
               <CategoryTile
                 key={c.id}
-                name={categoryLabel(c.slug, c.name, language)}
+                name={categoryLabel(c.slug, c.name, language, c.name_ne)}
                 slug={c.slug}
                 images={categoryImages(c.id, c.image_url, i)}
                 offset={i}
