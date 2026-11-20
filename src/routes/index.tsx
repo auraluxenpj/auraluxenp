@@ -16,7 +16,7 @@ import { SiteLayout } from "@/components/site/SiteLayout";
 import { ProductCard } from "@/components/site/ProductCard";
 import { HeroCarousel } from "@/components/site/HeroCarousel";
 import { useSettings, whatsappLink } from "@/lib/store";
-import { categoryLabel, useLanguage } from "@/lib/i18n";
+import { categoryLabel, localizedContent, useLanguage } from "@/lib/i18n";
 
 export const Route = createFileRoute("/")({
   // Fetch the data the hero needs BEFORE the page renders (on the server), so the
@@ -230,7 +230,7 @@ function CategoryTile({
 
 function Home() {
   const settings = useSettings();
-  const { language } = useLanguage();
+  const { language, t } = useLanguage();
   const initial = Route.useLoaderData();
   const { data: products = [], isLoading: productsLoading } = useQuery({
     queryKey: ["products"],
@@ -288,15 +288,16 @@ function Home() {
   const productSlides: Banner[] = newestFirst.slice(0, 4).map((p, i) => ({
     ...FALLBACK_HERO,
     id: `product-hero-${p.id}`,
-    title: p.name,
-    subtitle: "Now in stock — limited pieces, delivered across Nepal.",
+    title: localizedContent(p.name, p.name_ne, language),
+    subtitle: t("nowInStockLimited"),
     image_url: productImage(p),
-    button_text: "Shop now",
+    button_text: t("shopNow"),
     button_link: "/shop",
     sort_order: i,
   }));
+  const defaultHero: Banner = { ...FALLBACK_HERO, title: language === "ne" ? t("heroFallbackTitle") : FALLBACK_HERO.title, subtitle: language === "ne" ? t("heroFallbackSubtitle") : FALLBACK_HERO.subtitle, button_text: t("shopNewIn") };
   const heroBanners =
-    heroSlides.length > 0 ? heroSlides : productSlides.length > 0 ? productSlides : [FALLBACK_HERO];
+    heroSlides.length > 0 ? heroSlides : productSlides.length > 0 ? productSlides : [defaultHero];
 
   const activeCategories = categories.filter((c) => c.is_active).slice(0, 8);
   // Category pictures: newest in-stock products of that category (up to 3),
@@ -381,7 +382,7 @@ function Home() {
             {promo.image_url ? (
               <img
                 src={promo.image_url}
-                alt={promo.title ?? "Auraluxe promotion"}
+                alt={promo.title ?? t("promoAlt")}
                 loading="lazy"
                 width={1024}
                 height={768}
@@ -389,7 +390,7 @@ function Home() {
               />
             ) : null}
             <div className="flex flex-col justify-center p-8 sm:p-12">
-              <p className="eyebrow">Limited offer</p>
+              <p className="eyebrow">{t("limitedOffer")}</p>
               {promo.title ? <h2 className="mt-3 font-display text-4xl">{promo.title}</h2> : null}
               {promo.subtitle ? (
                 <p className="mt-3 text-[15px] text-muted-foreground">{promo.subtitle}</p>
@@ -399,7 +400,7 @@ function Home() {
                   to={promo.button_link as "/shop"}
                   className="mt-6 inline-block w-fit rounded-full bg-primary px-7 py-3.5 text-[13px] uppercase tracking-[0.18em] text-primary-foreground transition hover:bg-brand"
                 >
-                  {promo.button_text ?? "Shop now"}
+                  {promo.button_text ?? t("shopNow")}
                 </Link>
               ) : null}
             </div>
@@ -431,13 +432,13 @@ function Home() {
       {/* Editorial tiles */}
       <section className="mt-16 grid gap-5 md:grid-cols-3">
         <Link to="/about" className="group glass relative overflow-hidden rounded-3xl p-8 transition hover:-translate-y-1">
-          <p className="eyebrow">Our story</p>
-          <h3 className="mt-3 font-display text-3xl">Designed in Nepalgunj</h3>
+          <p className="eyebrow">{t("ourStory")}</p>
+          <h3 className="mt-3 font-display text-3xl">{t("designedNepalgunj")}</h3>
           <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-            The Auraluxe atelier, our fabrics, and the hands behind every piece.
+            {t("atelierStory")}
           </p>
           <span className="mt-5 inline-block text-[12px] uppercase tracking-[0.18em] text-brand transition group-hover:translate-x-1">
-            Read more →
+            {t("readMore")}
           </span>
         </Link>
         <Link
@@ -445,23 +446,23 @@ function Home() {
           search={{ sort: "newest" }}
           className="group glass relative overflow-hidden rounded-3xl p-8 transition hover:-translate-y-1"
         >
-          <p className="eyebrow">The edit</p>
-          <h3 className="mt-3 font-display text-3xl">New-season arrivals</h3>
+          <p className="eyebrow">{t("theEdit")}</p>
+          <h3 className="mt-3 font-display text-3xl">{t("newSeasonArrivals")}</h3>
           <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-            Fresh silhouettes and festive pieces, added as they leave the studio.
+            {t("freshSilhouettes")}
           </p>
           <span className="mt-5 inline-block text-[12px] uppercase tracking-[0.18em] text-brand transition group-hover:translate-x-1">
-            Shop new in →
+            {t("shopNewIn")}
           </span>
         </Link>
         <Link to="/contact" className="group glass relative overflow-hidden rounded-3xl p-8 transition hover:-translate-y-1">
-          <p className="eyebrow">Visit us</p>
-          <h3 className="mt-3 font-display text-3xl">The Nepalgunj store</h3>
+          <p className="eyebrow">{t("visitUs")}</p>
+          <h3 className="mt-3 font-display text-3xl">{t("nepalgunjStore")}</h3>
           <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-            {settings["address"] ?? "Come try your favourites in person."}
+            {settings["address"] ?? t("comeTry")}
           </p>
           <span className="mt-5 inline-block text-[12px] uppercase tracking-[0.18em] text-brand transition group-hover:translate-x-1">
-            Directions & hours →
+            {t("directionsHours")}
           </span>
         </Link>
       </section>
@@ -487,10 +488,10 @@ function Home() {
       {/* Social + contact CTA */}
       <section className="glass-strong mt-16 grid gap-8 rounded-3xl p-8 sm:p-12 md:grid-cols-2">
         <div>
-          <p className="eyebrow">Follow along</p>
-          <h2 className="mt-3 font-display text-4xl">The Auraluxe edit, daily</h2>
+          <p className="eyebrow">{t("followAlong")}</p>
+          <h2 className="mt-3 font-display text-4xl">{t("editDaily")}</h2>
           <p className="mt-3 max-w-sm text-[15px] text-muted-foreground">
-            Styling notes, new arrivals and early access on Instagram and TikTok.
+            {t("stylingNotes")}
           </p>
           <div className="mt-6 flex flex-wrap gap-3">
             {settings["instagram"] ? (
