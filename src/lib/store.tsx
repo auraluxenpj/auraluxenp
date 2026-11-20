@@ -21,9 +21,13 @@ type CartContextValue = {
   clear: () => void;
   count: number;
   subtotal: number;
+  wishlistIds: string[];
+  toggleWishlist: (productId: string) => void;
+  isWishlisted: (productId: string) => boolean;
 };
 
 const STORAGE_KEY = "auraluxe-cart-v1";
+const WISHLIST_STORAGE_KEY = "auraluxe-wishlist-v1";
 
 const CartContext = createContext<CartContextValue | null>(null);
 
@@ -31,6 +35,8 @@ export const itemKey = (i: CartItem) => `${i.productId}|${i.size ?? ""}|${i.colo
 
 export function CartProvider({ children }: { children: ReactNode }) {
   const [items, setItems] = useState<CartItem[]>([]);
+  const [wishlistIds, setWishlistIds] = useState<string[]>([]);
+  const [wishlistLoaded, setWishlistLoaded] = useState(false);
 
   useEffect(() => {
     try {
@@ -40,6 +46,29 @@ export function CartProvider({ children }: { children: ReactNode }) {
       /* ignore */
     }
   }, []);
+
+  useEffect(() => {
+    try {
+      const raw = window.localStorage.getItem(WISHLIST_STORAGE_KEY);
+      if (raw) {
+        const parsed: unknown = JSON.parse(raw);
+        if (Array.isArray(parsed)) setWishlistIds(parsed.filter((id): id is string => typeof id === "string"));
+      }
+    } catch {
+      /* ignore malformed local wishlist data */
+    } finally {
+      setWishlistLoaded(true);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!wishlistLoaded) return;
+    try {
+      window.localStorage.setItem(WISHLIST_STORAGE_KEY, JSON.stringify(wishlistIds));
+    } catch {
+      /* ignore unavailable storage */
+    }
+  }, [wishlistIds, wishlistLoaded]);
 
   useEffect(() => {
     try {
@@ -73,12 +102,16 @@ export function CartProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const clear = useCallback(() => setItems([]), []);
+  const toggleWishlist = useCallback((productId: string) => {
+    setWishlistIds((prev) => prev.includes(productId) ? prev.filter((id) => id !== productId) : [...prev, productId]);
+  }, []);
+  const isWishlisted = useCallback((productId: string) => wishlistIds.includes(productId), [wishlistIds]);
 
   const value = useMemo<CartContextValue>(() => {
     const count = items.reduce((n, i) => n + i.quantity, 0);
     const subtotal = items.reduce((n, i) => n + i.price * i.quantity, 0);
-    return { items, add, remove, setQuantity, clear, count, subtotal };
-  }, [items, add, remove, setQuantity, clear]);
+    return { items, add, remove, setQuantity, clear, count, subtotal, wishlistIds, toggleWishlist, isWishlisted };
+  }, [items, add, remove, setQuantity, clear, wishlistIds, toggleWishlist, isWishlisted]);
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;
 }
