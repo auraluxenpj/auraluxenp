@@ -112,7 +112,8 @@ jobs:
           });
           CONFIG
           bunx drizzle-kit pull --config=drizzle.baseline.config.ts
-          test -s .drizzle-baseline/schema.ts
+          test -s .drizzle-baseline/migrations/schema.ts
+          test -s .drizzle-baseline/migrations/relations.ts
           test -s .drizzle-baseline/migrations/meta/_journal.json
           find .drizzle-baseline -maxdepth 4 -type f -print
 
