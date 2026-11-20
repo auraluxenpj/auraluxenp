@@ -48,7 +48,7 @@ export function SiteLayout({ children }: { children: ReactNode }) {
             to="/cart"
             className="shrink-0 rounded-full bg-primary px-5 py-2.5 text-[12px] uppercase tracking-[0.15em] text-primary-foreground"
           >
-            Checkout
+            {t("checkout")}
           </Link>
         </div>
       ) : null}
