@@ -69,7 +69,7 @@ export function ProductCard({
         ) : null}
         {outOfStock ? (
           <span className="absolute right-2 top-2 rounded-full bg-primary/90 px-2 py-0.5 text-[9px] uppercase tracking-[0.18em] text-primary-foreground sm:right-3 sm:top-3 sm:px-3 sm:py-1 sm:text-[10px]">
-            Sold out
+            {t("soldOut")}
           </span>
         ) : null}
       </Link>
