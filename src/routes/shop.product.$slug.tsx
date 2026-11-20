@@ -18,7 +18,7 @@ import { requiredOptionLabels } from "@/lib/product-options";
 import { PhotoZoom } from "@/components/site/PhotoZoom";
 import { WomensSizeGuide } from "@/components/site/WomensSizeGuide";
 import { PHOTO_DISCLAIMER } from "@/lib/product-information";
-import { useLanguage } from "@/lib/i18n";
+import { localizedContent, useLanguage } from "@/lib/i18n";
 
 export const Route = createFileRoute("/shop/product/$slug")({
   head: ({ params }) => {
@@ -46,7 +46,7 @@ export const Route = createFileRoute("/shop/product/$slug")({
 function ProductDetail() {
   const { slug } = Route.useParams();
   const money = useMoney();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const settings = useSettings();
   const { add } = useCart();
 
@@ -126,6 +126,9 @@ function ProductDetail() {
   }
 
   const d = derived;
+  const displayName = localizedContent(product.name, product.name_ne, language);
+  const displayDescription = localizedContent(product.description, product.description_ne, language);
+  const displayFabric = localizedContent(product.fabric, product.fabric_ne, language);
   const price = effectivePrice(product);
   const hasDiscount = productHasDiscount(product);
   const images = product.images?.length ? product.images : [productImage(product)];
@@ -138,7 +141,7 @@ function ProductDetail() {
   const chosen = {
     productId: product.id,
     slug: product.slug,
-    name: product.name,
+    name: displayName,
     image: images[0] ?? null,
     price,
     size: d.effectiveSize,
@@ -156,7 +159,7 @@ function ProductDetail() {
         <Link to="/shop" className="hover:text-brand">
           Shop
         </Link>{" "}
-        / <span className="text-foreground/70">{product.name}</span>
+        / <span className="text-foreground/70">{displayName}</span>
       </nav>
 
       <section className="mt-6 grid gap-8 lg:grid-cols-2">
@@ -175,7 +178,7 @@ function ProductDetail() {
                 <img
                   key={img + i}
                   src={img}
-                  alt={`${product.name} view ${i + 1}`}
+                  alt={`${displayName} view ${i + 1}`}
                   loading={i === 0 ? "eager" : "lazy"}
                   width={1024}
                   height={1280}
@@ -231,8 +234,8 @@ function ProductDetail() {
         </div>
 
         <div className="auraluxe-product-buybox glass rounded-3xl p-6 sm:p-8 lg:sticky lg:top-28 lg:self-start">
-          <p className="eyebrow">{product.fabric}</p>
-          <h1 className="mt-2 font-display text-4xl leading-tight">{product.name}</h1>
+          <p className="eyebrow">{displayFabric}</p>
+          <h1 className="mt-2 font-display text-4xl leading-tight">{displayName}</h1>
 
           <div className="mt-4 flex items-baseline gap-3">
             <span className="font-display text-3xl text-primary">{money(price)}</span>
@@ -402,7 +405,7 @@ function ProductDetail() {
           </a>
 
           <div className="auraluxe-product-details mt-7 border-t border-border pt-6">
-            {product.description ? <p className="whitespace-pre-line text-[15px] leading-relaxed text-muted-foreground">{product.description}</p> : null}
+            {displayDescription ? <p className="whitespace-pre-line text-[15px] leading-relaxed text-muted-foreground">{displayDescription}</p> : null}
             <p className="mt-4 text-xs leading-relaxed text-muted-foreground">{PHOTO_DISCLAIMER}</p>
           </div>
           <div className="mt-6 grid grid-cols-2 gap-2 border-t border-border pt-5 text-center sm:grid-cols-4 lg:grid-cols-2 2xl:grid-cols-4">\n            <div className="auraluxe-service-item"><span>✓</span><small>{t("qualityChecked")}</small></div>\n            <div className="auraluxe-service-item"><span>↗</span><small>{t("secureCheckout")}</small></div>\n            <div className="auraluxe-service-item"><span>⌂</span><small>{t("deliveryNepal")}</small></div>\n            <div className="auraluxe-service-item"><span>♡</span><small>{t("personalAssistance")}</small></div>\n          </div>\n          <WomensSizeGuide customChart={product.size_chart} />
