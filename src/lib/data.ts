@@ -9,6 +9,7 @@ export type StorefrontProduct = Pick<
   Product,
   | "id"
   | "name"
+  | "name_ne"
   | "slug"
   | "category_id"
   | "price"
@@ -18,7 +19,9 @@ export type StorefrontProduct = Pick<
   | "colors"
   | "images"
   | "fabric"
+  | "fabric_ne"
   | "description"
+  | "description_ne"
   | "is_new"
   | "is_featured"
   | "is_bestseller"
@@ -65,7 +68,7 @@ export async function fetchProducts(): Promise<StorefrontProduct[]> {
   const { data, error } = await supabase
     .from("products")
     .select(
-      "id, name, slug, category_id, price, sale_price, stock, sizes, colors, images, fabric, description, is_new, is_featured, is_bestseller, is_published, created_at",
+      "id, name, name_ne, slug, category_id, price, sale_price, stock, sizes, colors, images, fabric, fabric_ne, description, description_ne, is_new, is_featured, is_bestseller, is_published, created_at",
     )
     .eq("is_published", true)
     .order("created_at", { ascending: false });
