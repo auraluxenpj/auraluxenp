@@ -157,7 +157,7 @@ function ProductDetail() {
         </Link>{" "}
         /{" "}
         <Link to="/shop" className="hover:text-brand">
-          Shop
+          {t("shop")}
         </Link>{" "}
         / <span className="text-foreground/70">{displayName}</span>
       </nav>
