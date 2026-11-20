@@ -120,7 +120,7 @@ export async function fetchAllProducts(): Promise<Product[]> {
 }
 
 export async function fetchProductBySlug(slug: string): Promise<Product | null> {
-  const { data, error } = await supabase.from("products").select("*").eq("slug", slug).maybeSingle();
+  const { data, error } = await supabase.from("products").select("*").eq("slug", slug).eq("is_published", true).maybeSingle();
   if (error) throw error;
   return data;
 }
