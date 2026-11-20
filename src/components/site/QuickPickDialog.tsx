@@ -10,6 +10,7 @@ import {
 import { effectivePrice, productImage, type StorefrontProduct } from "@/lib/data";
 import { requiredOptionLabels } from "@/lib/product-options";
 import { useCart, useMoney } from "@/lib/store";
+import { useLanguage } from "@/lib/i18n";
 
 const pill = (active: boolean) =>
   `rounded-full border px-3.5 py-2 text-[11px] uppercase tracking-[0.12em] transition sm:px-4 sm:text-[12px] ${
@@ -32,6 +33,7 @@ export function QuickPickDialog({
   onOpenChange: (open: boolean) => void;
 }) {
   const money = useMoney();
+  const { t } = useLanguage();
   const { add } = useCart();
   const price = effectivePrice(product);
   const sizes = product.sizes ?? [];
@@ -61,7 +63,7 @@ export function QuickPickDialog({
       color: color ?? colors[0] ?? null,
       quantity: 1,
     });
-    toast.success(`${product.name} added to your bag`);
+    toast.success(`${product.name} ${t("addedToBag")}`);
     onOpenChange(false);
   };
 
@@ -69,9 +71,9 @@ export function QuickPickDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle className="font-display text-lg">Choose your options</DialogTitle>
+          <DialogTitle className="font-display text-lg">{t("chooseOptionsTitle")}</DialogTitle>
           <DialogDescription>
-            Choose the available options before adding this piece to your bag.
+            {t("chooseOptionsDescription")}
           </DialogDescription>
         </DialogHeader>
 
@@ -93,7 +95,7 @@ export function QuickPickDialog({
 
         {sizes.length > 1 ? (
           <div>
-            <p className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground">Size</p>
+            <p className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground">{t("size")}</p>
             <div className="mt-2 flex flex-wrap gap-2">
               {sizes.map((s) => (
                 <button key={s} type="button" aria-pressed={size === s} onClick={() => setSize(s)} className={`${pill(size === s)} min-h-11`}>
@@ -106,7 +108,7 @@ export function QuickPickDialog({
 
         {colors.length > 1 ? (
           <div>
-            <p className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground">Colour</p>
+            <p className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground">{t("colour")}</p>
             <div className="mt-2 flex flex-wrap gap-2">
               {colors.map((c) => (
                 <button key={c} type="button" aria-pressed={color === c} onClick={() => setColor(c)} className={`${pill(color === c)} min-h-11`}>
@@ -118,7 +120,7 @@ export function QuickPickDialog({
         ) : null}
 
         {missing.length ? (
-          <p className="text-xs text-destructive">Please select a {missing.join(" and ")}</p>
+          <p className="text-xs text-destructive">{t("pleaseSelect")} {missing.map((v) => v.toLowerCase() === "colour" ? t("colour") : t("size")).join(" र ")}</p>
         ) : null}
 
         <button
