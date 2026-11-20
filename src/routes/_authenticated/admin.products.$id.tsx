@@ -31,7 +31,7 @@ const schema = z.object({
 });
 
 type Form = {
-  name: string; slug: string; sku: string; model_code: string; description: string; fabric: string; category_id: string;
+  name: string; name_ne: string; slug: string; sku: string; model_code: string; description: string; description_ne: string; fabric: string; fabric_ne: string; category_id: string;
   price: string; sale_price: string; stock: string; low_stock_threshold: string;
   sizes: string; colors: string; images: string; size_chart: string;
   is_new: boolean; is_bestseller: boolean; is_featured: boolean; is_published: boolean;
@@ -39,7 +39,7 @@ type Form = {
 };
 
 const EMPTY: Form = {
-  name: "", slug: "", sku: "", model_code: "", description: "", fabric: "", category_id: "",
+  name: "", name_ne: "", slug: "", sku: "", model_code: "", description: "", description_ne: "", fabric: "", fabric_ne: "", category_id: "",
   price: "", sale_price: "", stock: "0", low_stock_threshold: "5",
   sizes: "S, M, L, XL", colors: "", images: "", size_chart: "",
   is_new: true, is_bestseller: false, is_featured: false, is_published: true,
@@ -101,8 +101,8 @@ function ProductEditor() {
     setSkuSuffix(parts.suffix);
     setSkuKindTouched(true);
     setF({
-      name: product.name, slug: product.slug, sku: product.sku ?? "", model_code: product.model_code ?? "", description: product.description ?? "",
-      fabric: product.fabric ?? "", category_id: product.category_id ?? "",
+      name: product.name, name_ne: product.name_ne ?? "", slug: product.slug, sku: product.sku ?? "", model_code: product.model_code ?? "", description: product.description ?? "", description_ne: product.description_ne ?? "",
+      fabric: product.fabric ?? "", fabric_ne: product.fabric_ne ?? "", category_id: product.category_id ?? "",
       price: String(product.price), sale_price: product.sale_price != null ? String(product.sale_price) : "",
       stock: String(product.stock), low_stock_threshold: String(product.low_stock_threshold),
       sizes: product.sizes.join(", "), colors: product.colors.join(", "), images: product.images.join("\n"),
@@ -132,7 +132,7 @@ function ProductEditor() {
     if (!parsed.success) { toast.error(parsed.error.issues[0]?.message ?? "Check the form"); return; }
     const row = {
       ...parsed.data,
-      sku, model_code: f.model_code.trim().slice(0, 64) || null, description: f.description.trim() || null, fabric: f.fabric.trim() || null,
+      sku, model_code: f.model_code.trim().slice(0, 64) || null, description: f.description.trim() || null, description_ne: f.description_ne.trim() || null, name_ne: f.name_ne.trim() || null, fabric: f.fabric.trim() || null, fabric_ne: f.fabric_ne.trim() || null,
       category_id: f.category_id || null, low_stock_threshold: Number(f.low_stock_threshold) || 0,
       sizes: list(f.sizes), colors: list(f.colors), images: list(f.images),
       size_chart: f.size_chart.trim() || null, is_new: f.is_new, is_bestseller: f.is_bestseller,
@@ -203,13 +203,20 @@ function ProductEditor() {
           <label className={label + " block"}>Page link (/shop/product/…)
             <input className={input} value={f.slug} onChange={(e) => { setSlugTouched(true); set("slug", e.target.value); }} />
           </label>
-          <label className={label + " block"}>Description
+          <label className={label + " block"}>Description (English)
             <textarea rows={5} className={input} value={f.description} onChange={(e) => set("description", e.target.value)} />
+          </label>
+          <label className={label + " block"}>Product name (नेपाली)
+            <input className={input} value={f.name_ne} onChange={(e) => set("name_ne", e.target.value)} placeholder="नेपालीमा उत्पादनको नाम" />
+          </label>
+          <label className={label + " block"}>Description (नेपाली)
+            <textarea rows={5} className={input} value={f.description_ne} onChange={(e) => set("description_ne", e.target.value)} placeholder="उत्पादनको विवरण नेपालीमा लेख्नुहोस्" />
           </label>
           <p className="text-xs leading-relaxed text-muted-foreground">{PHOTO_DISCLAIMER}</p>
           <div className="grid gap-4 sm:grid-cols-2">
             <label className={label}>Model code (optional)<input className={input} value={f.model_code} maxLength={64} onChange={(e) => set("model_code", e.target.value)} /></label>
-            <label className={label}>Fabric<input className={input} value={f.fabric} onChange={(e) => set("fabric", e.target.value)} /></label>
+            <label className={label}>Fabric (English)<input className={input} value={f.fabric} onChange={(e) => set("fabric", e.target.value)} /></label>
+            <label className={label}>Fabric (नेपाली)<input className={input} value={f.fabric_ne} onChange={(e) => set("fabric_ne", e.target.value)} placeholder="कपडाको प्रकार" /></label>
             <label className={label}>Category
               <select className={input} value={f.category_id} onChange={(e) => set("category_id", e.target.value)}>
                 <option value="">None</option>
