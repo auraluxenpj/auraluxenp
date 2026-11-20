@@ -198,14 +198,14 @@ function Shop() {
       <div className="auraluxe-collection-intro mt-8 sm:mt-12">
         <p className="auraluxe-kicker">{t("auraluxeEdit")}</p>
         <h1 className="mt-3 font-display text-4xl leading-tight text-[#422d2a] sm:text-6xl">
-          {search.category ? categories.find((c) => c.slug === search.category) ? categoryLabel(search.category, categories.find((c) => c.slug === search.category)!.name, language) : (language === "ne" ? "सङ्ग्रह" : "The Collection") : t("discoverStyle")}
+          {search.category ? categories.find((c) => c.slug === search.category) ? categoryLabel(search.category, categories.find((c) => c.slug === search.category)!.name, language, categories.find((c) => c.slug === search.category)!.name_ne) : (language === "ne" ? "सङ्ग्रह" : "The Collection") : t("discoverStyle")}
         </h1>
         <p className="mt-3 max-w-2xl text-sm leading-6 text-stone-500 sm:text-base">
           {t("collectionDescription")}
         </p>
         <div className="mt-5 flex flex-wrap gap-2 text-[10px] uppercase tracking-[.16em] text-stone-500">
           <span>{t("home")}</span><span>/</span><span className="text-[#762b3b]">{t("shop")}</span>
-          {search.category ? <><span>/</span><span className="text-[#762b3b]">{categoryLabel(search.category, categories.find((c) => c.slug === search.category)?.name ?? "सङ्ग्रह", language)}</span></> : null}
+          {search.category ? <><span>/</span><span className="text-[#762b3b]">{categoryLabel(search.category, categories.find((c) => c.slug === search.category)?.name ?? "सङ्ग्रह", language, categories.find((c) => c.slug === search.category)?.name_ne)}</span></> : null}
         </div>
       </div>
 
@@ -229,7 +229,7 @@ function Shop() {
               >
                 <img
                   src={c.image_url || DUMMY_CATEGORY_IMAGES[i % DUMMY_CATEGORY_IMAGES.length]}
-                  alt={categoryLabel(c.slug, c.name, language)}
+                  alt={categoryLabel(c.slug, c.name, language, c.name_ne)}
                   loading="lazy"
                   width={720}
                   height={900}
@@ -237,7 +237,7 @@ function Shop() {
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-[#241713]/75 via-transparent to-transparent" />
                 <div className="absolute inset-x-0 bottom-0 flex items-end justify-between p-3 sm:p-4">
-                  <span className="font-display text-lg text-white sm:text-xl">{categoryLabel(c.slug, c.name, language)}</span>
+                  <span className="font-display text-lg text-white sm:text-xl">{categoryLabel(c.slug, c.name, language, c.name_ne)}</span>
                   <span className="text-sm text-white/90">↗</span>
                 </div>
               </Link>
@@ -294,7 +294,7 @@ function Shop() {
                 onClick={() => update({ category: c.slug })}
                 className={`rounded-full px-4 py-2 text-[12px] uppercase tracking-[0.15em] ${search.category === c.slug ? "bg-primary text-primary-foreground" : "glass text-foreground/70"}`}
               >
-                {categoryLabel(c.slug, c.name, language)}
+                {categoryLabel(c.slug, c.name, language, c.name_ne)}
               </button>
             ))}
         </div>
@@ -381,7 +381,7 @@ function Shop() {
               </p>
               <div className="mt-2 flex flex-wrap gap-2">
                 {search.q ? <button type="button" onClick={() => { setQuery(""); update({ q: undefined }); }} className="rounded-full border border-[#e5d8cd] bg-white px-3 py-1.5 text-[10px] text-stone-700">{t("search")}: {search.q} ×</button> : null}
-                {search.category ? <button type="button" onClick={() => update({ category: undefined })} className="rounded-full border border-[#e5d8cd] bg-white px-3 py-1.5 text-[10px] text-stone-700">{search.category === "sale" ? t("sale") : search.category === "new-arrivals" ? t("newArrivals") : categoryLabel(search.category, categories.find((c) => c.slug === search.category)?.name ?? (language === "ne" ? "सङ्ग्रह" : "Collection"), language)} ×</button> : null}
+                {search.category ? <button type="button" onClick={() => update({ category: undefined })} className="rounded-full border border-[#e5d8cd] bg-white px-3 py-1.5 text-[10px] text-stone-700">{search.category === "sale" ? t("sale") : search.category === "new-arrivals" ? t("newArrivals") : categoryLabel(search.category, categories.find((c) => c.slug === search.category)?.name ?? (language === "ne" ? "सङ्ग्रह" : "Collection"), language, categories.find((c) => c.slug === search.category)?.name_ne)} ×</button> : null}
                 {search.size ? <button type="button" onClick={() => update({ size: undefined })} className="rounded-full border border-[#e5d8cd] bg-white px-3 py-1.5 text-[10px] text-stone-700">{t("allSizes")}: {search.size} ×</button> : null}
                 {search.color ? <button type="button" onClick={() => update({ color: undefined })} className="rounded-full border border-[#e5d8cd] bg-white px-3 py-1.5 text-[10px] text-stone-700">{t("allColours")}: {search.color} ×</button> : null}
                 {search.fabric ? <button type="button" onClick={() => update({ fabric: undefined })} className="rounded-full border border-[#e5d8cd] bg-white px-3 py-1.5 text-[10px] text-stone-700">{t("allFabrics")}: {search.fabric} ×</button> : null}
