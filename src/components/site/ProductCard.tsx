@@ -4,7 +4,7 @@ import { effectivePrice, hasDiscount, productImage, type StorefrontProduct } fro
 import { useCart, useMoney } from "@/lib/store";
 import { toast } from "sonner";
 import { QuickPickDialog } from "@/components/site/QuickPickDialog";
-import { useLanguage } from "@/lib/i18n";
+import { localizedContent, useLanguage } from "@/lib/i18n";
 
 export function ProductCard({
   product,
@@ -14,7 +14,10 @@ export function ProductCard({
   fallbackImage?: string;
 }) {
   const money = useMoney();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
+  const displayName = localizedContent(product.name, product.name_ne, language);
+  const displayFabric = localizedContent(product.fabric, product.fabric_ne, language);
+  const displayProduct = { ...product, name: displayName, fabric: displayFabric };
   const { add } = useCart();
   const price = effectivePrice(product);
   const cardImage = product.images?.[0] ?? fallbackImage ?? productImage(product);
@@ -35,14 +38,14 @@ export function ProductCard({
     add({
       productId: product.id,
       slug: product.slug,
-      name: product.name,
+      name: displayName,
       image: cardImage,
       price,
       size: product.sizes?.[0] ?? null,
       color: product.colors?.[0] ?? null,
       quantity: 1,
     });
-    toast.success(`${product.name} ${t("addedToBag")}`);
+    toast.success(`${displayName} ${t("addedToBag")}`);
   };
 
   return (
@@ -50,7 +53,7 @@ export function ProductCard({
       <Link to="/shop/product/$slug" params={{ slug: product.slug }} className="relative block">
         <img
           src={cardImage}
-          alt={product.name}
+          alt={displayName}
           loading="lazy"
           decoding="async"
           width={1024}
@@ -95,7 +98,7 @@ export function ProductCard({
           ) : null}
         </div>
         <p className="mt-2 line-clamp-1 min-h-4 text-[10px] uppercase tracking-[0.1em] text-muted-foreground sm:text-xs">
-          {[product.fabric, product.sizes?.join(" ")].filter(Boolean).join(" · ") || t("exploreCollection")}
+          {[displayFabric, product.sizes?.join(" ")].filter(Boolean).join(" · ") || t("exploreCollection")}
         </p>
         <button
           type="button"
@@ -106,7 +109,7 @@ export function ProductCard({
           {outOfStock ? t("soldOut") : needsPick ? t("chooseOptions") : t("addToBag")}
         </button>
       </div>
-      <QuickPickDialog product={product} open={picking} onOpenChange={setPicking} />
+      <QuickPickDialog product={displayProduct} open={picking} onOpenChange={setPicking} />
     </article>
   );
 }
