@@ -464,25 +464,23 @@ Most importantly, make the backend genuinely usable: when I add/edit/delete a pr
 
 Do not create fake buttons or placeholder admin functionality. All core CRUD operations must be connected to the database and actually work.
 
-This project was built with [Lovable](https://lovable.dev).
+## Architecture and deployment
 
-**Live app**: https://auraluxenp.lovable.app
-
-## Build with Lovable
-
-Continue developing this project in the [Lovable editor](https://lovable.dev/projects/d3410baf-f573-4bc0-9b7e-3cc794aefc2c).
-
-- **Ship faster**: describe what you want to build and Lovable handles the code.
-- **Stay in sync**: every change made in Lovable is committed straight to this repository.
-- **Full ownership**: this code is yours. Push to `main` on GitHub and your changes sync back into Lovable, ready for your next prompt.
+- **Source control and CI:** GitHub repository `auraluxenpj/auraluxenp`. Work on feature branches and merge reviewed pull requests to `main`.
+- **Application hosting:** Cloudflare Workers. Production deploys through `.github/workflows/deploy-cloudflare.yml` to the existing Worker `auraluxenpj` in the `auraluxe26` Workers subdomain. Do not create a duplicate Worker.
+- **Database and backend:** Supabase production project `jsshaoucrjorbyuzagdr`.
+- **Production deployment:** A push to `main` triggers GitHub Actions to build and deploy the existing Cloudflare Worker. Manual workflow dispatch is restricted to `main`.
+- **No Vercel or Lovable deployment:** Neither service is part of the development, hosting, or release path.
 
 ## Development
 
-Prefer working locally? You need Node.js and npm — [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating).
+Use Bun and the committed lockfile:
 
 ```sh
 git clone <this-repository-url>
 cd <repository-name>
-npm i
-npm run dev
+bun install --frozen-lockfile
+bun run dev
 ```
+
+Before releasing, run the storefront verification workflow and confirm any required Supabase migration has been applied to the correct project.
