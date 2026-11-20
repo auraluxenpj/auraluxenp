@@ -1,7 +1,7 @@
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState, type FormEvent } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { ChevronDown, Menu, Search, ShoppingBag, UserRound, X, ArrowUpRight } from "lucide-react";
+import { ChevronDown, Menu, Search, ShoppingBag, UserRound, X, ArrowUpRight, Heart } from "lucide-react";
 import { useCart } from "@/lib/store";
 import { fetchCategories } from "@/lib/data";
 import { categoryLabel, useLanguage } from "@/lib/i18n";
@@ -138,6 +138,7 @@ export function Header() {
             </div>
             <button type="button" aria-label={t("searchProducts")} aria-expanded={searchOpen} onClick={() => { const next = !searchOpen; setSearchOpen(next); if (next) { setMobileOpen(false); setActiveMenu(null); setMobileShopOpen(false); setMobileOccasionOpen(false); } }} className="auraluxe-icon-link"><Search className="size-[18px]" /></button>
             <Link to="/auth" aria-label={t("myAccount")} className="auraluxe-icon-link hidden sm:grid"><UserRound className="size-[18px]" /></Link>
+            <Link to="/wishlist" aria-label="Wishlist" className="auraluxe-icon-link"><Heart className="size-[18px]" /></Link>
             <Link to="/cart" aria-label={`${t("shoppingBag")}, ${count}`} className="auraluxe-icon-link relative">
               <ShoppingBag className="size-[18px]" />
               {count > 0 ? <span className="absolute -right-1 -top-1 grid size-[17px] place-items-center rounded-full bg-[#762b3b] text-[9px] text-white">{count}</span> : null}
