@@ -71,7 +71,7 @@ function PaymentInstructions({ method, orderNumber, total }: { method: CheckoutM
         {t("paymentPending")}
       </p>
       <a href={wa} target="_blank" rel="noreferrer" className="mt-3 inline-block rounded-full bg-secondary px-6 py-3 text-[12px] uppercase tracking-[0.15em]">
-        Send payment proof on WhatsApp
+        {t("sendProof")}
       </a>
     </div>
   );
