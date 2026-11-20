@@ -11,6 +11,7 @@ AS $function$
   SELECT
     _user_id IS NOT NULL
     AND _role IS NOT NULL
+    AND auth.uid() IS NOT NULL
     AND (
       _user_id = auth.uid()
       OR EXISTS (
