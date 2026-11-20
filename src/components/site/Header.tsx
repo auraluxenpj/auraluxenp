@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { ChevronDown, Menu, Search, ShoppingBag, UserRound, X, ArrowUpRight } from "lucide-react";
 import { useCart } from "@/lib/store";
 import { fetchCategories } from "@/lib/data";
-import { useLanguage } from "@/lib/i18n";
+import { categoryLabel, useLanguage } from "@/lib/i18n";
 
 const QUICK_LINKS = [
   { label: "New Arrivals", search: { sort: "newest" } as const },
@@ -109,7 +109,7 @@ export function Header() {
                     <p className="auraluxe-kicker mb-4">{activeMenu === "women" ? t("shopCategory") : t("shopEdit")}</p>
                     <div className="grid grid-cols-2 gap-x-6 gap-y-3">
                       {(activeMenu === "women" ? activeCategories : OCCASION_LINKS.map((item) => ({ id: item.label, name: item.label, slug: item.query }))).map((c) => (
-                        <Link key={c.id} to="/shop" search={activeMenu === "women" ? { category: c.slug } : { q: c.slug }} onClick={closeMenus} className="auraluxe-mega-link">{c.name}</Link>
+                        <Link key={c.id} to="/shop" search={activeMenu === "women" ? { category: c.slug } : { q: c.slug }} onClick={closeMenus} className="auraluxe-mega-link">{categoryLabel(c.slug, c.name, language)}</Link>
                       ))}
                       {activeMenu === "women" ? ["Kurti Sets", "Short Kurtis", "Sarees", "Dresses", "Bags & Accessories"].map((name) => (
                         <Link key={name} to="/shop" onClick={closeMenus} className="auraluxe-mega-link">{name}</Link>
