@@ -41,3 +41,12 @@ jobs:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: 2a5ced50e8aafc5fbc9b0329cf25f84e
           command: deploy .output/server/index.mjs --assets .output/public --name auraluxenp --compatibility-date 2026-11-20 --compatibility-flags nodejs_compat --var SUPABASE_URL:https://jsshaoucrjorbyuzagdr.supabase.co --var SUPABASE_PUBLISHABLE_KEY:sb_publishable_ti84mMAfbpf5l2a6n-czjw_8OLu-OJA
+
+      - name: Smoke-test deployed storefront
+        run: |
+          set -euo pipefail
+          URL="https://auraluxenp.auraluxe-nepalgunj.workers.dev/"
+          curl --fail --silent --show-error --location --retry 8 --retry-all-errors --retry-delay 5 "$URL" -o /tmp/auraluxe-home.html
+          grep -Eiq '<!doctype html|<html' /tmp/auraluxe-home.html
+          test -s /tmp/auraluxe-home.html
+          echo "Storefront returned HTTP 200 and an HTML document."
