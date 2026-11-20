@@ -111,16 +111,42 @@ jobs:
             dialect: "postgresql",
             schema: "./.drizzle-baseline/schema.ts",
             out: "./.drizzle-baseline/migrations",
-            schemaFilter: ["public"],
+            schemaFilter: ["public", "auth"],
             dbCredentials: {
               url: process.env.DATABASE_URL ?? "",
             },
           });
           CONFIG
           bunx drizzle-kit pull --config=drizzle.baseline.config.ts
-          test -s .drizzle-baseline/migrations/schema.ts
+
+      - name: Repair and validate generated TypeScript baseline
+        run: |
+          set -euo pipefail
+          python3 <<'PY'
+          from pathlib import Path
+          import re
+
+          schema = Path(".drizzle-baseline/migrations/schema.ts")
+          source = schema.read_text()
+          # drizzle-kit 0.31.11 emits an unterminated default for empty-string
+          # PostgreSQL defaults. Normalize only this exact malformed sequence.
+          repaired = source.count("default(').notNull()")
+          source = source.replace("default(').notNull()", "default('').notNull()")
+          schema.write_text(source)
+
+          if "default(')" in source:
+              raise SystemExit("Malformed empty-string default remains in generated schema.")
+          if not re.search(r"export const usersInAuth\s*=", source):
+              raise SystemExit("auth.users was not introspected; cross-schema FK targets would be unresolved.")
+          if not re.search(r"export const appRole\s*=", source):
+              raise SystemExit("Expected public enum app_role is missing.")
+          if len(re.findall(r"= pgTable\(", source)) < 27:
+              raise SystemExit("Expected at least 27 public tables in generated schema.")
+          print(f"Normalized {repaired} empty-string defaults; generated schema contains auth.users and public tables.")
+          PY
           test -s .drizzle-baseline/migrations/relations.ts
           test -s .drizzle-baseline/migrations/meta/_journal.json
+          bunx tsc --noEmit --skipLibCheck --target ES2022 --module ESNext --moduleResolution bundler .drizzle-baseline/migrations/schema.ts .drizzle-baseline/migrations/relations.ts
           find .drizzle-baseline -maxdepth 4 -type f -print
 
       - name: Upload generated baseline for review (not committed or deployed)
