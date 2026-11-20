@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
-import { fetchCategories, slugify } from "@/lib/data";
+import { BILINGUAL_MIGRATION_REQUIRED, fetchCategories, isMissingBilingualCatalogueColumn, slugify } from "@/lib/data";
 import { ImageUploader } from "@/components/admin/ImageUploader";
 import { Button } from "@/components/ui/button";
 import { WomensSizeGuide } from "@/components/site/WomensSizeGuide";
@@ -152,7 +152,7 @@ function ProductEditor() {
       : await supabase.from("products").update(row).eq("id", id).select("id").single();
     if (error || !saved) {
       setSaving(false);
-      toast.error(error?.code === "23505" ? "That link or SKU is already used" : error?.message ?? "Couldn't save");
+      toast.error(isMissingBilingualCatalogueColumn(error) ? BILINGUAL_MIGRATION_REQUIRED : error?.code === "23505" ? "That link or SKU is already used" : error?.message ?? "Couldn't save");
       return;
     }
     const productId = isNew ? saved.id : id;
