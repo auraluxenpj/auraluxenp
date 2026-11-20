@@ -389,7 +389,7 @@ function Home() {
             className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-4 lg:gap-5"
             aria-hidden="true"
           >
-            {Array.from({ length: 3 }).map((_, i) => (
+            {Array.from({ length: 4 }).map((_, i) => (
               <div key={i} className="aspect-[3/4] w-full animate-pulse rounded-3xl bg-muted" />
             ))}
           </section>
