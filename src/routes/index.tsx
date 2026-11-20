@@ -143,7 +143,6 @@ function CategoryTile({
   images: string[];
   offset: number;
 }) {
-  const { language } = useLanguage();
   const count = images.length;
   const imagesKey = images.join("|");
   const boxRef = useRef<HTMLDivElement>(null);
@@ -231,6 +230,7 @@ function CategoryTile({
 
 function Home() {
   const settings = useSettings();
+  const { language } = useLanguage();
   const initial = Route.useLoaderData();
   const { data: products = [], isLoading: productsLoading } = useQuery({
     queryKey: ["products"],
