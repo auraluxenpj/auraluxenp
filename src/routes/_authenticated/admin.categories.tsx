@@ -81,10 +81,19 @@ function Categories() {
     }
     setBusy(true);
     try {
-      const row = { ...parsed.data, description: parsed.data.description || null, name_ne: parsed.data.name_ne.trim() || null, description_ne: parsed.data.description_ne.trim() || null };
-      const result = existing
+      const baseRow = { ...parsed.data, description: parsed.data.description || null };
+      const row = { ...baseRow, name_ne: parsed.data.name_ne.trim() || null, description_ne: parsed.data.description_ne.trim() || null };
+      const sortOrder = Math.max(-1, ...categories.map((c) => c.sort_order)) + 1;
+      let result = existing
         ? await supabase.from("categories").update(row).eq("id", existing.id).select("id").single()
-        : await supabase.from("categories").insert({ ...row, sort_order: Math.max(-1, ...categories.map((c) => c.sort_order)) + 1 }).select("id").single();
+        : await supabase.from("categories").insert({ ...row, sort_order: sortOrder }).select("id").single();
+      const hasNepaliContent = !!(parsed.data.name_ne.trim() || parsed.data.description_ne.trim());
+      if (isMissingBilingualCatalogueColumn(result.error) && !hasNepaliContent) {
+        // Preserve English-only category management on a database awaiting migration.
+        result = existing
+          ? await supabase.from("categories").update(baseRow).eq("id", existing.id).select("id").single()
+          : await supabase.from("categories").insert({ ...baseRow, sort_order: sortOrder }).select("id").single();
+      }
       if (result.error) throw result.error;
       await refresh();
       setEditor(null);
