@@ -72,3 +72,21 @@ A second comparison was performed against the live Supabase migration listing an
 ### Decision
 
 Do not edit migration SQL, journal, snapshots, or Supabase's migration history yet. The repository metadata is conclusively incomplete, but a valid Drizzle snapshot cannot be inferred from empty shells. A full schema-only export and a Supabase-compatible isolated baseline are still required. No paid development branch was created and no production changes were made.
+
+
+## Source-to-ledger SQL verification — 2026-11-20
+
+A direct read-only comparison was completed for **all 18 migrations**. For each migration, the exact SQL text stored in `supabase_migrations.schema_migrations.statements[1]` was compared with its corresponding checked-in `drizzle/migrations/*.sql` file from `main`.
+
+**Result: 18 of 18 exact text matches**, including the core migration 0000 and inventory-sync migrations 0015/0016 plus model-code migration 0017. This resolves the older reported core SQL hash mismatch for the current checked-in source and production migration record. The migration-list API alone did not expose checksums; the direct stored-statement comparison provided stronger evidence.
+
+This verifies the applied migration statement text against the repository SQL files. It does **not** prove that no later manual schema drift occurred, nor does it repair Drizzle's empty snapshots or missing journal entry 0017.
+
+### Updated conclusion
+
+- Migration ledger: complete, 18 entries.
+- Repository SQL sequence: complete, 18 files.
+- Applied SQL text vs repository SQL: exact match for all 18.
+- Drizzle metadata: still incomplete (journal missing 0017; snapshots empty; schema file blank).
+
+The remaining blocker is strictly the Drizzle schema/snapshot baseline and any post-migration drift review. Do not rewrite migration history or replay migrations. Production remains unchanged.
