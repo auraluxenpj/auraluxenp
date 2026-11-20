@@ -22,28 +22,28 @@ export function Footer() {
         </div>
         <div className="flex flex-wrap gap-x-10 gap-y-2 text-[12px] uppercase tracking-[0.15em] text-foreground/60">
           <Link className="hover:text-brand" to="/stylist">
-            AI Stylist
+            {t('aiStylist')}
           </Link>
           <Link className="hover:text-brand" to="/track">
-            Track Order
+            {t('trackOrder')}
           </Link>
           <Link className="hover:text-brand" to="/contact">
-            Contact
+            {t('contact')}
           </Link>
           <Link className="hover:text-brand" to="/pages/$slug" params={{ slug: "shipping-policy" }}>
-            Shipping
+            {t('shippingPolicy')}
           </Link>
           <Link className="hover:text-brand" to="/pages/$slug" params={{ slug: "return-policy" }}>
-            Returns
+            {t('returns')}
           </Link>
           <Link className="hover:text-brand" to="/pages/$slug" params={{ slug: "faq" }}>
-            FAQ
+            {t('faq')}
           </Link>
           <Link className="hover:text-brand" to="/pages/$slug" params={{ slug: "privacy-policy" }}>
-            Privacy
+            {t('privacy')}
           </Link>
           <Link className="hover:text-brand" to="/pages/$slug" params={{ slug: "terms" }}>
-            Terms
+            {t('terms')}
           </Link>
         </div>
       </div>
