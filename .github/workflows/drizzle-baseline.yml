@@ -1,0 +1,125 @@
+name: Drizzle isolated baseline validation
+
+on:
+  pull_request:
+    paths:
+      - "drizzle/migrations/**"
+      - "drizzle.config.ts"
+      - ".github/workflows/drizzle-baseline.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: drizzle-baseline-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  introspect:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: auraluxe_baseline
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d auraluxe_baseline"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/auraluxe_baseline
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install locked dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Create minimal Supabase-compatible prerequisites
+        run: |
+          set -euo pipefail
+          psql "$DATABASE_URL" -v ON_ERROR_STOP=1 <<'SQL'
+          DO $$
+          BEGIN
+            IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'anon') THEN CREATE ROLE anon NOLOGIN; END IF;
+            IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'authenticated') THEN CREATE ROLE authenticated NOLOGIN; END IF;
+            IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'service_role') THEN CREATE ROLE service_role NOLOGIN BYPASSRLS; END IF;
+          END
+          $$;
+
+          CREATE SCHEMA auth;
+          CREATE TABLE auth.users (
+            id uuid PRIMARY KEY,
+            email text,
+            raw_user_meta_data jsonb NOT NULL DEFAULT '{}'::jsonb
+          );
+          CREATE OR REPLACE FUNCTION auth.uid()
+          RETURNS uuid
+          LANGUAGE sql STABLE
+          AS $function$
+            SELECT NULLIF(current_setting('request.jwt.claim.sub', true), '')::uuid
+          $function$;
+
+          CREATE SCHEMA storage;
+          CREATE TABLE storage.objects (
+            id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+            bucket_id text NOT NULL,
+            name text NOT NULL
+          );
+          GRANT USAGE ON SCHEMA auth, storage TO anon, authenticated, service_role;
+          GRANT SELECT, INSERT, UPDATE, DELETE ON storage.objects TO anon, authenticated, service_role;
+          SQL
+
+      - name: Apply the 18 repository migrations to the temporary database
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          migrations=(drizzle/migrations/[0-9][0-9][0-9][0-9]_*.sql)
+          if [ "${#migrations[@]}" -ne 18 ]; then
+            echo "Expected exactly 18 numbered SQL migrations; found ${#migrations[@]}."
+            exit 1
+          fi
+          for migration in "${migrations[@]}"; do
+            echo "Applying $migration to ephemeral PostgreSQL"
+            psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f "$migration"
+          done
+
+      - name: Generate Drizzle schema and snapshot in a temporary output directory
+        run: |
+          set -euo pipefail
+          cat > drizzle.baseline.config.ts <<'CONFIG'
+          import { defineConfig } from "drizzle-kit";
+
+          export default defineConfig({
+            dialect: "postgresql",
+            schema: "./.drizzle-baseline/schema.ts",
+            out: "./.drizzle-baseline/migrations",
+            schemaFilter: ["public"],
+            dbCredentials: {
+              url: process.env.DATABASE_URL ?? "",
+            },
+          });
+          CONFIG
+          bunx drizzle-kit pull --config=drizzle.baseline.config.ts
+          test -s .drizzle-baseline/schema.ts
+          test -s .drizzle-baseline/migrations/meta/_journal.json
+          find .drizzle-baseline -maxdepth 4 -type f -print
+
+      - name: Upload generated baseline for review (not committed or deployed)
+        uses: actions/upload-artifact@v4
+        with:
+          name: auraluxe-drizzle-baseline
+          path: .drizzle-baseline/
+          if-no-files-found: error
+          retention-days: 7
