@@ -76,12 +76,12 @@ export function Header() {
       </div>
       <div className="auraluxe-header-wrap sticky top-0 z-40 -mx-5 px-5 sm:-mx-8 sm:px-8 lg:-mx-12 lg:px-12 2xl:-mx-16 2xl:px-16">
         <header className="auraluxe-header relative flex min-h-[76px] items-center justify-between gap-3">
-          <Link to="/" onClick={closeMenus} className="auraluxe-wordmark flex shrink-0 flex-col leading-none" aria-label="Auraluxe home">
+          <Link to="/" onClick={closeMenus} className="auraluxe-wordmark flex shrink-0 flex-col leading-none" aria-label={t("headerHome")}>
             <span>AURALUXE</span>
             <small>THE ART OF EVERYDAY ELEGANCE</small>
           </Link>
 
-          <nav className="hidden items-center gap-6 xl:flex" aria-label="Main navigation" onMouseLeave={() => setActiveMenu(null)}>
+          <nav className="hidden items-center gap-6 xl:flex" aria-label={t("mainNavigation")} onMouseLeave={() => setActiveMenu(null)}>
             <div className="auraluxe-nav-group relative" onMouseEnter={() => setActiveMenu("women")}>
               <button type="button" className="auraluxe-nav-link flex items-center gap-1.5" aria-expanded={activeMenu === "women"} onClick={() => setActiveMenu(activeMenu === "women" ? null : "women")}>
                 {t("women")} <ChevronDown className="size-3" />
@@ -112,17 +112,17 @@ export function Header() {
                         <Link key={c.id} to="/shop" search={activeMenu === "women" ? { category: c.slug } : { q: c.slug }} onClick={closeMenus} className="auraluxe-mega-link">{categoryLabel(c.slug, c.name, language, c.name_ne)}</Link>
                       ))}
                       {activeMenu === "women" ? ["Kurti Sets", "Short Kurtis", "Sarees", "Dresses", "Bags & Accessories"].map((name) => (
-                        <Link key={name} to="/shop" onClick={closeMenus} className="auraluxe-mega-link">{name}</Link>
+                        <Link key={name} to="/shop" onClick={closeMenus} className="auraluxe-mega-link">{name === "Kurti Sets" ? t("kurtiSets") : name === "Short Kurtis" ? t("shortKurtis") : name === "Sarees" ? t("sarees") : name === "Dresses" ? t("dresses") : t("bagsAccessories")}</Link>
                       )) : null}
                     </div>
                   </div>
                   <div className="relative min-h-[220px] overflow-hidden bg-[#efe5dc]">
-                    <img src="https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=800&q=85" alt="Auraluxe ethnic fashion collection" loading="lazy" className="absolute inset-0 h-full w-full object-cover" />
+                    <img src="https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=800&q=85" alt={t("curatedFashionAlt")} loading="lazy" className="absolute inset-0 h-full w-full object-cover" />
                     <div className="absolute inset-0 bg-gradient-to-t from-[#2d1918]/70 to-transparent" />
                     <div className="absolute inset-x-0 bottom-0 p-5 text-white">
-                      <p className="text-[9px] uppercase tracking-[.22em]">Auraluxe edit</p>
-                      <p className="mt-2 font-display text-2xl">Made for your moments</p>
-                      <Link to="/shop" onClick={closeMenus} className="mt-3 inline-block border-b border-white/80 pb-1 text-[10px] uppercase tracking-[.18em]">Discover now</Link>
+                      <p className="text-[9px] uppercase tracking-[.22em]">{t("auraEdit")}</p>
+                      <p className="mt-2 font-display text-2xl">{t("madeForMoments")}</p>
+                      <Link to="/shop" onClick={closeMenus} className="mt-3 inline-block border-b border-white/80 pb-1 text-[10px] uppercase tracking-[.18em]">{t("discoverNow")}</Link>
                     </div>
                   </div>
                 </div>
@@ -158,7 +158,7 @@ export function Header() {
         ) : null}
 
         {mobileOpen ? (
-          <nav className="auraluxe-mobile-nav xl:hidden" aria-label="Mobile navigation">
+          <nav className="auraluxe-mobile-nav xl:hidden" aria-label={t("mobileNavigation")}>
             <button type="button" onClick={() => setMobileShopOpen((v) => !v)} aria-expanded={mobileShopOpen}>{t("shopCategory")} <ChevronDown className={`size-4 transition ${mobileShopOpen ? "rotate-180" : ""}`} /></button>
             {mobileShopOpen ? activeCategories.map((c) => <Link key={c.id} to="/shop" search={{ category: c.slug }} onClick={closeMenus}>{categoryLabel(c.slug, c.name, language, c.name_ne)}</Link>) : null}
             {QUICK_LINKS.map((item) => <Link key={item.label} to="/shop" search={item.search} onClick={closeMenus}>{item.label === "New Arrivals" ? t("newArrivals") : item.label === "Best Sellers" ? t("bestSellers") : t("sale")}</Link>)}
