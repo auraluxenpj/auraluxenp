@@ -135,11 +135,11 @@ jobs:
 
           if "default(')" in source:
               raise SystemExit("Malformed empty-string default remains in generated schema.")
-          if not re.search(r"export const usersInAuth\\s*=", source):
+          if not re.search(r"export const usersInAuth\s*=", source):
               raise SystemExit("auth.users was not introspected; cross-schema FK targets would be unresolved.")
-          if not re.search(r"export const appRole\\s*=", source):
+          if not re.search(r"export const appRole\s*=", source):
               raise SystemExit("Expected public enum app_role is missing.")
-          if len(re.findall(r"= pgTable\\(", source)) < 27:
+          if len(re.findall(r"= pgTable\(", source)) < 27:
               raise SystemExit("Expected at least 27 public tables in generated schema.")
           print(f"Normalized {repaired} empty-string defaults; generated schema contains auth.users and public tables.")
           PY
