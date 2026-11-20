@@ -18,6 +18,7 @@ import { requiredOptionLabels } from "@/lib/product-options";
 import { PhotoZoom } from "@/components/site/PhotoZoom";
 import { WomensSizeGuide } from "@/components/site/WomensSizeGuide";
 import { PHOTO_DISCLAIMER } from "@/lib/product-information";
+import { localizedContent, useLanguage } from "@/lib/i18n";
 
 export const Route = createFileRoute("/shop/product/$slug")({
   head: ({ params }) => {
@@ -45,6 +46,7 @@ export const Route = createFileRoute("/shop/product/$slug")({
 function ProductDetail() {
   const { slug } = Route.useParams();
   const money = useMoney();
+  const { t, language } = useLanguage();
   const settings = useSettings();
   const { add } = useCart();
 
@@ -105,7 +107,7 @@ function ProductDetail() {
   if (isLoading) {
     return (
       <SiteLayout>
-        <p className="glass mt-10 rounded-3xl p-8 text-sm text-muted-foreground">Loading piece…</p>
+        <p className="glass mt-10 rounded-3xl p-8 text-sm text-muted-foreground">{t("loadingCollection")}</p>
       </SiteLayout>
     );
   }
@@ -114,9 +116,9 @@ function ProductDetail() {
     return (
       <SiteLayout>
         <div className="glass mt-10 rounded-3xl p-8">
-          <h1 className="font-display text-3xl">Piece not found</h1>
+          <h1 className="font-display text-3xl">{t("pieceNotFound")}</h1>
           <Link to="/shop" className="mt-4 inline-block text-sm text-brand underline">
-            Back to the shop
+            {t("backToShop")}
           </Link>
         </div>
       </SiteLayout>
@@ -124,6 +126,9 @@ function ProductDetail() {
   }
 
   const d = derived;
+  const displayName = localizedContent(product.name, product.name_ne, language);
+  const displayDescription = localizedContent(product.description, product.description_ne, language);
+  const displayFabric = localizedContent(product.fabric, product.fabric_ne, language);
   const price = effectivePrice(product);
   const hasDiscount = productHasDiscount(product);
   const images = product.images?.length ? product.images : [productImage(product)];
@@ -136,7 +141,7 @@ function ProductDetail() {
   const chosen = {
     productId: product.id,
     slug: product.slug,
-    name: product.name,
+    name: displayName,
     image: images[0] ?? null,
     price,
     size: d.effectiveSize,
@@ -148,13 +153,13 @@ function ProductDetail() {
     <SiteLayout>
       <nav className="mt-8 text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
         <Link to="/" className="hover:text-brand">
-          Home
+          {t("home")}
         </Link>{" "}
         /{" "}
         <Link to="/shop" className="hover:text-brand">
-          Shop
+          {t("shop")}
         </Link>{" "}
-        / <span className="text-foreground/70">{product.name}</span>
+        / <span className="text-foreground/70">{displayName}</span>
       </nav>
 
       <section className="mt-6 grid gap-8 lg:grid-cols-2">
@@ -173,7 +178,7 @@ function ProductDetail() {
                 <img
                   key={img + i}
                   src={img}
-                  alt={`${product.name} view ${i + 1}`}
+                  alt={`${displayName} view ${i + 1}`}
                   loading={i === 0 ? "eager" : "lazy"}
                   width={1024}
                   height={1280}
@@ -186,7 +191,7 @@ function ProductDetail() {
               <>
                 <button
                   type="button"
-                  aria-label="Previous image"
+                  aria-label={t("previousImage")}
                   onClick={() => goTo(Math.max(0, active - 1))}
                   className="absolute left-3 top-1/2 grid h-10 w-10 -translate-y-1/2 place-items-center rounded-full bg-background/80 text-foreground shadow disabled:opacity-0"
                   disabled={active === 0}
@@ -195,7 +200,7 @@ function ProductDetail() {
                 </button>
                 <button
                   type="button"
-                  aria-label="Next image"
+                  aria-label={t("nextImage")}
                   onClick={() => goTo(Math.min(images.length - 1, active + 1))}
                   className="absolute right-3 top-1/2 grid h-10 w-10 -translate-y-1/2 place-items-center rounded-full bg-background/80 text-foreground shadow disabled:opacity-0"
                   disabled={active === images.length - 1}
@@ -216,7 +221,7 @@ function ProductDetail() {
                 <button key={img + i} type="button" onClick={() => goTo(i)} aria-label={`Show image ${i + 1} of ${images.length}`} aria-current={i === active ? "true" : undefined}>
                   <img
                     src={img}
-                    alt={`${product.name} view ${i + 1}`}
+                    alt={`${displayName} view ${i + 1}`}
                     loading="lazy"
                     width={256}
                     height={256}
@@ -229,8 +234,8 @@ function ProductDetail() {
         </div>
 
         <div className="auraluxe-product-buybox glass rounded-3xl p-6 sm:p-8 lg:sticky lg:top-28 lg:self-start">
-          <p className="eyebrow">{product.fabric}</p>
-          <h1 className="mt-2 font-display text-4xl leading-tight">{product.name}</h1>
+          <p className="eyebrow">{displayFabric}</p>
+          <h1 className="mt-2 font-display text-4xl leading-tight">{displayName}</h1>
 
           <div className="mt-4 flex items-baseline gap-3">
             <span className="font-display text-3xl text-primary">{money(price)}</span>
@@ -248,16 +253,16 @@ function ProductDetail() {
 
           <p className="mt-2 text-[12px] uppercase tracking-[0.18em] text-muted-foreground">
             {outOfStock
-              ? "Out of stock"
+              ? t("outOfStockDetail")
               : comboEmpty
-                ? "Sold out in this colour — please pick another"
-                : "In stock"}
+                ? t("soldOutColour")
+                : t("inStock")}
             {product.sku ? ` · SKU ${product.sku}` : ""}
           </p>
 
           {product.sizes?.length ? (
             <div className="mt-6">
-              <p className="label-caps text-muted-foreground">Size</p>
+              <p className="label-caps text-muted-foreground">{t("size")}</p>
               <div className="mt-3 flex flex-wrap gap-2">
                 {product.sizes.map((s) => {
                   const entry = d.sizeStocksList?.find((e) => e.size === s);
@@ -292,14 +297,14 @@ function ProductDetail() {
                 })}
               </div>
               {(product.sizes?.length ?? 0) > 1 && !size ? (
-                <p className="mt-2 text-xs text-destructive">Please select a size</p>
+                <p className="mt-2 text-xs text-destructive">{t("pleaseSelectSize")}</p>
               ) : null}
             </div>
           ) : null}
 
           {product.colors?.length ? (
             <div className="mt-5">
-              <p className="label-caps text-muted-foreground">Colour</p>
+              <p className="label-caps text-muted-foreground">{t("colour")}</p>
               <div className="mt-3 flex flex-wrap gap-2">
                 {product.colors.map((c) => (
                   <button
@@ -318,17 +323,17 @@ function ProductDetail() {
                 ))}
               </div>
               {(product.colors?.length ?? 0) > 1 && !color ? (
-                <p className="mt-2 text-xs text-destructive">Please select a colour</p>
+                <p className="mt-2 text-xs text-destructive">{t("pleaseSelectColour")}</p>
               ) : null}
             </div>
           ) : null}
 
           <div className="mt-5 flex items-center gap-3">
-            <p className="label-caps text-muted-foreground">Quantity</p>
+            <p className="label-caps text-muted-foreground">{t("quantity")}</p>
             <div className="glass flex items-center rounded-full">
               <button
                 type="button"
-                aria-label="Decrease quantity"
+                aria-label={t("decreaseQuantity")}
                 disabled={d.qty <= 1}
                 className="px-4 py-2 disabled:cursor-not-allowed disabled:opacity-40"
                 onClick={() => setQuantity((q) => Math.max(1, Math.min(q, d.maxQty ?? q) - 1))}
@@ -338,7 +343,7 @@ function ProductDetail() {
               <span className="w-8 text-center text-sm" aria-live="polite" aria-atomic="true">{d.qty}</span>
               <button
                 type="button"
-                aria-label="Increase quantity"
+                aria-label={t("increaseQuantity")}
                 disabled={d.maxQty != null && d.qty >= d.maxQty}
                 className="px-4 py-2 disabled:cursor-not-allowed disabled:opacity-40"
                 onClick={() =>
@@ -349,7 +354,7 @@ function ProductDetail() {
               </button>
             </div>
             {d.maxQty != null && d.maxQty > 0 ? (
-              <span className="text-xs text-muted-foreground">Max {d.maxQty}</span>
+              <span className="text-xs text-muted-foreground">{t("max")} {d.maxQty}</span>
             ) : null}
           </div>
 
@@ -359,11 +364,11 @@ function ProductDetail() {
               disabled={outOfStock || comboEmpty || missingOptions.length > 0}
               onClick={() => {
                 add(chosen);
-                toast.success("Added to your bag");
+                toast.success(t("addedBagToast"));
               }}
               className="flex-1 rounded-full border border-brand/30 bg-secondary py-3.5 text-[12px] uppercase tracking-[0.18em] text-primary disabled:opacity-50"
             >
-              Add to bag
+              {t("addToBag")}
             </button>
             <Link
               to="/checkout"
@@ -371,47 +376,47 @@ function ProductDetail() {
               onClick={(e) => {
                 if (missingOptions.length) {
                   e.preventDefault();
-                  toast.error(`Please select a ${missingOptions.join(" and ")}`);
+                  toast.error(`${t("pleaseSelect")} ${missingOptions.join(` ${t("and")} `)}`);
                   return;
                 }
                 if (comboEmpty) {
                   e.preventDefault();
-                  toast.error("That colour is sold out in this size — please pick another");
+                  toast.error(t("soldOutSize"));
                   return;
                 }
                 add(chosen);
               }}
               className="flex-1 rounded-full bg-primary py-3.5 text-center text-[12px] uppercase tracking-[0.18em] text-primary-foreground"
             >
-              Buy now
+              {t("buyNow")}
             </Link>
           </div>
 
           <a
             href={whatsappLink(
               settings["whatsapp"] ?? "",
-              `Hello Auraluxe! I'm interested in ${product.name} (${product.sku ?? product.slug}).`,
+              `Hello Auraluxe! I'm interested in ${displayName} (${product.sku ?? product.slug}).`,
             )}
             target="_blank"
             rel="noreferrer"
             className="mt-3 block rounded-full border border-brand/30 bg-secondary py-3.5 text-center text-[12px] uppercase tracking-[0.18em] text-primary"
           >
-            Ask on WhatsApp
+            {t("askWhatsApp")}
           </a>
 
           <div className="auraluxe-product-details mt-7 border-t border-border pt-6">
-            {product.description ? <p className="whitespace-pre-line text-[15px] leading-relaxed text-muted-foreground">{product.description}</p> : null}
+            {displayDescription ? <p className="whitespace-pre-line text-[15px] leading-relaxed text-muted-foreground">{displayDescription}</p> : null}
             <p className="mt-4 text-xs leading-relaxed text-muted-foreground">{PHOTO_DISCLAIMER}</p>
           </div>
-          <div className="mt-6 grid grid-cols-2 gap-2 border-t border-border pt-5 text-center sm:grid-cols-4 lg:grid-cols-2 2xl:grid-cols-4">\n            <div className="auraluxe-service-item"><span>✓</span><small>Quality checked</small></div>\n            <div className="auraluxe-service-item"><span>↗</span><small>Secure checkout</small></div>\n            <div className="auraluxe-service-item"><span>⌂</span><small>Delivery across Nepal</small></div>\n            <div className="auraluxe-service-item"><span>♡</span><small>Personal assistance</small></div>\n          </div>\n          <WomensSizeGuide customChart={product.size_chart} />
+          <div className="mt-6 grid grid-cols-2 gap-2 border-t border-border pt-5 text-center sm:grid-cols-4 lg:grid-cols-2 2xl:grid-cols-4">\n            <div className="auraluxe-service-item"><span>✓</span><small>{t("qualityChecked")}</small></div>\n            <div className="auraluxe-service-item"><span>↗</span><small>{t("secureCheckout")}</small></div>\n            <div className="auraluxe-service-item"><span>⌂</span><small>{t("deliveryNepal")}</small></div>\n            <div className="auraluxe-service-item"><span>♡</span><small>{t("personalAssistance")}</small></div>\n          </div>\n          <WomensSizeGuide customChart={product.size_chart} />
         </div>
       </section>
 
       {related.length > 0 ? (
         <>
           <div className="mt-14">
-            <p className="eyebrow">You may also like</p>
-            <h2 className="mt-2 font-display text-4xl">Related pieces</h2>
+            <p className="eyebrow">{t("youMayLike")}</p>
+            <h2 className="mt-2 font-display text-4xl">{t("relatedPieces")}</h2>
           </div>
           <section className="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {related.map((p) => (
@@ -420,7 +425,7 @@ function ProductDetail() {
           </section>
         </>
       ) : null}
-      {zoomed ? <PhotoZoom src={images[active] ?? images[0] ?? ""} alt={`${product.name} view ${active + 1}`} onClose={() => setZoomed(false)} /> : null}
+      {zoomed ? <PhotoZoom src={images[active] ?? images[0] ?? ""} alt={`${displayName} view ${active + 1}`} onClose={() => setZoomed(false)} /> : null}
     </SiteLayout>
   );
 }

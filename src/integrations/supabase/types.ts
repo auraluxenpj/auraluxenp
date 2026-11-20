@@ -109,6 +109,8 @@ export type Database = {
       }
       categories: {
         Row: {
+          name_ne: string | null
+          description_ne: string | null
           created_at: string
           description: string | null
           id: string
@@ -120,6 +122,8 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          name_ne?: string | null
+          description_ne?: string | null
           created_at?: string
           description?: string | null
           id?: string
@@ -131,6 +135,8 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          name_ne?: string | null
+          description_ne?: string | null
           created_at?: string
           description?: string | null
           id?: string
@@ -795,6 +801,9 @@ export type Database = {
       }
       products: {
         Row: {
+          name_ne: string | null
+          description_ne: string | null
+          fabric_ne: string | null
           category_id: string | null
           colors: string[]
           created_at: string
@@ -821,6 +830,9 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          name_ne?: string | null
+          description_ne?: string | null
+          fabric_ne?: string | null
           category_id?: string | null
           colors?: string[]
           created_at?: string
@@ -847,6 +859,9 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          name_ne?: string | null
+          description_ne?: string | null
+          fabric_ne?: string | null
           category_id?: string | null
           colors?: string[]
           created_at?: string

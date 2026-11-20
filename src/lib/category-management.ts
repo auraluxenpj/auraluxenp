@@ -2,6 +2,8 @@ import { z } from "zod";
 
 export const categorySchema = z.object({
   name: z.string().trim().min(1, "Enter a category name").max(100),
+  name_ne: z.string().trim().max(100).default(""),
+  description_ne: z.string().trim().max(2000).default(""),
   slug: z.string().trim().min(1, "Enter a URL name").max(120).regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, "Use lowercase letters, numbers and hyphens"),
   description: z.string().trim().max(2000),
   is_active: z.boolean(),

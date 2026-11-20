@@ -100,14 +100,14 @@ export function useSettings(): SettingsMap {
 
 export function useMoney() {
   const settings = useSettings();
-  const symbol = settings["currency"] || "Rs.";
+  const symbol = settings["currency"] || "NPR";
   return useCallback(
     (amount: number) => `${symbol} ${Math.round(amount).toLocaleString("en-IN")}`,
     [symbol],
   );
 }
 
-export function formatMoney(amount: number, symbol = "Rs.") {
+export function formatMoney(amount: number, symbol = "NPR") {
   return `${symbol} ${Math.round(amount).toLocaleString("en-IN")}`;
 }
 

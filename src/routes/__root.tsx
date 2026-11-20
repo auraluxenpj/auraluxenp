@@ -14,6 +14,7 @@ import appCss from "../styles.css?url";
 import appleTouchIcon from "@/assets/apple-touch-icon.png.asset.json";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { CartProvider } from "@/lib/store";
+import { LanguageProvider } from "@/lib/i18n";
 import { Toaster } from "@/components/ui/sonner";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -100,7 +101,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
       {
         rel: "stylesheet",
-        href: "https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Jost:wght@300;400;500;600&display=swap",
+        href: "https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Jost:wght@300;400;500;600&family=Noto+Sans+Devanagari:wght@400;500;600;700&display=swap",
       },
       { rel: "icon", href: "/favicon.png?v=master-20261027", type: "image/png", sizes: "64x64" },
       { rel: "apple-touch-icon", href: appleTouchIcon.url, sizes: "180x180" },
@@ -142,10 +143,12 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <CartProvider>
-        <Outlet />
-        <Toaster position="top-center" />
-      </CartProvider>
+      <LanguageProvider>
+        <CartProvider>
+          <Outlet />
+          <Toaster position="top-center" />
+        </CartProvider>
+      </LanguageProvider>
     </QueryClientProvider>
   );
 }

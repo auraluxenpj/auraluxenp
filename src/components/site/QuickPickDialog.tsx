@@ -10,6 +10,7 @@ import {
 import { effectivePrice, productImage, type StorefrontProduct } from "@/lib/data";
 import { requiredOptionLabels } from "@/lib/product-options";
 import { useCart, useMoney } from "@/lib/store";
+import { localizedContent, useLanguage } from "@/lib/i18n";
 
 const pill = (active: boolean) =>
   `rounded-full border px-3.5 py-2 text-[11px] uppercase tracking-[0.12em] transition sm:px-4 sm:text-[12px] ${
@@ -32,6 +33,8 @@ export function QuickPickDialog({
   onOpenChange: (open: boolean) => void;
 }) {
   const money = useMoney();
+  const { language, t } = useLanguage();
+  const productName = localizedContent(product.name, product.name_ne, language);
   const { add } = useCart();
   const price = effectivePrice(product);
   const sizes = product.sizes ?? [];
@@ -54,14 +57,14 @@ export function QuickPickDialog({
     add({
       productId: product.id,
       slug: product.slug,
-      name: product.name,
+      name: productName,
       image: productImage(product),
       price,
       size: size ?? sizes[0] ?? null,
       color: color ?? colors[0] ?? null,
       quantity: 1,
     });
-    toast.success(`${product.name} added to your bag`);
+    toast.success(`${productName} ${t("addedToBag")}`);
     onOpenChange(false);
   };
 
@@ -69,23 +72,23 @@ export function QuickPickDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle className="font-display text-lg">Choose your options</DialogTitle>
+          <DialogTitle className="font-display text-lg">{t("chooseOptionsTitle")}</DialogTitle>
           <DialogDescription>
-            Choose the available options before adding this piece to your bag.
+            {t("chooseOptionsDescription")}
           </DialogDescription>
         </DialogHeader>
 
         <div className="flex gap-3">
           <img
             src={productImage(product)}
-            alt={product.name}
+            alt={productName}
             width={72}
             height={96}
             className="h-24 w-18 shrink-0 rounded-xl bg-muted object-cover"
           />
           <div className="min-w-0">
             <h3 className="line-clamp-2 font-display text-sm leading-tight sm:text-base">
-              {product.name}
+              {productName}
             </h3>
             <p className="mt-1 font-display text-sm text-primary sm:text-base">{money(price)}</p>
           </div>
@@ -93,7 +96,7 @@ export function QuickPickDialog({
 
         {sizes.length > 1 ? (
           <div>
-            <p className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground">Size</p>
+            <p className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground">{t("size")}</p>
             <div className="mt-2 flex flex-wrap gap-2">
               {sizes.map((s) => (
                 <button key={s} type="button" aria-pressed={size === s} onClick={() => setSize(s)} className={`${pill(size === s)} min-h-11`}>
@@ -106,7 +109,7 @@ export function QuickPickDialog({
 
         {colors.length > 1 ? (
           <div>
-            <p className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground">Colour</p>
+            <p className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground">{t("colour")}</p>
             <div className="mt-2 flex flex-wrap gap-2">
               {colors.map((c) => (
                 <button key={c} type="button" aria-pressed={color === c} onClick={() => setColor(c)} className={`${pill(color === c)} min-h-11`}>
@@ -118,7 +121,7 @@ export function QuickPickDialog({
         ) : null}
 
         {missing.length ? (
-          <p className="text-xs text-destructive">Please select a {missing.join(" and ")}</p>
+          <p className="text-xs text-destructive">{t("pleaseSelect")} {missing.map((v) => ["colour", "color"].includes(v.toLowerCase()) ? t("colour") : t("size")).join(` ${t("and")} `)}</p>
         ) : null}
 
         <button
@@ -127,7 +130,7 @@ export function QuickPickDialog({
           disabled={!canAdd}
           className="w-full rounded-full bg-primary py-3 text-[12px] uppercase tracking-[0.18em] text-primary-foreground transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
         >
-          Add to bag
+          {t("addToBag")}
         </button>
       </DialogContent>
     </Dialog>

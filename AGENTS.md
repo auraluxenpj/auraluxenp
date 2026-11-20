@@ -1,13 +1,8 @@
-<!-- LOVABLE:BEGIN -->
-> [!IMPORTANT]
-> This project is connected to [Lovable](https://lovable.dev). Avoid rewriting
-> published git history — force pushing, or rebasing/amending/squashing commits
-> that are already pushed — as it rewrites history on Lovable's side and the
-> user will likely lose their project history.
->
-> Commits you push to the connected branch sync back to Lovable and show up in
-> the editor, so keep the branch in a working state.
-<!-- LOVABLE:END -->
+## Project workflow
+
+- Source of truth is the existing GitHub repository and its pull requests. Do not use Lovable or Vercel for development, builds, hosting, or deployment.
+- Production deployment is performed by the GitHub Actions Cloudflare workflow to the existing Worker `auraluxenp`; never create a second production Worker.
+- Supabase project `jsshaoucrjorbyuzagdr` is the production database. Treat production schema and customer/business data as protected; review additive migrations and verify them before deployment.
 
 - Category management reuses the protected admin layout and existing category RLS; invalidate the shared categories query after writes so shop and product forms reflect changes.
 - Inventory health uses administrator-verified, paginated narrow catalogue reads and pure exception analysis; keep the dashboard free of mutation controls and scope its query cache to the signed-in user.

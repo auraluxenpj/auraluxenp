@@ -383,3 +383,11 @@ main .glass:not(article):not(a.group) {
   .auraluxe-product-buybox { border-radius: .55rem; padding: 1.1rem; }
   .auraluxe-service-item small { font-size: 8px; }
 }
+
+
+/* Bilingual storefront typography and accessible language selector. */
+.auraluxe-language-switch{display:inline-flex;align-items:center;gap:5px;padding:0 5px;color:#8a7468;font-size:11px;letter-spacing:.04em;white-space:nowrap}
+.auraluxe-language-switch button{min-width:25px;min-height:32px;border-radius:4px;color:#6e5b52}
+.auraluxe-language-switch button[aria-pressed="true"]{color:#762b3b;font-weight:700;text-decoration:underline;text-underline-offset:4px}
+html[lang="ne"] body,html[lang="ne"] button,html[lang="ne"] input,html[lang="ne"] select,html[lang="ne"] textarea{font-family:"Noto Sans Devanagari","Jost",system-ui,sans-serif}
+html[lang="ne"] .font-display{font-family:"Noto Sans Devanagari","Cormorant Garamond",Georgia,serif}

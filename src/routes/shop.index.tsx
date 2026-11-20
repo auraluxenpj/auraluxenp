@@ -5,6 +5,7 @@ import { SiteLayout } from "@/components/site/SiteLayout";
 import { ProductCard } from "@/components/site/ProductCard";
 import { effectivePrice, fetchCategories, fetchProducts, hasDiscount } from "@/lib/data";
 import { useMoney } from "@/lib/store";
+import { categoryLabel, useLanguage } from "@/lib/i18n";
 
 type ShopSearch = {
   category?: string | undefined;
@@ -65,6 +66,7 @@ function Shop() {
   const search = Route.useSearch();
   const navigate = useNavigate({ from: "/shop/" });
   const money = useMoney();
+  const { t, language } = useLanguage();
   const [query, setQuery] = useState(search.q ?? "");
 
   // Keep the visible search field in sync with browser back/forward navigation.
@@ -77,25 +79,26 @@ function Shop() {
     queryFn: fetchProducts,
   });
   const { data: categories = [] } = useQuery({ queryKey: ["categories"], queryFn: fetchCategories });
+  const publishedProducts = useMemo(() => products.filter((product) => product.is_published), [products]);
 
   const update = (patch: Partial<ShopSearch>) =>
     navigate({ search: (prev) => ({ ...prev, ...patch }) });
 
   const sizes = useMemo(
-    () => Array.from(new Set(products.flatMap((p) => p.sizes ?? []))).sort(),
-    [products],
+    () => Array.from(new Set(publishedProducts.flatMap((p) => p.sizes ?? []))).sort(),
+    [publishedProducts],
   );
   const colors = useMemo(
-    () => Array.from(new Set(products.flatMap((p) => p.colors ?? []))).sort(),
-    [products],
+    () => Array.from(new Set(publishedProducts.flatMap((p) => p.colors ?? []))).sort(),
+    [publishedProducts],
   );
   const fabrics = useMemo(
-    () => Array.from(new Set(products.map((p) => p.fabric).filter((v): v is string => Boolean(v)))).sort(),
-    [products],
+    () => Array.from(new Set(publishedProducts.map((p) => p.fabric).filter((v): v is string => Boolean(v)))).sort(),
+    [publishedProducts],
   );
   const maxPrice = useMemo(
-    () => Math.max(10000, ...products.map((p) => Number(p.price))),
-    [products],
+    () => Math.max(10000, ...publishedProducts.map((p) => Number(p.price))),
+    [publishedProducts],
   );
 
   const activeCategories = categories.filter((c) => c.is_active);
@@ -109,7 +112,8 @@ function Shop() {
     : undefined;
 
   const filtered = useMemo(() => {
-    let list = [...products];
+    // Never expose admin drafts or unpublished catalogue records on the public storefront.
+    let list = [...publishedProducts];
     if (search.category === "sale") {
       list = list.filter(hasDiscount);
     } else if (search.category === "new-arrivals") {
@@ -122,8 +126,11 @@ function Shop() {
       list = list.filter(
         (p) =>
           p.name.toLowerCase().includes(q) ||
+          (p.name_ne ?? "").toLowerCase().includes(q) ||
           (p.description ?? "").toLowerCase().includes(q) ||
-          (p.fabric ?? "").toLowerCase().includes(q),
+          (p.description_ne ?? "").toLowerCase().includes(q) ||
+          (p.fabric ?? "").toLowerCase().includes(q) ||
+          (p.fabric_ne ?? "").toLowerCase().includes(q),
       );
     }
     if (search.size) list = list.filter((p) => (p.sizes ?? []).includes(search.size!));
@@ -159,7 +166,7 @@ function Shop() {
         list.sort((a, b) => (a.created_at < b.created_at ? 1 : -1));
     }
     return list;
-  }, [products, search, categoryId]);
+  }, [publishedProducts, search, categoryId]);
 
   const [limit, setLimit] = useState(PER_PAGE);
   const sentinelRef = useRef<HTMLDivElement | null>(null);
@@ -192,28 +199,28 @@ function Shop() {
   return (
     <SiteLayout>
       <div className="auraluxe-collection-intro mt-8 sm:mt-12">
-        <p className="auraluxe-kicker">The Auraluxe edit</p>
+        <p className="auraluxe-kicker">{t("auraluxeEdit")}</p>
         <h1 className="mt-3 font-display text-4xl leading-tight text-[#422d2a] sm:text-6xl">
-          {search.category ? categories.find((c) => c.slug === search.category)?.name ?? "The Collection" : "Discover your style"}
+          {search.category ? categories.find((c) => c.slug === search.category) ? categoryLabel(search.category, categories.find((c) => c.slug === search.category)!.name, language, categories.find((c) => c.slug === search.category)!.name_ne) : (language === "ne" ? "सङ्ग्रह" : "The Collection") : t("discoverStyle")}
         </h1>
         <p className="mt-3 max-w-2xl text-sm leading-6 text-stone-500 sm:text-base">
-          Thoughtfully chosen ethnic wear for everyday moments, celebrations and everything in between.
+          {t("collectionDescription")}
         </p>
         <div className="mt-5 flex flex-wrap gap-2 text-[10px] uppercase tracking-[.16em] text-stone-500">
-          <span>Home</span><span>/</span><span className="text-[#762b3b]">Shop</span>
-          {search.category ? <><span>/</span><span className="text-[#762b3b]">{categories.find((c) => c.slug === search.category)?.name}</span></> : null}
+          <span>{t("home")}</span><span>/</span><span className="text-[#762b3b]">{t("shop")}</span>
+          {search.category ? <><span>/</span><span className="text-[#762b3b]">{categoryLabel(search.category, categories.find((c) => c.slug === search.category)?.name ?? "सङ्ग्रह", language, categories.find((c) => c.slug === search.category)?.name_ne)}</span></> : null}
         </div>
       </div>
 
       {/* Visual category discovery — temporary editorial imagery until the catalogue is fully photographed. */}
       {categories.some((c) => c.is_active) ? (
-        <section className="mt-8" aria-label="Shop by category">
+        <section className="mt-8" aria-label={t("shopCategory")}>
           <div className="mb-4 flex items-end justify-between gap-3">
             <div>
-              <p className="auraluxe-kicker">Explore the edit</p>
-              <h2 className="mt-2 font-display text-2xl text-[#422d2a] sm:text-3xl">Shop by category</h2>
+              <p className="auraluxe-kicker">{t("exploreEdit")}</p>
+              <h2 className="mt-2 font-display text-2xl text-[#422d2a] sm:text-3xl">{t("shopCategory")}</h2>
             </div>
-            <span className="text-[10px] uppercase tracking-[.16em] text-stone-500">Find your look</span>
+            <span className="text-[10px] uppercase tracking-[.16em] text-stone-500">{t("findLook")}</span>
           </div>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
             {categories.filter((c) => c.is_active).map((c, i) => (
@@ -225,7 +232,7 @@ function Shop() {
               >
                 <img
                   src={c.image_url || DUMMY_CATEGORY_IMAGES[i % DUMMY_CATEGORY_IMAGES.length]}
-                  alt={c.name}
+                  alt={categoryLabel(c.slug, c.name, language, c.name_ne)}
                   loading="lazy"
                   width={720}
                   height={900}
@@ -233,7 +240,7 @@ function Shop() {
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-[#241713]/75 via-transparent to-transparent" />
                 <div className="absolute inset-x-0 bottom-0 flex items-end justify-between p-3 sm:p-4">
-                  <span className="font-display text-lg text-white sm:text-xl">{c.name}</span>
+                  <span className="font-display text-lg text-white sm:text-xl">{categoryLabel(c.slug, c.name, language, c.name_ne)}</span>
                   <span className="text-sm text-white/90">↗</span>
                 </div>
               </Link>
@@ -254,22 +261,22 @@ function Shop() {
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search kurtis, co-ords, fabrics…"
+            placeholder={t("searchPlaceholder")}
             className="w-full rounded-full border border-border bg-input px-5 py-3 text-sm outline-none placeholder:text-muted-foreground"
           />
           <button
             type="submit"
             className="shrink-0 rounded-full bg-primary px-6 py-3 text-[12px] uppercase tracking-[0.15em] text-primary-foreground"
           >
-            Search
+            {t("search")}
           </button>
         </form>
 
         <div className="mt-4 flex flex-wrap gap-2">
           {[
-            { label: "All", value: undefined },
-            { label: "New arrivals", value: "new-arrivals" },
-            { label: "Sale", value: "sale" },
+            { label: t("all"), value: undefined },
+            { label: t("newArrivals"), value: "new-arrivals" },
+            { label: t("sale"), value: "sale" },
           ].map((item) => (
             <button
               key={item.label}
@@ -290,7 +297,7 @@ function Shop() {
                 onClick={() => update({ category: c.slug })}
                 className={`rounded-full px-4 py-2 text-[12px] uppercase tracking-[0.15em] ${search.category === c.slug ? "bg-primary text-primary-foreground" : "glass text-foreground/70"}`}
               >
-                {c.name}
+                {categoryLabel(c.slug, c.name, language, c.name_ne)}
               </button>
             ))}
         </div>
@@ -301,13 +308,13 @@ function Shop() {
             value={search.sort ?? "newest"}
             onChange={(e) => update({ sort: e.target.value })}
           >
-            <option value="newest">Sort: New arrivals</option>
-            <option value="bestsellers">Bestsellers</option>
-            <option value="popular">Featured</option>
-            <option value="discount">Biggest discount</option>
-            <option value="price-asc">Price: Low to high</option>
-            <option value="price-desc">Price: High to low</option>
-            <option value="name">Name A–Z</option>
+            <option value="newest">{t("sortNew")}</option>
+            <option value="bestsellers">{t("bestSellers")}</option>
+            <option value="popular">{t("featured")}</option>
+            <option value="discount">{t("biggestDiscount")}</option>
+            <option value="price-asc">{t("priceLowHigh")}</option>
+            <option value="price-desc">{t("priceHighLow")}</option>
+            <option value="name">{t("nameAZ")}</option>
           </select>
 
           <select
@@ -315,7 +322,7 @@ function Shop() {
             value={search.size ?? ""}
             onChange={(e) => update({ size: e.target.value || undefined })}
           >
-            <option value="">All sizes</option>
+            <option value="">{t("allSizes")}</option>
             {sizes.map((s) => (
               <option key={s} value={s}>
                 {s}
@@ -328,7 +335,7 @@ function Shop() {
             value={search.color ?? ""}
             onChange={(e) => update({ color: e.target.value || undefined })}
           >
-            <option value="">All colours</option>
+            <option value="">{t("allColours")}</option>
             {colors.map((c) => (
               <option key={c} value={c}>
                 {c}
@@ -341,7 +348,7 @@ function Shop() {
             value={search.fabric ?? ""}
             onChange={(e) => update({ fabric: e.target.value || undefined })}
           >
-            <option value="">All fabrics</option>
+            <option value="">{t("allFabrics")}</option>
             {fabrics.map((fabric) => <option key={fabric} value={fabric}>{fabric}</option>)}
           </select>
 
@@ -350,13 +357,13 @@ function Shop() {
             value={search.stock ?? ""}
             onChange={(e) => update({ stock: e.target.value || undefined })}
           >
-            <option value="">Any availability</option>
-            <option value="in">In stock only</option>
+            <option value="">{t("anyAvailability")}</option>
+            <option value="in">{t("inStockOnly")}</option>
           </select>
 
           <label className="glass flex min-w-[220px] items-center gap-3 rounded-full px-4 py-2">
             <span className="text-[11px] uppercase tracking-[0.15em] text-muted-foreground">
-              Max {money(search.max ?? maxPrice)}
+              {t("maxPrice")} {money(search.max ?? maxPrice)}
             </span>
             <input
               type="range"
@@ -371,9 +378,20 @@ function Shop() {
         </div>
         {(search.q || search.category || search.size || search.color || search.fabric || search.max || search.stock) ? (
           <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-border/60 pt-4">
-            <p className="text-xs text-muted-foreground" aria-live="polite">
-              Filters are active — {filtered.length} matching pieces
-            </p>
+            <div className="min-w-0 flex-1">
+              <p className="text-xs text-muted-foreground" aria-live="polite">
+                {t("activeFilters")} — {filtered.length} {t("matchingPieces")}
+              </p>
+              <div className="mt-2 flex flex-wrap gap-2">
+                {search.q ? <button type="button" onClick={() => { setQuery(""); update({ q: undefined }); }} className="rounded-full border border-[#e5d8cd] bg-white px-3 py-1.5 text-[10px] text-stone-700">{t("search")}: {search.q} ×</button> : null}
+                {search.category ? <button type="button" onClick={() => update({ category: undefined })} className="rounded-full border border-[#e5d8cd] bg-white px-3 py-1.5 text-[10px] text-stone-700">{search.category === "sale" ? t("sale") : search.category === "new-arrivals" ? t("newArrivals") : categoryLabel(search.category, categories.find((c) => c.slug === search.category)?.name ?? (language === "ne" ? "सङ्ग्रह" : "Collection"), language, categories.find((c) => c.slug === search.category)?.name_ne)} ×</button> : null}
+                {search.size ? <button type="button" onClick={() => update({ size: undefined })} className="rounded-full border border-[#e5d8cd] bg-white px-3 py-1.5 text-[10px] text-stone-700">{t("allSizes")}: {search.size} ×</button> : null}
+                {search.color ? <button type="button" onClick={() => update({ color: undefined })} className="rounded-full border border-[#e5d8cd] bg-white px-3 py-1.5 text-[10px] text-stone-700">{t("allColours")}: {search.color} ×</button> : null}
+                {search.fabric ? <button type="button" onClick={() => update({ fabric: undefined })} className="rounded-full border border-[#e5d8cd] bg-white px-3 py-1.5 text-[10px] text-stone-700">{t("allFabrics")}: {search.fabric} ×</button> : null}
+                {search.max ? <button type="button" onClick={() => update({ max: undefined })} className="rounded-full border border-[#e5d8cd] bg-white px-3 py-1.5 text-[10px] text-stone-700">{t("maxPrice")}: {money(search.max)} ×</button> : null}
+                {search.stock === "in" ? <button type="button" onClick={() => update({ stock: undefined })} className="rounded-full border border-[#e5d8cd] bg-white px-3 py-1.5 text-[10px] text-stone-700">{t("inStockOnly")} ×</button> : null}
+              </div>
+            </div>
             <button
               type="button"
               onClick={() => {
@@ -382,7 +400,7 @@ function Shop() {
               }}
               className="rounded-full border border-brand/30 px-4 py-2 text-[11px] uppercase tracking-[0.15em] text-primary transition hover:bg-secondary"
             >
-              Clear all filters
+              {t("clearAllFilters")}
             </button>
           </div>
         ) : null}
@@ -390,15 +408,15 @@ function Shop() {
 
       <div className="mt-8 flex flex-wrap items-end justify-between gap-3 border-b border-[#e8ded5] pb-4">
         <div>
-          <p className="auraluxe-kicker">Curated for you</p>
-          <h2 className="mt-2 font-display text-2xl text-[#422d2a] sm:text-3xl">The collection</h2>
+          <p className="auraluxe-kicker">{t("curatedForYou")}</p>
+          <h2 className="mt-2 font-display text-2xl text-[#422d2a] sm:text-3xl">{t("collection")}</h2>
         </div>
         <p className="text-[11px] uppercase tracking-[.15em] text-stone-500" aria-live="polite">
-          {isLoading ? "Loading collection…" : String(filtered.length) + " pieces"}
+          {isLoading ? t("loadingCollection") : String(filtered.length) + " " + t("pieces")}
         </p>
       </div>
 
-      <section className="auraluxe-product-grid mt-5 grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-4 2xl:grid-cols-5">
+      <section className="auraluxe-product-grid mt-5 grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-4 2xl:grid-cols-4">
         {visible.map((p) => (
           <ProductCard key={p.id} product={p} {...(categoryFallbackImage ? { fallbackImage: categoryFallbackImage } : {})} />
         ))}
@@ -406,19 +424,19 @@ function Shop() {
 
       {!isLoading && filtered.length === 0 ? (
         <p className="glass mt-6 rounded-3xl p-8 text-sm text-muted-foreground">
-          No pieces match these filters yet.
+          {t("noPieces")}
         </p>
       ) : null}
 
       {hasMore ? (
         <div ref={sentinelRef} className="mt-10 flex justify-center" aria-hidden={false}>
           <span className="text-[12px] uppercase tracking-[0.18em] text-muted-foreground">
-            Loading more…
+            {t("loadingMore")}
           </span>
         </div>
       ) : filtered.length > PER_PAGE ? (
         <p className="mt-10 text-center text-[12px] uppercase tracking-[0.18em] text-muted-foreground">
-          You've seen all {filtered.length} pieces
+          {t("seenAll")} {filtered.length} {t("pieces")}
         </p>
       ) : null}
     </SiteLayout>

@@ -4,9 +4,11 @@ import { MessageCircle } from "lucide-react";
 import { Header } from "./Header";
 import { Footer } from "./Footer";
 import { useCart, useMoney, useSettings, whatsappLink } from "@/lib/store";
+import { useLanguage } from "@/lib/i18n";
 
 export function SiteLayout({ children }: { children: ReactNode }) {
   const { count, subtotal } = useCart();
+  const { t } = useLanguage();
   const money = useMoney();
   const s = useSettings();
 
@@ -28,7 +30,7 @@ export function SiteLayout({ children }: { children: ReactNode }) {
         href={whatsappLink(s["whatsapp"] ?? "", "Hello Auraluxe! I'd like to ask about a piece.")}
         target="_blank"
         rel="noreferrer"
-        aria-label="Chat on WhatsApp"
+        aria-label={t("chatWhatsApp")}
         className="fixed bottom-4 right-4 z-20 grid size-12 place-items-center rounded-full bg-primary text-primary-foreground shadow-lg transition hover:bg-brand md:hidden"
       >
         <MessageCircle className="size-5" />
@@ -37,16 +39,16 @@ export function SiteLayout({ children }: { children: ReactNode }) {
       {count > 0 ? (
         <div className="fixed inset-x-4 bottom-4 z-10 flex items-center justify-between gap-3 rounded-full glass-strong py-3 pl-5 pr-24 md:hidden">
           <div className="min-w-0">
-            <p className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground">Bag</p>
+            <p className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground">{t("bag")}</p>
             <p className="truncate font-display text-base">
-              {count} item{count > 1 ? "s" : ""} · {money(subtotal)}
+              {count} {count === 1 ? t("bagItem") : t("bagItems")} · {money(subtotal)}
             </p>
           </div>
           <Link
             to="/cart"
             className="shrink-0 rounded-full bg-primary px-5 py-2.5 text-[12px] uppercase tracking-[0.15em] text-primary-foreground"
           >
-            Checkout
+            {t("checkout")}
           </Link>
         </div>
       ) : null}

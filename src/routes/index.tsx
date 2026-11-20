@@ -16,6 +16,7 @@ import { SiteLayout } from "@/components/site/SiteLayout";
 import { ProductCard } from "@/components/site/ProductCard";
 import { HeroCarousel } from "@/components/site/HeroCarousel";
 import { useSettings, whatsappLink } from "@/lib/store";
+import { categoryLabel, localizedContent, useLanguage } from "@/lib/i18n";
 
 export const Route = createFileRoute("/")({
   // Fetch the data the hero needs BEFORE the page renders (on the server), so the
@@ -87,17 +88,20 @@ const FALLBACK_HERO: Banner = {
 };
 
 function SectionHeading({ eyebrow, title }: { eyebrow: string; title: string }) {
+  const { t } = useLanguage();
+  const translatedEyebrow: Record<string, string> = { "Find your fit": t("findFit"), "Just landed": t("justLanded"), "Loved right now": t("lovedNow"), "Most wanted": t("mostWanted"), "Reduced this week": t("specialOffers"), "In their words": t("inTheirWords") };
+  const translatedTitle: Record<string, string> = { "Shop by Category": t("shopByCategory"), "New Arrivals": t("newArrivalsTitle"), "Trending Now": t("trendingNow"), "Best Sellers": t("bestSellers"), "Special Offers": t("specialOffers"), "Customer Stories": t("customerStories") };
   return (
     <div className="mt-16 flex items-end justify-between">
       <div>
-        <p className="eyebrow">{eyebrow}</p>
-        <h2 className="mt-2 font-display text-4xl">{title}</h2>
+        <p className="eyebrow">{translatedEyebrow[eyebrow] ?? eyebrow}</p>
+        <h2 className="mt-2 font-display text-4xl">{translatedTitle[title] ?? title}</h2>
       </div>
       <Link
         to="/shop"
         className="hidden text-[13px] uppercase tracking-[0.18em] text-foreground/60 underline decoration-accent decoration-2 underline-offset-4 hover:text-brand sm:block"
       >
-        View all
+        {t("viewAll")}
       </Link>
     </div>
   );
@@ -226,6 +230,7 @@ function CategoryTile({
 
 function Home() {
   const settings = useSettings();
+  const { language, t } = useLanguage();
   const initial = Route.useLoaderData();
   const { data: products = [], isLoading: productsLoading } = useQuery({
     queryKey: ["products"],
@@ -283,15 +288,16 @@ function Home() {
   const productSlides: Banner[] = newestFirst.slice(0, 4).map((p, i) => ({
     ...FALLBACK_HERO,
     id: `product-hero-${p.id}`,
-    title: p.name,
-    subtitle: "Now in stock — limited pieces, delivered across Nepal.",
+    title: localizedContent(p.name, p.name_ne, language),
+    subtitle: t("nowInStockLimited"),
     image_url: productImage(p),
-    button_text: "Shop now",
+    button_text: t("shopNow"),
     button_link: "/shop",
     sort_order: i,
   }));
+  const defaultHero: Banner = { ...FALLBACK_HERO, title: language === "ne" ? t("heroFallbackTitle") : FALLBACK_HERO.title, subtitle: language === "ne" ? t("heroFallbackSubtitle") : FALLBACK_HERO.subtitle, button_text: t("shopNewIn") };
   const heroBanners =
-    heroSlides.length > 0 ? heroSlides : productSlides.length > 0 ? productSlides : [FALLBACK_HERO];
+    heroSlides.length > 0 ? heroSlides : productSlides.length > 0 ? productSlides : [defaultHero];
 
   const activeCategories = categories.filter((c) => c.is_active).slice(0, 8);
   // Category pictures: newest in-stock products of that category (up to 3),
@@ -311,7 +317,7 @@ function Home() {
     <SiteLayout>
       {bannersLoading || (heroSlides.length === 0 && productsLoading) ? (
         <section className="relative -mx-5 -mt-2 overflow-hidden sm:-mx-8 lg:-mx-12 2xl:-mx-16">
-          <h1 className="sr-only">Auraluxe — Premium Ladies' Fashion in Nepalgunj</h1>
+          <h1 className="sr-only">{t("homeSeoTitle")}</h1>
           <div className="aspect-[3/4] w-full animate-pulse bg-muted sm:aspect-[16/9] lg:aspect-[2/1]" />
         </section>
       ) : (
@@ -321,7 +327,7 @@ function Home() {
       {/* Placeholder while categories load, so the page below doesn't jump */}
       {categoriesLoading ? (
         <>
-          <SectionHeading eyebrow="Find your fit" title="Shop by Category" />
+          <SectionHeading eyebrow={t("findFit")} title={t("shopByCategory")} />
           <section className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-4" aria-hidden="true">
             {Array.from({ length: 8 }).map((_, i) => (
               <div key={i} className="aspect-[4/5] w-full animate-pulse rounded-3xl bg-muted" />
@@ -333,12 +339,12 @@ function Home() {
       {/* Shop by category */}
       {activeCategories.length > 0 ? (
         <>
-          <SectionHeading eyebrow="Find your fit" title="Shop by Category" />
+          <SectionHeading eyebrow={t("findFit")} title={t("shopByCategory")} />
           <section className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-4">
             {activeCategories.map((c, i) => (
               <CategoryTile
                 key={c.id}
-                name={c.name}
+                name={categoryLabel(c.slug, c.name, language, c.name_ne)}
                 slug={c.slug}
                 images={categoryImages(c.id, c.image_url, i)}
                 offset={i}
@@ -350,7 +356,7 @@ function Home() {
 
       {productsLoading ? (
         <>
-          <SectionHeading eyebrow="Just landed" title="New Arrivals" />
+          <SectionHeading eyebrow={t("justLanded")} title={t("newArrivalsTitle")} />
           <section
             className="mt-6 grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-3"
             aria-hidden="true"
@@ -364,7 +370,7 @@ function Home() {
 
       {newCollection.length > 0 ? (
         <>
-          <SectionHeading eyebrow="Just landed" title="New Arrivals" />
+          <SectionHeading eyebrow={t("justLanded")} title={t("newArrivalsTitle")} />
           <Rail products={newCollection} />
         </>
       ) : null}
@@ -376,7 +382,7 @@ function Home() {
             {promo.image_url ? (
               <img
                 src={promo.image_url}
-                alt={promo.title ?? "Auraluxe promotion"}
+                alt={promo.title ?? t("promoAlt")}
                 loading="lazy"
                 width={1024}
                 height={768}
@@ -384,7 +390,7 @@ function Home() {
               />
             ) : null}
             <div className="flex flex-col justify-center p-8 sm:p-12">
-              <p className="eyebrow">Limited offer</p>
+              <p className="eyebrow">{t("limitedOffer")}</p>
               {promo.title ? <h2 className="mt-3 font-display text-4xl">{promo.title}</h2> : null}
               {promo.subtitle ? (
                 <p className="mt-3 text-[15px] text-muted-foreground">{promo.subtitle}</p>
@@ -394,7 +400,7 @@ function Home() {
                   to={promo.button_link as "/shop"}
                   className="mt-6 inline-block w-fit rounded-full bg-primary px-7 py-3.5 text-[13px] uppercase tracking-[0.18em] text-primary-foreground transition hover:bg-brand"
                 >
-                  {promo.button_text ?? "Shop now"}
+                  {promo.button_text ?? t("shopNow")}
                 </Link>
               ) : null}
             </div>
@@ -404,21 +410,21 @@ function Home() {
 
       {trending.length > 0 ? (
         <>
-          <SectionHeading eyebrow="Loved right now" title="Trending Now" />
+          <SectionHeading eyebrow={t("lovedNow")} title={t("trendingNow")} />
           <Rail products={trending} />
         </>
       ) : null}
 
       {bestSellers.length > 0 ? (
         <>
-          <SectionHeading eyebrow="Most wanted" title="Best Sellers" />
+          <SectionHeading eyebrow={t("mostWanted")} title={t("bestSellers")} />
           <Rail products={bestSellers} />
         </>
       ) : null}
 
       {offers.length > 0 ? (
         <>
-          <SectionHeading eyebrow="Reduced this week" title="Special Offers" />
+          <SectionHeading eyebrow={t("reducedThisWeek")} title={t("specialOffers")} />
           <Rail products={offers} />
         </>
       ) : null}
@@ -426,13 +432,13 @@ function Home() {
       {/* Editorial tiles */}
       <section className="mt-16 grid gap-5 md:grid-cols-3">
         <Link to="/about" className="group glass relative overflow-hidden rounded-3xl p-8 transition hover:-translate-y-1">
-          <p className="eyebrow">Our story</p>
-          <h3 className="mt-3 font-display text-3xl">Designed in Nepalgunj</h3>
+          <p className="eyebrow">{t("ourStory")}</p>
+          <h3 className="mt-3 font-display text-3xl">{t("designedNepalgunj")}</h3>
           <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-            The Auraluxe atelier, our fabrics, and the hands behind every piece.
+            {t("atelierStory")}
           </p>
           <span className="mt-5 inline-block text-[12px] uppercase tracking-[0.18em] text-brand transition group-hover:translate-x-1">
-            Read more →
+            {t("readMore")}
           </span>
         </Link>
         <Link
@@ -440,23 +446,23 @@ function Home() {
           search={{ sort: "newest" }}
           className="group glass relative overflow-hidden rounded-3xl p-8 transition hover:-translate-y-1"
         >
-          <p className="eyebrow">The edit</p>
-          <h3 className="mt-3 font-display text-3xl">New-season arrivals</h3>
+          <p className="eyebrow">{t("theEdit")}</p>
+          <h3 className="mt-3 font-display text-3xl">{t("newSeasonArrivals")}</h3>
           <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-            Fresh silhouettes and festive pieces, added as they leave the studio.
+            {t("freshSilhouettes")}
           </p>
           <span className="mt-5 inline-block text-[12px] uppercase tracking-[0.18em] text-brand transition group-hover:translate-x-1">
-            Shop new in →
+            {t("shopNewIn")}
           </span>
         </Link>
         <Link to="/contact" className="group glass relative overflow-hidden rounded-3xl p-8 transition hover:-translate-y-1">
-          <p className="eyebrow">Visit us</p>
-          <h3 className="mt-3 font-display text-3xl">The Nepalgunj store</h3>
+          <p className="eyebrow">{t("visitUs")}</p>
+          <h3 className="mt-3 font-display text-3xl">{t("nepalgunjStore")}</h3>
           <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-            {settings["address"] ?? "Come try your favourites in person."}
+            {settings["address"] ?? t("comeTry")}
           </p>
           <span className="mt-5 inline-block text-[12px] uppercase tracking-[0.18em] text-brand transition group-hover:translate-x-1">
-            Directions & hours →
+            {t("directionsHours")}
           </span>
         </Link>
       </section>
@@ -464,7 +470,7 @@ function Home() {
       {/* Testimonials */}
       {testimonials.length > 0 ? (
         <>
-          <SectionHeading eyebrow="In their words" title="Customer Stories" />
+          <SectionHeading eyebrow={t("inTheirWords")} title={t("customerStories")} />
           <section className="mt-6 grid gap-5 sm:grid-cols-3">
             {testimonials.slice(0, 3).map((t) => (
               <blockquote key={t.id} className="glass rounded-3xl p-6">
@@ -482,10 +488,10 @@ function Home() {
       {/* Social + contact CTA */}
       <section className="glass-strong mt-16 grid gap-8 rounded-3xl p-8 sm:p-12 md:grid-cols-2">
         <div>
-          <p className="eyebrow">Follow along</p>
-          <h2 className="mt-3 font-display text-4xl">The Auraluxe edit, daily</h2>
+          <p className="eyebrow">{t("followAlong")}</p>
+          <h2 className="mt-3 font-display text-4xl">{t("editDaily")}</h2>
           <p className="mt-3 max-w-sm text-[15px] text-muted-foreground">
-            Styling notes, new arrivals and early access on Instagram and TikTok.
+            {t("stylingNotes")}
           </p>
           <div className="mt-6 flex flex-wrap gap-3">
             {settings["instagram"] ? (

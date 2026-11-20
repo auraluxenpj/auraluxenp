@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import type { Banner } from "@/lib/data";
+import { useLanguage } from "@/lib/i18n";
 
 const AUTOPLAY_MS = 6000;
 
@@ -50,6 +51,7 @@ function SlideImage({ banner, priority }: { banner: Banner; priority: boolean })
 }
 
 export function HeroCarousel({ banners }: { banners: Banner[] }) {
+  const { t } = useLanguage();
   const [index, setIndex] = useState(0);
   const [paused, setPaused] = useState(false);
   const reduced = useRef(false);
@@ -76,12 +78,12 @@ export function HeroCarousel({ banners }: { banners: Banner[] }) {
   return (
     <section
       aria-roledescription="carousel"
-      aria-label="Featured campaigns"
+      aria-label={t("featuredCampaigns")}
       className="relative -mx-5 -mt-2 overflow-hidden sm:-mx-8 lg:-mx-12 2xl:-mx-16"
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
     >
-      <h1 className="sr-only">Auraluxe — Premium Ladies' Fashion in Nepalgunj</h1>
+      <h1 className="sr-only">{t("homeSeoTitle")}</h1>
       <div className="relative aspect-[3/4] w-full sm:aspect-[16/9] lg:aspect-[2/1]">
         {banners.map((b, i) => (
           <div
@@ -134,7 +136,7 @@ export function HeroCarousel({ banners }: { banners: Banner[] }) {
         <>
           <button
             type="button"
-            aria-label="Previous banner"
+            aria-label={t("previousBanner")}
             onClick={() => go(-1)}
             className="glass-strong absolute left-4 top-1/2 grid size-11 -translate-y-1/2 place-items-center rounded-full text-primary transition hover:text-brand"
           >
@@ -142,7 +144,7 @@ export function HeroCarousel({ banners }: { banners: Banner[] }) {
           </button>
           <button
             type="button"
-            aria-label="Next banner"
+            aria-label={t("nextBanner")}
             onClick={() => go(1)}
             className="glass-strong absolute right-4 top-1/2 grid size-11 -translate-y-1/2 place-items-center rounded-full text-primary transition hover:text-brand"
           >
@@ -153,7 +155,7 @@ export function HeroCarousel({ banners }: { banners: Banner[] }) {
               <button
                 key={b.id}
                 type="button"
-                aria-label={`Go to banner ${i + 1}`}
+                aria-label={`${t("goToBanner")} ${i + 1}`}
                 aria-current={i === index}
                 onClick={() => setIndex(i)}
                 className={`h-2 rounded-full transition-all ${

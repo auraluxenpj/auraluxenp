@@ -9,6 +9,7 @@ export type StorefrontProduct = Pick<
   Product,
   | "id"
   | "name"
+  | "name_ne"
   | "slug"
   | "category_id"
   | "price"
@@ -18,7 +19,9 @@ export type StorefrontProduct = Pick<
   | "colors"
   | "images"
   | "fabric"
+  | "fabric_ne"
   | "description"
+  | "description_ne"
   | "is_new"
   | "is_featured"
   | "is_bestseller"
@@ -38,11 +41,20 @@ export type SettingsMap = Record<string, string>;
 
 export const DEFAULT_SETTINGS: SettingsMap = {
   brand_name: "AURALUXE",
-  currency: "Rs.",
+  currency: "NPR",
   shipping_charge: "150",
   free_shipping_threshold: "3500",
   tax_percent: "0",
 };
+
+export function isMissingBilingualCatalogueColumn(error: { code?: string; message?: string } | null | undefined): boolean {
+  return !!error &&
+    (error.code === "PGRST204" || error.code === "42703") &&
+    ["name_ne", "description_ne", "fabric_ne"].some((field) => error.message?.includes(field));
+}
+
+export const BILINGUAL_MIGRATION_REQUIRED =
+  "Nepali catalogue fields are not available in the connected database yet. Apply the bilingual catalogue migration before saving Nepali product or category content. Your changes were not saved.";
 
 export async function fetchSettings(): Promise<SettingsMap> {
   const { data, error } = await supabase.from("site_settings").select("key, value");
@@ -65,12 +77,37 @@ export async function fetchProducts(): Promise<StorefrontProduct[]> {
   const { data, error } = await supabase
     .from("products")
     .select(
+      "id, name, name_ne, slug, category_id, price, sale_price, stock, sizes, colors, images, fabric, fabric_ne, description, description_ne, is_new, is_featured, is_bestseller, is_published, created_at",
+    )
+    .eq("is_published", true)
+    .order("created_at", { ascending: false });
+
+  if (!error) return data ?? [];
+
+  // Keep the English storefront usable while an older database is waiting for
+  // the additive bilingual migration. Do not mask unrelated API or network errors.
+  const missingBilingualField =
+    (error.code === "PGRST204" || error.code === "42703") &&
+    ["name_ne", "description_ne", "fabric_ne"].some((field) => error.message.includes(field));
+
+  if (!missingBilingualField) throw error;
+
+  const legacy = await supabase
+    .from("products")
+    .select(
       "id, name, slug, category_id, price, sale_price, stock, sizes, colors, images, fabric, description, is_new, is_featured, is_bestseller, is_published, created_at",
     )
     .eq("is_published", true)
     .order("created_at", { ascending: false });
-  if (error) throw error;
-  return data ?? [];
+
+  if (legacy.error) throw legacy.error;
+
+  return (legacy.data ?? []).map((product) => ({
+    ...product,
+    name_ne: null,
+    description_ne: null,
+    fabric_ne: null,
+  }));
 }
 
 export async function fetchAllProducts(): Promise<Product[]> {
@@ -83,7 +120,7 @@ export async function fetchAllProducts(): Promise<Product[]> {
 }
 
 export async function fetchProductBySlug(slug: string): Promise<Product | null> {
-  const { data, error } = await supabase.from("products").select("*").eq("slug", slug).maybeSingle();
+  const { data, error } = await supabase.from("products").select("*").eq("slug", slug).eq("is_published", true).maybeSingle();
   if (error) throw error;
   return data;
 }

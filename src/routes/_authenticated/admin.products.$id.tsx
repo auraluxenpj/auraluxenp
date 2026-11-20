@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
-import { fetchCategories, slugify } from "@/lib/data";
+import { BILINGUAL_MIGRATION_REQUIRED, fetchCategories, isMissingBilingualCatalogueColumn, slugify } from "@/lib/data";
 import { ImageUploader } from "@/components/admin/ImageUploader";
 import { Button } from "@/components/ui/button";
 import { WomensSizeGuide } from "@/components/site/WomensSizeGuide";
@@ -31,7 +31,7 @@ const schema = z.object({
 });
 
 type Form = {
-  name: string; slug: string; sku: string; model_code: string; description: string; fabric: string; category_id: string;
+  name: string; name_ne: string; slug: string; sku: string; model_code: string; description: string; description_ne: string; fabric: string; fabric_ne: string; category_id: string;
   price: string; sale_price: string; stock: string; low_stock_threshold: string;
   sizes: string; colors: string; images: string; size_chart: string;
   is_new: boolean; is_bestseller: boolean; is_featured: boolean; is_published: boolean;
@@ -39,7 +39,7 @@ type Form = {
 };
 
 const EMPTY: Form = {
-  name: "", slug: "", sku: "", model_code: "", description: "", fabric: "", category_id: "",
+  name: "", name_ne: "", slug: "", sku: "", model_code: "", description: "", description_ne: "", fabric: "", fabric_ne: "", category_id: "",
   price: "", sale_price: "", stock: "0", low_stock_threshold: "5",
   sizes: "S, M, L, XL", colors: "", images: "", size_chart: "",
   is_new: true, is_bestseller: false, is_featured: false, is_published: true,
@@ -101,8 +101,8 @@ function ProductEditor() {
     setSkuSuffix(parts.suffix);
     setSkuKindTouched(true);
     setF({
-      name: product.name, slug: product.slug, sku: product.sku ?? "", model_code: product.model_code ?? "", description: product.description ?? "",
-      fabric: product.fabric ?? "", category_id: product.category_id ?? "",
+      name: product.name, name_ne: product.name_ne ?? "", slug: product.slug, sku: product.sku ?? "", model_code: product.model_code ?? "", description: product.description ?? "", description_ne: product.description_ne ?? "",
+      fabric: product.fabric ?? "", fabric_ne: product.fabric_ne ?? "", category_id: product.category_id ?? "",
       price: String(product.price), sale_price: product.sale_price != null ? String(product.sale_price) : "",
       stock: String(product.stock), low_stock_threshold: String(product.low_stock_threshold),
       sizes: product.sizes.join(", "), colors: product.colors.join(", "), images: product.images.join("\n"),
@@ -130,7 +130,7 @@ function ProductEditor() {
       sale_price: f.sale_price === "" ? null : Number(f.sale_price), stock: Number(f.stock),
     });
     if (!parsed.success) { toast.error(parsed.error.issues[0]?.message ?? "Check the form"); return; }
-    const row = {
+    const baseRow = {
       ...parsed.data,
       sku, model_code: f.model_code.trim().slice(0, 64) || null, description: f.description.trim() || null, fabric: f.fabric.trim() || null,
       category_id: f.category_id || null, low_stock_threshold: Number(f.low_stock_threshold) || 0,
@@ -139,20 +139,37 @@ function ProductEditor() {
       is_featured: f.is_featured, is_published: f.is_published,
       meta_title: f.meta_title.trim() || null, meta_description: f.meta_description.trim() || null,
     };
+    const row = {
+      ...baseRow,
+      description_ne: f.description_ne.trim() || null,
+      name_ne: f.name_ne.trim() || null,
+      fabric_ne: f.fabric_ne.trim() || null,
+    };
     // With per-size tracking on, the overall stock is always the sum of the sizes.
     if (trackBySize) {
-      row.stock = list(f.sizes).reduce(
+      const total = list(f.sizes).reduce(
         (n, s) => n + (Math.max(0, Math.floor(Number(sizeStock[s] ?? "0")) || 0)),
         0,
       );
+      baseRow.stock = total;
+      row.stock = total;
     }
     setSaving(true);
-    const { data: saved, error } = isNew
+    let saveResult = isNew
       ? await supabase.from("products").insert(row).select("id").single()
       : await supabase.from("products").update(row).eq("id", id).select("id").single();
+    const hasNepaliContent = !!(f.name_ne.trim() || f.description_ne.trim() || f.fabric_ne.trim());
+    if (isMissingBilingualCatalogueColumn(saveResult.error) && !hasNepaliContent) {
+      // Empty optional Nepali fields must not block English-only edits on the
+      // legacy schema. Retry without them; populated Nepali content is never dropped.
+      saveResult = isNew
+        ? await supabase.from("products").insert(baseRow).select("id").single()
+        : await supabase.from("products").update(baseRow).eq("id", id).select("id").single();
+    }
+    const { data: saved, error } = saveResult;
     if (error || !saved) {
       setSaving(false);
-      toast.error(error?.code === "23505" ? "That link or SKU is already used" : error?.message ?? "Couldn't save");
+      toast.error(isMissingBilingualCatalogueColumn(error) ? BILINGUAL_MIGRATION_REQUIRED : error?.code === "23505" ? "That link or SKU is already used" : error?.message ?? "Couldn't save");
       return;
     }
     const productId = isNew ? saved.id : id;
@@ -203,13 +220,20 @@ function ProductEditor() {
           <label className={label + " block"}>Page link (/shop/product/…)
             <input className={input} value={f.slug} onChange={(e) => { setSlugTouched(true); set("slug", e.target.value); }} />
           </label>
-          <label className={label + " block"}>Description
+          <label className={label + " block"}>Description (English)
             <textarea rows={5} className={input} value={f.description} onChange={(e) => set("description", e.target.value)} />
+          </label>
+          <label className={label + " block"}>Product name (नेपाली)
+            <input className={input} value={f.name_ne} onChange={(e) => set("name_ne", e.target.value)} placeholder="नेपालीमा उत्पादनको नाम" />
+          </label>
+          <label className={label + " block"}>Description (नेपाली)
+            <textarea rows={5} className={input} value={f.description_ne} onChange={(e) => set("description_ne", e.target.value)} placeholder="उत्पादनको विवरण नेपालीमा लेख्नुहोस्" />
           </label>
           <p className="text-xs leading-relaxed text-muted-foreground">{PHOTO_DISCLAIMER}</p>
           <div className="grid gap-4 sm:grid-cols-2">
             <label className={label}>Model code (optional)<input className={input} value={f.model_code} maxLength={64} onChange={(e) => set("model_code", e.target.value)} /></label>
-            <label className={label}>Fabric<input className={input} value={f.fabric} onChange={(e) => set("fabric", e.target.value)} /></label>
+            <label className={label}>Fabric (English)<input className={input} value={f.fabric} onChange={(e) => set("fabric", e.target.value)} /></label>
+            <label className={label}>Fabric (नेपाली)<input className={input} value={f.fabric_ne} onChange={(e) => set("fabric_ne", e.target.value)} placeholder="कपडाको प्रकार" /></label>
             <label className={label}>Category
               <select className={input} value={f.category_id} onChange={(e) => set("category_id", e.target.value)}>
                 <option value="">None</option>

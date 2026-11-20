@@ -6,7 +6,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
-import { fetchCategories, slugify, type Category } from "@/lib/data";
+import { BILINGUAL_MIGRATION_REQUIRED, fetchCategories, isMissingBilingualCatalogueColumn, slugify, type Category } from "@/lib/data";
 import { categoryCanDelete, categorySchema, moveCategory } from "@/lib/category-management";
 
 const categoriesQuery = queryOptions({ queryKey: ["categories"], queryFn: fetchCategories });
@@ -24,7 +24,7 @@ export const Route = createFileRoute("/_authenticated/admin/categories")({
   component: Categories,
 });
 
-const emptyForm = { name: "", slug: "", description: "", is_active: true };
+const emptyForm = { name: "", name_ne: "", slug: "", description: "", description_ne: "", is_active: true };
 const inputClass = "w-full rounded-md border border-input bg-background px-3 py-2 text-sm";
 
 function Categories() {
@@ -64,7 +64,7 @@ function Categories() {
     setEditor(category);
     setSlugTouched(category !== "new");
     setForm(category === "new" ? emptyForm : {
-      name: category.name, slug: category.slug, description: category.description ?? "", is_active: category.is_active,
+      name: category.name, name_ne: category.name_ne ?? "", slug: category.slug, description: category.description ?? "", description_ne: category.description_ne ?? "", is_active: category.is_active,
     });
   }
 
@@ -81,15 +81,25 @@ function Categories() {
     }
     setBusy(true);
     try {
-      const row = { ...parsed.data, description: parsed.data.description || null };
-      const result = existing
+      const { name_ne, description_ne, ...englishData } = parsed.data;
+      const baseRow = { ...englishData, description: englishData.description || null };
+      const row = { ...baseRow, name_ne: name_ne.trim() || null, description_ne: description_ne.trim() || null };
+      const sortOrder = Math.max(-1, ...categories.map((c) => c.sort_order)) + 1;
+      let result = existing
         ? await supabase.from("categories").update(row).eq("id", existing.id).select("id").single()
-        : await supabase.from("categories").insert({ ...row, sort_order: Math.max(-1, ...categories.map((c) => c.sort_order)) + 1 }).select("id").single();
+        : await supabase.from("categories").insert({ ...row, sort_order: sortOrder }).select("id").single();
+      const hasNepaliContent = !!(parsed.data.name_ne.trim() || parsed.data.description_ne.trim());
+      if (isMissingBilingualCatalogueColumn(result.error) && !hasNepaliContent) {
+        // Preserve English-only category management on a database awaiting migration.
+        result = existing
+          ? await supabase.from("categories").update(baseRow).eq("id", existing.id).select("id").single()
+          : await supabase.from("categories").insert({ ...baseRow, sort_order: sortOrder }).select("id").single();
+      }
       if (result.error) throw result.error;
       await refresh();
       setEditor(null);
       toast.success(existing ? "Category updated" : "Category created");
-    } catch (error) { toast.error(error instanceof Error ? error.message : "Couldn't save the category"); }
+    } catch (error) { toast.error(isMissingBilingualCatalogueColumn(error as { code?: string; message?: string }) ? BILINGUAL_MIGRATION_REQUIRED : error instanceof Error ? error.message : "Couldn't save the category"); }
     finally { setBusy(false); }
   }
 
@@ -159,9 +169,11 @@ function Categories() {
     <Dialog open={editor !== null} onOpenChange={(open) => { if (!open && !busy) setEditor(null); }}>
       <DialogContent className="max-h-[90dvh] overflow-y-auto"><DialogHeader><DialogTitle>{editor === "new" ? "Add category" : "Edit category"}</DialogTitle><DialogDescription>Category details</DialogDescription></DialogHeader>
         <form onSubmit={save} className="space-y-4">
-          <label className="block space-y-1 text-sm"><span>Name</span><input required maxLength={100} className={inputClass} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value, slug: slugTouched ? form.slug : slugify(e.target.value) })} /></label>
+          <label className="block space-y-1 text-sm"><span>Name (English)</span><input required maxLength={100} className={inputClass} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value, slug: slugTouched ? form.slug : slugify(e.target.value) })} /></label>
+          <label className="block space-y-1 text-sm"><span>Category name (नेपाली)</span><input maxLength={100} className={inputClass} value={form.name_ne} onChange={(e) => setForm({ ...form, name_ne: e.target.value })} placeholder="श्रेणीको नाम नेपालीमा" /></label>
           <label className="block space-y-1 text-sm"><span>URL name</span><input required maxLength={120} className={inputClass} value={form.slug} onChange={(e) => { setSlugTouched(true); setForm({ ...form, slug: e.target.value }); }} /></label>
-          <label className="block space-y-1 text-sm"><span>Description</span><textarea maxLength={2000} rows={3} className={inputClass} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} /></label>
+          <label className="block space-y-1 text-sm"><span>Description (English)</span><textarea maxLength={2000} rows={3} className={inputClass} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} /></label>
+          <label className="block space-y-1 text-sm"><span>Description (नेपाली)</span><textarea maxLength={2000} rows={3} className={inputClass} value={form.description_ne} onChange={(e) => setForm({ ...form, description_ne: e.target.value })} placeholder="श्रेणीको विवरण नेपालीमा" /></label>
           <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={form.is_active} onChange={(e) => setForm({ ...form, is_active: e.target.checked })} />Visible in shop</label>
           <div className="flex justify-end gap-2"><Button type="button" variant="outline" disabled={busy} onClick={() => setEditor(null)}>Cancel</Button><Button disabled={busy}>{busy ? "Saving…" : "Save category"}</Button></div>
         </form>
