@@ -126,8 +126,11 @@ function Shop() {
       list = list.filter(
         (p) =>
           p.name.toLowerCase().includes(q) ||
+          (p.name_ne ?? "").toLowerCase().includes(q) ||
           (p.description ?? "").toLowerCase().includes(q) ||
-          (p.fabric ?? "").toLowerCase().includes(q),
+          (p.description_ne ?? "").toLowerCase().includes(q) ||
+          (p.fabric ?? "").toLowerCase().includes(q) ||
+          (p.fabric_ne ?? "").toLowerCase().includes(q),
       );
     }
     if (search.size) list = list.filter((p) => (p.sizes ?? []).includes(search.size!));
