@@ -263,7 +263,7 @@ function Shop() {
             type="submit"
             className="shrink-0 rounded-full bg-primary px-6 py-3 text-[12px] uppercase tracking-[0.15em] text-primary-foreground"
           >
-            Search
+            {t("search")}
           </button>
         </form>
 
@@ -303,13 +303,13 @@ function Shop() {
             value={search.sort ?? "newest"}
             onChange={(e) => update({ sort: e.target.value })}
           >
-            <option value="newest">Sort: New arrivals</option>
-            <option value="bestsellers">Bestsellers</option>
-            <option value="popular">Featured</option>
-            <option value="discount">Biggest discount</option>
-            <option value="price-asc">Price: Low to high</option>
-            <option value="price-desc">Price: High to low</option>
-            <option value="name">Name A–Z</option>
+            <option value="newest">{t("sortNew")}</option>
+            <option value="bestsellers">{t("bestSellers")}</option>
+            <option value="popular">{t("featured")}</option>
+            <option value="discount">{t("biggestDiscount")}</option>
+            <option value="price-asc">{t("priceLowHigh")}</option>
+            <option value="price-desc">{t("priceHighLow")}</option>
+            <option value="name">{t("nameAZ")}</option>
           </select>
 
           <select
@@ -317,7 +317,7 @@ function Shop() {
             value={search.size ?? ""}
             onChange={(e) => update({ size: e.target.value || undefined })}
           >
-            <option value="">All sizes</option>
+            <option value="">{t("allSizes")}</option>
             {sizes.map((s) => (
               <option key={s} value={s}>
                 {s}
@@ -330,7 +330,7 @@ function Shop() {
             value={search.color ?? ""}
             onChange={(e) => update({ color: e.target.value || undefined })}
           >
-            <option value="">All colours</option>
+            <option value="">{t("allColours")}</option>
             {colors.map((c) => (
               <option key={c} value={c}>
                 {c}
@@ -343,7 +343,7 @@ function Shop() {
             value={search.fabric ?? ""}
             onChange={(e) => update({ fabric: e.target.value || undefined })}
           >
-            <option value="">All fabrics</option>
+            <option value="">{t("allFabrics")}</option>
             {fabrics.map((fabric) => <option key={fabric} value={fabric}>{fabric}</option>)}
           </select>
 
@@ -352,13 +352,13 @@ function Shop() {
             value={search.stock ?? ""}
             onChange={(e) => update({ stock: e.target.value || undefined })}
           >
-            <option value="">Any availability</option>
-            <option value="in">In stock only</option>
+            <option value="">{t("anyAvailability")}</option>
+            <option value="in">{t("inStockOnly")}</option>
           </select>
 
           <label className="glass flex min-w-[220px] items-center gap-3 rounded-full px-4 py-2">
             <span className="text-[11px] uppercase tracking-[0.15em] text-muted-foreground">
-              Max {money(search.max ?? maxPrice)}
+              {t("maxPrice")} {money(search.max ?? maxPrice)}
             </span>
             <input
               type="range"
@@ -374,7 +374,7 @@ function Shop() {
         {(search.q || search.category || search.size || search.color || search.fabric || search.max || search.stock) ? (
           <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-border/60 pt-4">
             <p className="text-xs text-muted-foreground" aria-live="polite">
-              Filters are active — {filtered.length} matching pieces
+              {t("activeFilters")} — {filtered.length} {t("matchingPieces")}
             </p>
             <button
               type="button"
@@ -384,7 +384,7 @@ function Shop() {
               }}
               className="rounded-full border border-brand/30 px-4 py-2 text-[11px] uppercase tracking-[0.15em] text-primary transition hover:bg-secondary"
             >
-              Clear all filters
+              {t("clearAllFilters")}
             </button>
           </div>
         ) : null}
@@ -392,11 +392,11 @@ function Shop() {
 
       <div className="mt-8 flex flex-wrap items-end justify-between gap-3 border-b border-[#e8ded5] pb-4">
         <div>
-          <p className="auraluxe-kicker">Curated for you</p>
-          <h2 className="mt-2 font-display text-2xl text-[#422d2a] sm:text-3xl">The collection</h2>
+          <p className="auraluxe-kicker">{t("curatedForYou")}</p>
+          <h2 className="mt-2 font-display text-2xl text-[#422d2a] sm:text-3xl">{t("collection")}</h2>
         </div>
         <p className="text-[11px] uppercase tracking-[.15em] text-stone-500" aria-live="polite">
-          {isLoading ? "Loading collection…" : String(filtered.length) + " pieces"}
+          {isLoading ? t("loadingCollection") : String(filtered.length) + " " + t("pieces")}
         </p>
       </div>
 
@@ -408,19 +408,19 @@ function Shop() {
 
       {!isLoading && filtered.length === 0 ? (
         <p className="glass mt-6 rounded-3xl p-8 text-sm text-muted-foreground">
-          No pieces match these filters yet.
+          {t("noPieces")}
         </p>
       ) : null}
 
       {hasMore ? (
         <div ref={sentinelRef} className="mt-10 flex justify-center" aria-hidden={false}>
           <span className="text-[12px] uppercase tracking-[0.18em] text-muted-foreground">
-            Loading more…
+            {t("loadingMore")}
           </span>
         </div>
       ) : filtered.length > PER_PAGE ? (
         <p className="mt-10 text-center text-[12px] uppercase tracking-[0.18em] text-muted-foreground">
-          You've seen all {filtered.length} pieces
+          {t("seenAll")} {filtered.length} {t("pieces")}
         </p>
       ) : null}
     </SiteLayout>
