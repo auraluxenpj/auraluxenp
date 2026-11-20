@@ -5,7 +5,7 @@ import { SiteLayout } from "@/components/site/SiteLayout";
 import { ProductCard } from "@/components/site/ProductCard";
 import { effectivePrice, fetchCategories, fetchProducts, hasDiscount } from "@/lib/data";
 import { useMoney } from "@/lib/store";
-import { useLanguage } from "@/lib/i18n";
+import { categoryLabel, useLanguage } from "@/lib/i18n";
 
 type ShopSearch = {
   category?: string | undefined;
@@ -196,14 +196,14 @@ function Shop() {
       <div className="auraluxe-collection-intro mt-8 sm:mt-12">
         <p className="auraluxe-kicker">{t("auraluxeEdit")}</p>
         <h1 className="mt-3 font-display text-4xl leading-tight text-[#422d2a] sm:text-6xl">
-          {search.category ? categories.find((c) => c.slug === search.category)?.name ?? (language === "ne" ? "सङ्ग्रह" : "The Collection") : t("discoverStyle")}
+          {search.category ? categories.find((c) => c.slug === search.category) ? categoryLabel(search.category, categories.find((c) => c.slug === search.category)!.name, language) : (language === "ne" ? "सङ्ग्रह" : "The Collection") : t("discoverStyle")}
         </h1>
         <p className="mt-3 max-w-2xl text-sm leading-6 text-stone-500 sm:text-base">
           {t("collectionDescription")}
         </p>
         <div className="mt-5 flex flex-wrap gap-2 text-[10px] uppercase tracking-[.16em] text-stone-500">
           <span>{t("home")}</span><span>/</span><span className="text-[#762b3b]">{t("shop")}</span>
-          {search.category ? <><span>/</span><span className="text-[#762b3b]">{categories.find((c) => c.slug === search.category)?.name}</span></> : null}
+          {search.category ? <><span>/</span><span className="text-[#762b3b]">{categoryLabel(search.category, categories.find((c) => c.slug === search.category)?.name ?? "सङ्ग्रह", language)}</span></> : null}
         </div>
       </div>
 
@@ -227,7 +227,7 @@ function Shop() {
               >
                 <img
                   src={c.image_url || DUMMY_CATEGORY_IMAGES[i % DUMMY_CATEGORY_IMAGES.length]}
-                  alt={c.name}
+                  alt={categoryLabel(c.slug, c.name, language)}
                   loading="lazy"
                   width={720}
                   height={900}
@@ -235,7 +235,7 @@ function Shop() {
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-[#241713]/75 via-transparent to-transparent" />
                 <div className="absolute inset-x-0 bottom-0 flex items-end justify-between p-3 sm:p-4">
-                  <span className="font-display text-lg text-white sm:text-xl">{c.name}</span>
+                  <span className="font-display text-lg text-white sm:text-xl">{categoryLabel(c.slug, c.name, language)}</span>
                   <span className="text-sm text-white/90">↗</span>
                 </div>
               </Link>
