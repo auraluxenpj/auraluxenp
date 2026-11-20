@@ -4,7 +4,7 @@ on:
   pull_request:
     branches: [main]
   push:
-    branches: [main, feature/biba-inspired-auraluxe-home]
+    branches: [main, feature/biba-inspired-auraluxe-home, feature/auraluxe-hybrid-fashion-storefront]
 
 permissions:
   contents: read
