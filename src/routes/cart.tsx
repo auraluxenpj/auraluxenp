@@ -117,11 +117,11 @@ function CartPage() {
               </div>
               {threshold > 0 && subtotal < threshold ? (
                 <p className="text-[11px] uppercase tracking-[0.15em] text-brand">
-                  {money(threshold - subtotal)} more for free shipping
+                  {money(threshold - subtotal)} {t("freeShippingRemaining")}
                 </p>
               ) : null}
               <div className="flex justify-between border-t border-border pt-3 font-display text-xl">
-                <dt>Total</dt>
+                <dt>{t("total")}</dt>
                 <dd className="text-primary">{money(total)}</dd>
               </div>
             </dl>
