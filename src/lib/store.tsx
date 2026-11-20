@@ -36,6 +36,7 @@ export const itemKey = (i: CartItem) => `${i.productId}|${i.size ?? ""}|${i.colo
 export function CartProvider({ children }: { children: ReactNode }) {
   const [items, setItems] = useState<CartItem[]>([]);
   const [wishlistIds, setWishlistIds] = useState<string[]>([]);
+  const [wishlistLoaded, setWishlistLoaded] = useState(false);
 
   useEffect(() => {
     try {
@@ -55,16 +56,19 @@ export function CartProvider({ children }: { children: ReactNode }) {
       }
     } catch {
       /* ignore malformed local wishlist data */
+    } finally {
+      setWishlistLoaded(true);
     }
   }, []);
 
   useEffect(() => {
+    if (!wishlistLoaded) return;
     try {
       window.localStorage.setItem(WISHLIST_STORAGE_KEY, JSON.stringify(wishlistIds));
     } catch {
       /* ignore unavailable storage */
     }
-  }, [wishlistIds]);
+  }, [wishlistIds, wishlistLoaded]);
 
   useEffect(() => {
     try {
