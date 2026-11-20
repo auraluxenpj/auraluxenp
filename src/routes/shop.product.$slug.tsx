@@ -118,7 +118,7 @@ function ProductDetail() {
         <div className="glass mt-10 rounded-3xl p-8">
           <h1 className="font-display text-3xl">{t("pieceNotFound")}</h1>
           <Link to="/shop" className="mt-4 inline-block text-sm text-brand underline">
-            {t("backTo{t("shop")}")}
+            {t("backToShop")}
           </Link>
         </div>
       </SiteLayout>
