@@ -327,7 +327,7 @@ function Home() {
       {/* Placeholder while categories load, so the page below doesn't jump */}
       {categoriesLoading ? (
         <>
-          <SectionHeading eyebrow="Find your fit" title="Shop by Category" />
+          <SectionHeading eyebrow={t("findFit")} title={t("shopByCategory")} />
           <section className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-4" aria-hidden="true">
             {Array.from({ length: 8 }).map((_, i) => (
               <div key={i} className="aspect-[4/5] w-full animate-pulse rounded-3xl bg-muted" />
@@ -339,7 +339,7 @@ function Home() {
       {/* Shop by category */}
       {activeCategories.length > 0 ? (
         <>
-          <SectionHeading eyebrow="Find your fit" title="Shop by Category" />
+          <SectionHeading eyebrow={t("findFit")} title={t("shopByCategory")} />
           <section className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-4">
             {activeCategories.map((c, i) => (
               <CategoryTile
@@ -356,7 +356,7 @@ function Home() {
 
       {productsLoading ? (
         <>
-          <SectionHeading eyebrow="Just landed" title="New Arrivals" />
+          <SectionHeading eyebrow={t("justLanded")} title={t("newArrivalsTitle")} />
           <section
             className="mt-6 grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-3"
             aria-hidden="true"
@@ -370,7 +370,7 @@ function Home() {
 
       {newCollection.length > 0 ? (
         <>
-          <SectionHeading eyebrow="Just landed" title="New Arrivals" />
+          <SectionHeading eyebrow={t("justLanded")} title={t("newArrivalsTitle")} />
           <Rail products={newCollection} />
         </>
       ) : null}
@@ -410,21 +410,21 @@ function Home() {
 
       {trending.length > 0 ? (
         <>
-          <SectionHeading eyebrow="Loved right now" title="Trending Now" />
+          <SectionHeading eyebrow={t("lovedNow")} title={t("trendingNow")} />
           <Rail products={trending} />
         </>
       ) : null}
 
       {bestSellers.length > 0 ? (
         <>
-          <SectionHeading eyebrow="Most wanted" title="Best Sellers" />
+          <SectionHeading eyebrow={t("mostWanted")} title={t("bestSellers")} />
           <Rail products={bestSellers} />
         </>
       ) : null}
 
       {offers.length > 0 ? (
         <>
-          <SectionHeading eyebrow="Reduced this week" title="Special Offers" />
+          <SectionHeading eyebrow={t("reducedThisWeek")} title={t("specialOffers")} />
           <Rail products={offers} />
         </>
       ) : null}
@@ -470,7 +470,7 @@ function Home() {
       {/* Testimonials */}
       {testimonials.length > 0 ? (
         <>
-          <SectionHeading eyebrow="In their words" title="Customer Stories" />
+          <SectionHeading eyebrow={t("inTheirWords")} title={t("customerStories")} />
           <section className="mt-6 grid gap-5 sm:grid-cols-3">
             {testimonials.slice(0, 3).map((t) => (
               <blockquote key={t.id} className="glass rounded-3xl p-6">
