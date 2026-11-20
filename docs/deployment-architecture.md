@@ -26,6 +26,7 @@
 - Region: `ap-south-1`
 - The Supabase CLI project reference is maintained in `supabase/config.toml`.
 - Production schema changes must be committed as reviewed SQL migrations, applied to this exact project, and verified before deploying code that depends on new columns or tables.
+- Legacy/source candidate reference from the previous repository config: `putubzokaolkolryjgnd`. It is not visible in the currently connected Supabase accounts, so its ownership/status and data relationship remain unverified. Do not pause, delete, disconnect, or overwrite that database until the source-to-target data migration is explicitly verified.
 
 ## Release sequence
 
