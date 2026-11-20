@@ -24,7 +24,7 @@ export const Route = createFileRoute("/_authenticated/admin/categories")({
   component: Categories,
 });
 
-const emptyForm = { name: "", slug: "", description: "", is_active: true };
+const emptyForm = { name: "", name_ne: "", slug: "", description: "", description_ne: "", is_active: true };
 const inputClass = "w-full rounded-md border border-input bg-background px-3 py-2 text-sm";
 
 function Categories() {
@@ -64,7 +64,7 @@ function Categories() {
     setEditor(category);
     setSlugTouched(category !== "new");
     setForm(category === "new" ? emptyForm : {
-      name: category.name, slug: category.slug, description: category.description ?? "", is_active: category.is_active,
+      name: category.name, name_ne: category.name_ne ?? "", slug: category.slug, description: category.description ?? "", description_ne: category.description_ne ?? "", is_active: category.is_active,
     });
   }
 
@@ -81,7 +81,7 @@ function Categories() {
     }
     setBusy(true);
     try {
-      const row = { ...parsed.data, description: parsed.data.description || null };
+      const row = { ...parsed.data, description: parsed.data.description || null, name_ne: parsed.data.name_ne.trim() || null, description_ne: parsed.data.description_ne.trim() || null };
       const result = existing
         ? await supabase.from("categories").update(row).eq("id", existing.id).select("id").single()
         : await supabase.from("categories").insert({ ...row, sort_order: Math.max(-1, ...categories.map((c) => c.sort_order)) + 1 }).select("id").single();
@@ -159,9 +159,11 @@ function Categories() {
     <Dialog open={editor !== null} onOpenChange={(open) => { if (!open && !busy) setEditor(null); }}>
       <DialogContent className="max-h-[90dvh] overflow-y-auto"><DialogHeader><DialogTitle>{editor === "new" ? "Add category" : "Edit category"}</DialogTitle><DialogDescription>Category details</DialogDescription></DialogHeader>
         <form onSubmit={save} className="space-y-4">
-          <label className="block space-y-1 text-sm"><span>Name</span><input required maxLength={100} className={inputClass} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value, slug: slugTouched ? form.slug : slugify(e.target.value) })} /></label>
+          <label className="block space-y-1 text-sm"><span>Name (English)</span><input required maxLength={100} className={inputClass} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value, slug: slugTouched ? form.slug : slugify(e.target.value) })} /></label>
+          <label className="block space-y-1 text-sm"><span>Category name (नेपाली)</span><input maxLength={100} className={inputClass} value={form.name_ne} onChange={(e) => setForm({ ...form, name_ne: e.target.value })} placeholder="श्रेणीको नाम नेपालीमा" /></label>
           <label className="block space-y-1 text-sm"><span>URL name</span><input required maxLength={120} className={inputClass} value={form.slug} onChange={(e) => { setSlugTouched(true); setForm({ ...form, slug: e.target.value }); }} /></label>
-          <label className="block space-y-1 text-sm"><span>Description</span><textarea maxLength={2000} rows={3} className={inputClass} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} /></label>
+          <label className="block space-y-1 text-sm"><span>Description (English)</span><textarea maxLength={2000} rows={3} className={inputClass} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} /></label>
+          <label className="block space-y-1 text-sm"><span>Description (नेपाली)</span><textarea maxLength={2000} rows={3} className={inputClass} value={form.description_ne} onChange={(e) => setForm({ ...form, description_ne: e.target.value })} placeholder="श्रेणीको विवरण नेपालीमा" /></label>
           <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={form.is_active} onChange={(e) => setForm({ ...form, is_active: e.target.checked })} />Visible in shop</label>
           <div className="flex justify-end gap-2"><Button type="button" variant="outline" disabled={busy} onClick={() => setEditor(null)}>Cancel</Button><Button disabled={busy}>{busy ? "Saving…" : "Save category"}</Button></div>
         </form>
