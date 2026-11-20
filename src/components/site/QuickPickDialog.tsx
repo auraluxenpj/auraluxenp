@@ -10,7 +10,7 @@ import {
 import { effectivePrice, productImage, type StorefrontProduct } from "@/lib/data";
 import { requiredOptionLabels } from "@/lib/product-options";
 import { useCart, useMoney } from "@/lib/store";
-import { useLanguage } from "@/lib/i18n";
+import { localizedContent, useLanguage } from "@/lib/i18n";
 
 const pill = (active: boolean) =>
   `rounded-full border px-3.5 py-2 text-[11px] uppercase tracking-[0.12em] transition sm:px-4 sm:text-[12px] ${
@@ -33,7 +33,8 @@ export function QuickPickDialog({
   onOpenChange: (open: boolean) => void;
 }) {
   const money = useMoney();
-  const { t } = useLanguage();
+  const { language, t } = useLanguage();
+  const productName = localizedContent(product.name, product.name_ne, language);
   const { add } = useCart();
   const price = effectivePrice(product);
   const sizes = product.sizes ?? [];
@@ -56,14 +57,14 @@ export function QuickPickDialog({
     add({
       productId: product.id,
       slug: product.slug,
-      name: product.name,
+      name: productName,
       image: productImage(product),
       price,
       size: size ?? sizes[0] ?? null,
       color: color ?? colors[0] ?? null,
       quantity: 1,
     });
-    toast.success(`${product.name} ${t("addedToBag")}`);
+    toast.success(`${productName} ${t("addedToBag")}`);
     onOpenChange(false);
   };
 
@@ -80,14 +81,14 @@ export function QuickPickDialog({
         <div className="flex gap-3">
           <img
             src={productImage(product)}
-            alt={product.name}
+            alt={productName}
             width={72}
             height={96}
             className="h-24 w-18 shrink-0 rounded-xl bg-muted object-cover"
           />
           <div className="min-w-0">
             <h3 className="line-clamp-2 font-display text-sm leading-tight sm:text-base">
-              {product.name}
+              {productName}
             </h3>
             <p className="mt-1 font-display text-sm text-primary sm:text-base">{money(price)}</p>
           </div>
