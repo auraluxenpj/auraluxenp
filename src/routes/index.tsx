@@ -303,7 +303,8 @@ function Home() {
       .filter(Boolean);
     const unique = Array.from(new Set(own)).slice(0, 3);
     if (unique.length > 0) return unique;
-    return fallback ? [fallback] : [DUMMY_CATEGORY_IMAGES[offset % DUMMY_CATEGORY_IMAGES.length]];
+    const placeholder = DUMMY_CATEGORY_IMAGES[offset % DUMMY_CATEGORY_IMAGES.length];
+    return fallback ? [fallback] : placeholder ? [placeholder] : [];
   };
 
   return (

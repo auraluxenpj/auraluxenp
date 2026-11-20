@@ -37,6 +37,8 @@ export const Route = createFileRoute("/shop/")({
           "Browse every Auraluxe piece: kurtis, co-ord sets, suits, dresses and party wear. Filter by size, colour, price and availability.",
       },
       { property: "og:title", content: "Shop All — Auraluxe Nepalgunj" },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
       {
         property: "og:description",
         content: "Kurtis, co-ord sets, suits, dresses and party wear from Auraluxe.",
@@ -398,7 +400,7 @@ function Shop() {
 
       <section className="auraluxe-product-grid mt-5 grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-4 2xl:grid-cols-5">
         {visible.map((p) => (
-          <ProductCard key={p.id} product={p} fallbackImage={categoryFallbackImage} />
+          <ProductCard key={p.id} product={p} {...(categoryFallbackImage ? { fallbackImage: categoryFallbackImage } : {})} />
         ))}
       </section>
 
