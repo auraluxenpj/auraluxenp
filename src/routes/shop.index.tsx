@@ -111,7 +111,8 @@ function Shop() {
     : undefined;
 
   const filtered = useMemo(() => {
-    let list = [...products];
+    // Never expose admin drafts or unpublished catalogue records on the public storefront.
+    let list = products.filter((p) => p.is_published);
     if (search.category === "sale") {
       list = list.filter(hasDiscount);
     } else if (search.category === "new-arrivals") {
@@ -292,7 +293,7 @@ function Shop() {
                 onClick={() => update({ category: c.slug })}
                 className={`rounded-full px-4 py-2 text-[12px] uppercase tracking-[0.15em] ${search.category === c.slug ? "bg-primary text-primary-foreground" : "glass text-foreground/70"}`}
               >
-                {c.name}
+                {categoryLabel(c.slug, c.name, language)}
               </button>
             ))}
         </div>
@@ -373,9 +374,20 @@ function Shop() {
         </div>
         {(search.q || search.category || search.size || search.color || search.fabric || search.max || search.stock) ? (
           <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-border/60 pt-4">
-            <p className="text-xs text-muted-foreground" aria-live="polite">
-              {t("activeFilters")} — {filtered.length} {t("matchingPieces")}
-            </p>
+            <div className="min-w-0 flex-1">
+              <p className="text-xs text-muted-foreground" aria-live="polite">
+                {t("activeFilters")} — {filtered.length} {t("matchingPieces")}
+              </p>
+              <div className="mt-2 flex flex-wrap gap-2">
+                {search.q ? <button type="button" onClick={() => { setQuery(""); update({ q: undefined }); }} className="rounded-full border border-[#e5d8cd] bg-white px-3 py-1.5 text-[10px] text-stone-700">{t("search")}: {search.q} ×</button> : null}
+                {search.category ? <button type="button" onClick={() => update({ category: undefined })} className="rounded-full border border-[#e5d8cd] bg-white px-3 py-1.5 text-[10px] text-stone-700">{categoryLabel(search.category, categories.find((c) => c.slug === search.category)?.name ?? (language === "ne" ? "सङ्ग्रह" : "Collection"), language)} ×</button> : null}
+                {search.size ? <button type="button" onClick={() => update({ size: undefined })} className="rounded-full border border-[#e5d8cd] bg-white px-3 py-1.5 text-[10px] text-stone-700">{t("allSizes")}: {search.size} ×</button> : null}
+                {search.color ? <button type="button" onClick={() => update({ color: undefined })} className="rounded-full border border-[#e5d8cd] bg-white px-3 py-1.5 text-[10px] text-stone-700">{t("allColours")}: {search.color} ×</button> : null}
+                {search.fabric ? <button type="button" onClick={() => update({ fabric: undefined })} className="rounded-full border border-[#e5d8cd] bg-white px-3 py-1.5 text-[10px] text-stone-700">{t("allFabrics")}: {search.fabric} ×</button> : null}
+                {search.max ? <button type="button" onClick={() => update({ max: undefined })} className="rounded-full border border-[#e5d8cd] bg-white px-3 py-1.5 text-[10px] text-stone-700">{t("maxPrice")}: {money(search.max)} ×</button> : null}
+                {search.stock === "in" ? <button type="button" onClick={() => update({ stock: undefined })} className="rounded-full border border-[#e5d8cd] bg-white px-3 py-1.5 text-[10px] text-stone-700">{t("inStockOnly")} ×</button> : null}
+              </div>
+            </div>
             <button
               type="button"
               onClick={() => {
@@ -400,7 +412,7 @@ function Shop() {
         </p>
       </div>
 
-      <section className="auraluxe-product-grid mt-5 grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-4 2xl:grid-cols-5">
+      <section className="auraluxe-product-grid mt-5 grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-4 2xl:grid-cols-4">
         {visible.map((p) => (
           <ProductCard key={p.id} product={p} {...(categoryFallbackImage ? { fallbackImage: categoryFallbackImage } : {})} />
         ))}
