@@ -4,6 +4,7 @@
 - [x] Inspect runtime configuration without revealing values: browser/server connection variables are present locally; hosted Cloud is paused and managed binding repair failed.
 - [x] Correct two pre-existing homepage/shop image-fallback type errors without changing catalogue data; automatic build OK and 14 product-option/size-stock tests pass.
 - [x] Preview homepage returns HTTP 200 with no page errors or missing-configuration exception; screenshot shows the store shell with loading placeholders, not a verified catalogue read.
+- [x] Final desktop/phone checks: preview home/shop return HTTP 200 without page errors, but catalogue remains loading. Published homepage returns HTTP 200 yet visibly shows “This page didn't load”; live recovery is not complete.
 - [ ] Resume hosted Cloud (owner approved Nov 20), retry managed connection repair and verify the store; resume attempted but blocked by exhausted workspace Cloud credits.
 - [ ] Confirm the missing-settings error is resolved on the published site; no publication requested.
 
