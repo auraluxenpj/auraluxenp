@@ -16,6 +16,7 @@ import { SiteLayout } from "@/components/site/SiteLayout";
 import { ProductCard } from "@/components/site/ProductCard";
 import { HeroCarousel } from "@/components/site/HeroCarousel";
 import { useSettings, whatsappLink } from "@/lib/store";
+import { categoryLabel, useLanguage } from "@/lib/i18n";
 
 export const Route = createFileRoute("/")({
   // Fetch the data the hero needs BEFORE the page renders (on the server), so the
@@ -87,11 +88,14 @@ const FALLBACK_HERO: Banner = {
 };
 
 function SectionHeading({ eyebrow, title }: { eyebrow: string; title: string }) {
+  const { language, t } = useLanguage();
+  const translatedEyebrow: Record<string, string> = { "Find your fit": t("findFit"), "Just landed": t("justLanded"), "Loved right now": t("lovedNow"), "Most wanted": t("mostWanted"), "Reduced this week": t("specialOffers"), "In their words": t("inTheirWords") };
+  const translatedTitle: Record<string, string> = { "Shop by Category": t("shopByCategory"), "New Arrivals": t("newArrivalsTitle"), "Trending Now": t("trendingNow"), "Best Sellers": t("bestSellers"), "Special Offers": t("specialOffers"), "Customer Stories": t("customerStories") };
   return (
     <div className="mt-16 flex items-end justify-between">
       <div>
-        <p className="eyebrow">{eyebrow}</p>
-        <h2 className="mt-2 font-display text-4xl">{title}</h2>
+        <p className="eyebrow">{translatedEyebrow[eyebrow] ?? eyebrow}</p>
+        <h2 className="mt-2 font-display text-4xl">{translatedTitle[title] ?? title}</h2>
       </div>
       <Link
         to="/shop"
@@ -139,6 +143,7 @@ function CategoryTile({
   images: string[];
   offset: number;
 }) {
+  const { language } = useLanguage();
   const count = images.length;
   const imagesKey = images.join("|");
   const boxRef = useRef<HTMLDivElement>(null);
@@ -338,7 +343,7 @@ function Home() {
             {activeCategories.map((c, i) => (
               <CategoryTile
                 key={c.id}
-                name={c.name}
+                name={categoryLabel(c.slug, c.name, language)}
                 slug={c.slug}
                 images={categoryImages(c.id, c.image_url, i)}
                 offset={i}
