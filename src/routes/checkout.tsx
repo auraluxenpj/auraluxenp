@@ -261,7 +261,7 @@ function CheckoutPage() {
           <p className="text-xs text-muted-foreground">{t("couponChecked")}</p>
           <dl className="space-y-2 text-sm">
             <div className="flex justify-between"><dt className="text-muted-foreground">{t("subtotal")}</dt><dd>{money(subtotal)}</dd></div>
-            <div className="flex justify-between"><dt className="text-muted-foreground">{t("shipping")} ({t("estimated")})</dt><dd>{estShipping === 0 ? "Free" : money(estShipping)}</dd></div>
+            <div className="flex justify-between"><dt className="text-muted-foreground">{t("shipping")} ({t("estimated")})</dt><dd>{estShipping === 0 ? t("free") : money(estShipping)}</dd></div>
             <div className="flex justify-between border-t border-border pt-3 font-display text-xl"><dt>{t("estimatedTotal")}</dt><dd className="text-primary">{money(subtotal + estShipping)}</dd></div>
           </dl>
           <p className="text-xs text-muted-foreground">{t("finalTotal")}</p>
