@@ -38,7 +38,7 @@ export type SettingsMap = Record<string, string>;
 
 export const DEFAULT_SETTINGS: SettingsMap = {
   brand_name: "AURALUXE",
-  currency: "Rs.",
+  currency: "NPR",
   shipping_charge: "150",
   free_shipping_threshold: "3500",
   tax_percent: "0",
