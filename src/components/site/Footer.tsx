@@ -1,8 +1,10 @@
 import { Link } from "@tanstack/react-router";
 import { useSettings } from "@/lib/store";
+import { useLanguage } from "@/lib/i18n";
 
 export function Footer() {
   const s = useSettings();
+  const { t } = useLanguage();
   return (
     <footer className="glass mt-14 rounded-3xl p-8">
       <div className="flex flex-col gap-6 sm:flex-row sm:items-start sm:justify-between">
