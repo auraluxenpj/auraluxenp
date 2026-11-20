@@ -52,3 +52,23 @@ The production migration ledger is complete through 0017. The SQL migration sequ
 ## Conclusion
 
 The production migration history and repository SQL migration sequence agree on the full sequence 0000–0017. Drizzle metadata is incomplete and must be rebuilt as a verified baseline. Production is not ready for a Drizzle migration workflow until this is resolved.
+
+
+## Recheck addendum — 2026-11-20 11:xx local
+
+A second comparison was performed against the live Supabase migration listing and the current `main` repository files.
+
+- The live migration listing returns all 18 named migrations, `0000_auraluxe_core_schema` through `0017_product_model_code`.
+- The current repository contains SQL files 0000–0017, including the exact 0015, 0016 and 0017 files.
+- The Drizzle journal currently ends at idx 16 / `0016_inventory_sync_push_guard`; it does not contain the 0017 entry.
+- Snapshot files 0000, 0015 and 0016 remain empty shells. There is no 0017 snapshot.
+- The current production catalog confirms the 0017 model_code column, check constraint and partial expression index.
+- The 0015/0016 live inventory-sync objects and service-role-only function permissions were inspected separately. Their existence and present definitions do not prove that historical SQL checksums match.
+
+### Clarification of the older shared-inventory warning
+
+`SHARED_INVENTORY.md` contains an earlier November 12 warning about an unmatched historical database migration row and missing 0015/0016 records. The current Supabase migration API now lists 0015 and 0016 by name, and lists the full sequence through 0017. Therefore, the earlier missing-record statement is historical and must not be presented as the current ledger state. The older reported core SQL hash mismatch remains unverified by this recheck; the available migration-list API exposes versions and names, not source checksums.
+
+### Decision
+
+Do not edit migration SQL, journal, snapshots, or Supabase's migration history yet. The repository metadata is conclusively incomplete, but a valid Drizzle snapshot cannot be inferred from empty shells. A full schema-only export and a Supabase-compatible isolated baseline are still required. No paid development branch was created and no production changes were made.
