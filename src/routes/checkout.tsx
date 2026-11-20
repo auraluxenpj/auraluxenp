@@ -48,7 +48,7 @@ function PaymentInstructions({ method, orderNumber, total }: { method: CheckoutM
       {method.id === "qr" ? (
         <div className="mt-3 space-y-3 text-sm">
           <p>
-            Scan this QR code{method.provider ? ` with ${method.provider}` : ""} and pay <strong>{total}</strong> to{" "}
+            {t("scanQr")}{method.provider ? ` with ${method.provider}` : ""} and pay <strong>{total}</strong> to{" "}
             <strong>{method.merchantName}</strong>.
           </p>
           {method.qrImageUrl ? (
@@ -161,7 +161,7 @@ function CheckoutPage() {
           <p className="mt-1 font-display text-2xl text-primary">{placed.orderNumber}</p>
           <PaymentInstructions method={placed.method} orderNumber={placed.orderNumber} total={money(placed.total)} />
           <Link to="/shop" className="mt-6 inline-block rounded-full bg-primary px-7 py-3.5 text-[12px] uppercase tracking-[0.18em] text-primary-foreground">
-            Continue shopping
+            {t("continueShopping")}
           </Link>
         </div>
       </SiteLayout>
@@ -175,7 +175,7 @@ function CheckoutPage() {
           <h1 className="font-display text-4xl">{t("checkout")}</h1>
           <p className="mt-3 text-sm text-muted-foreground">{t("emptyBag")}</p>
           <Link to="/shop" className="mt-5 inline-block rounded-full bg-primary px-7 py-3.5 text-[12px] uppercase tracking-[0.18em] text-primary-foreground">
-            Start shopping
+            {t("startShopping")}
           </Link>
         </div>
       </SiteLayout>
@@ -187,12 +187,12 @@ function CheckoutPage() {
     return (
       <SiteLayout>
         <div className="glass mt-10 rounded-3xl p-8 text-center">
-          <h1 className="font-display text-4xl">Checkout</h1>
+          <h1 className="font-display text-4xl">{t("paymentUnavailableTitle")}</h1>
           <p className="mx-auto mt-3 max-w-md text-sm text-muted-foreground">
-            Online payment isn't available right now. Please message us on WhatsApp and we'll complete your order personally.
+            {t("paymentUnavailableDescription")}
           </p>
           <a href={wa} target="_blank" rel="noreferrer" className="mt-6 inline-block rounded-full bg-primary px-7 py-3.5 text-[12px] uppercase tracking-[0.18em] text-primary-foreground">
-            Message us on WhatsApp
+            {t("messageWhatsApp")}
           </a>
         </div>
       </SiteLayout>
@@ -203,7 +203,7 @@ function CheckoutPage() {
     <SiteLayout>
       <div className="mt-10">
         <p className="eyebrow">{t("almostYours")}</p>
-        <h1 className="mt-2 font-display text-5xl">Checkout</h1>
+        <h1 className="mt-2 font-display text-5xl">{t("checkout")}</h1>
       </div>
       <form onSubmit={submitOrder} className="mt-6 grid gap-6 lg:grid-cols-12">
         <div className="glass space-y-4 rounded-3xl p-6 lg:col-span-7">
@@ -232,7 +232,7 @@ function CheckoutPage() {
             ))}
           </div>
           <p className="text-xs text-muted-foreground">
-            Payment instructions appear after you place the order. Your order stays unpaid until we verify your payment.
+            {t("paymentInstructionsAfterOrder")}
           </p>
         </div>
 
@@ -261,12 +261,12 @@ function CheckoutPage() {
           <p className="text-xs text-muted-foreground">{t("couponChecked")}</p>
           <dl className="space-y-2 text-sm">
             <div className="flex justify-between"><dt className="text-muted-foreground">{t("subtotal")}</dt><dd>{money(subtotal)}</dd></div>
-            <div className="flex justify-between"><dt className="text-muted-foreground">Shipping (estimated)</dt><dd>{estShipping === 0 ? "Free" : money(estShipping)}</dd></div>
+            <div className="flex justify-between"><dt className="text-muted-foreground">{t("shipping")} ({t("estimated")})</dt><dd>{estShipping === 0 ? "Free" : money(estShipping)}</dd></div>
             <div className="flex justify-between border-t border-border pt-3 font-display text-xl"><dt>{t("estimatedTotal")}</dt><dd className="text-primary">{money(subtotal + estShipping)}</dd></div>
           </dl>
           <p className="text-xs text-muted-foreground">{t("finalTotal")}</p>
           <button disabled={busy || !selected} className="w-full rounded-full bg-primary py-3.5 text-[12px] uppercase tracking-[0.18em] text-primary-foreground disabled:opacity-60">
-            {busy ? "Placing order…" : "Place order"}
+            {busy ? t("placingOrder") : t("placeOrder")}
           </button>
         </aside>
       </form>
