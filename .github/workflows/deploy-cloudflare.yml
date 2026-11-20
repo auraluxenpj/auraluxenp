@@ -1,0 +1,43 @@
+name: Deploy Auraluxe to Cloudflare
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: auraluxe-cloudflare-production
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Build Cloudflare Worker
+        run: bun run build
+        env:
+          VITE_SUPABASE_URL: https://jsshaoucrjorbyuzagdr.supabase.co
+          VITE_SUPABASE_PUBLISHABLE_KEY: sb_publishable_ti84mMAfbpf5l2a6n-czjw_8OLu-OJA
+          SUPABASE_URL: https://jsshaoucrjorbyuzagdr.supabase.co
+          SUPABASE_PUBLISHABLE_KEY: sb_publishable_ti84mMAfbpf5l2a6n-czjw_8OLu-OJA
+
+      - name: Deploy existing auraluxenp Worker
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: 2a5ced50e8aafc5fbc9b0329cf25f84e
+          command: deploy .output/server/index.mjs --assets .output/public --name auraluxenp --compatibility-date 2026-11-20 --compatibility-flags nodejs_compat --var SUPABASE_URL:https://jsshaoucrjorbyuzagdr.supabase.co --var SUPABASE_PUBLISHABLE_KEY:sb_publishable_ti84mMAfbpf5l2a6n-czjw_8OLu-OJA
