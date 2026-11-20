@@ -9,8 +9,8 @@ type Value={language:Language;setLanguage:(v:Language)=>void;t:(k:Key)=>string};
 const Context=createContext<Value|null>(null);
 export function LanguageProvider({children}:{children:ReactNode}){
  const [language,setLanguageState]=useState<Language>("en");
- useEffect(()=>{try{const v=localStorage.getItem("auraluxe-language");if(v==="ne"||v==="en")setLanguageState(v)}catch{}},[]);
- useEffect(()=>{document.documentElement.lang=language;try{localStorage.setItem("auraluxe-language",language)}catch{}},[language]);
+ useEffect(()=>{try{const v=localStorage.getItem("auraluxe-language");if(v==="ne"||v==="en")setLanguageState(v)}catch { /* local storage may be unavailable */ }},[]);
+ useEffect(()=>{document.documentElement.lang=language;try{localStorage.setItem("auraluxe-language",language)}catch { /* local storage may be unavailable */ }},[language]);
  const setLanguage=useCallback((v:Language)=>setLanguageState(v),[]);
  const t=useCallback((k:Key)=>messages[language][k]??messages.en[k],[language]);
  const value=useMemo(()=>({language,setLanguage,t}),[language,setLanguage,t]);
