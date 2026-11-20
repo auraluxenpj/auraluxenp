@@ -1,5 +1,5 @@
 import { Link, useNavigate } from "@tanstack/react-router";
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { ChevronDown, Menu, Search, ShoppingBag, UserRound, X, ArrowUpRight } from "lucide-react";
 import { useCart } from "@/lib/store";
@@ -45,7 +45,25 @@ export function Header() {
   const closeMenus = () => {
     setActiveMenu(null);
     setMobileOpen(false);
+    setMobileShopOpen(false);
+    setMobileOccasionOpen(false);
+    setSearchOpen(false);
   };
+
+  // Keep the mobile search and navigation panels mutually exclusive, and let
+  // keyboard users dismiss either panel without needing to find its close control.
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      setActiveMenu(null);
+      setMobileOpen(false);
+      setMobileShopOpen(false);
+      setMobileOccasionOpen(false);
+      setSearchOpen(false);
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, []);
 
   return (
     <>
@@ -111,13 +129,13 @@ export function Header() {
           </nav>
 
           <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
-            <button type="button" aria-label="Search products" aria-expanded={searchOpen} onClick={() => setSearchOpen((v) => !v)} className="auraluxe-icon-link"><Search className="size-[18px]" /></button>
+            <button type="button" aria-label="Search products" aria-expanded={searchOpen} onClick={() => { const next = !searchOpen; setSearchOpen(next); if (next) { setMobileOpen(false); setActiveMenu(null); setMobileShopOpen(false); setMobileOccasionOpen(false); } }} className="auraluxe-icon-link"><Search className="size-[18px]" /></button>
             <Link to="/auth" aria-label="My account" className="auraluxe-icon-link hidden sm:grid"><UserRound className="size-[18px]" /></Link>
             <Link to="/cart" aria-label={`Shopping bag, ${count} items`} className="auraluxe-icon-link relative">
               <ShoppingBag className="size-[18px]" />
               {count > 0 ? <span className="absolute -right-1 -top-1 grid size-[17px] place-items-center rounded-full bg-[#762b3b] text-[9px] text-white">{count}</span> : null}
             </Link>
-            <button type="button" aria-label="Menu" aria-expanded={mobileOpen} onClick={() => setMobileOpen((v) => !v)} className="auraluxe-icon-link xl:hidden">
+            <button type="button" aria-label="Menu" aria-expanded={mobileOpen} onClick={() => { const next = !mobileOpen; setMobileOpen(next); if (next) { setSearchOpen(false); setActiveMenu(null); } }} className="auraluxe-icon-link xl:hidden">
               {mobileOpen ? <X className="size-[18px]" /> : <Menu className="size-[18px]" />}
             </button>
           </div>
