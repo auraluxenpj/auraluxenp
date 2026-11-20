@@ -142,7 +142,7 @@ export function Header() {
               <ShoppingBag className="size-[18px]" />
               {count > 0 ? <span className="absolute -right-1 -top-1 grid size-[17px] place-items-center rounded-full bg-[#762b3b] text-[9px] text-white">{count}</span> : null}
             </Link>
-            <button type="button" aria-label="Menu" aria-expanded={mobileOpen} onClick={() => { const next = !mobileOpen; setMobileOpen(next); if (next) { setSearchOpen(false); setActiveMenu(null); } }} className="auraluxe-icon-link xl:hidden">
+            <button type="button" aria-label={t("menu")} aria-expanded={mobileOpen} onClick={() => { const next = !mobileOpen; setMobileOpen(next); if (next) { setSearchOpen(false); setActiveMenu(null); } }} className="auraluxe-icon-link xl:hidden">
               {mobileOpen ? <X className="size-[18px]" /> : <Menu className="size-[18px]" />}
             </button>
           </div>
@@ -151,21 +151,21 @@ export function Header() {
         {searchOpen ? (
           <form onSubmit={submitSearch} className="auraluxe-search-panel flex items-center gap-3 border-t border-[#eee5dd] py-4">
             <Search className="size-4 shrink-0 text-[#8b6a5e]" />
-            <input autoFocus value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} placeholder={t("searchPlaceholder")} className="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-stone-400" aria-label="Search products" />
+            <input autoFocus value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} placeholder={t("searchPlaceholder")} className="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-stone-400" aria-label={t("searchProducts")} />
             <button type="submit" className="text-[10px] font-semibold uppercase tracking-[.18em] text-[#762b3b]">{t("search")}</button>
-            <button type="button" aria-label="Close search" onClick={() => setSearchOpen(false)} className="auraluxe-icon-link"><X className="size-4" /></button>
+            <button type="button" aria-label={t("closeSearch")} onClick={() => setSearchOpen(false)} className="auraluxe-icon-link"><X className="size-4" /></button>
           </form>
         ) : null}
 
         {mobileOpen ? (
           <nav className="auraluxe-mobile-nav xl:hidden" aria-label="Mobile navigation">
             <button type="button" onClick={() => setMobileShopOpen((v) => !v)} aria-expanded={mobileShopOpen}>{t("shopCategory")} <ChevronDown className={`size-4 transition ${mobileShopOpen ? "rotate-180" : ""}`} /></button>
-            {mobileShopOpen ? activeCategories.map((c) => <Link key={c.id} to="/shop" search={{ category: c.slug }} onClick={closeMenus}>{c.name}</Link>) : null}
-            {QUICK_LINKS.map((item) => <Link key={item.label} to="/shop" search={item.search} onClick={closeMenus}>{item.label}</Link>)}
+            {mobileShopOpen ? activeCategories.map((c) => <Link key={c.id} to="/shop" search={{ category: c.slug }} onClick={closeMenus}>{categoryLabel(c.slug, c.name, language)}</Link>) : null}
+            {QUICK_LINKS.map((item) => <Link key={item.label} to="/shop" search={item.search} onClick={closeMenus}>{item.label === "New Arrivals" ? t("newArrivals") : item.label === "Best Sellers" ? t("bestSellers") : t("sale")}</Link>)}
             <button type="button" onClick={() => setMobileOccasionOpen((v) => !v)} aria-expanded={mobileOccasionOpen}>{t("shopOccasion")} <ChevronDown className={`size-4 transition ${mobileOccasionOpen ? "rotate-180" : ""}`} /></button>
-            {mobileOccasionOpen ? OCCASION_LINKS.map((item) => <Link key={item.label} to="/shop" search={{ q: item.query }} onClick={closeMenus}>{item.label}</Link>) : null}
+            {mobileOccasionOpen ? OCCASION_LINKS.map((item) => <Link key={item.label} to="/shop" search={{ q: item.query }} onClick={closeMenus}>{item.label === "Festive Edit" ? t("festiveEdit") : item.label === "Wedding Guest" ? t("weddingGuest") : item.label === "Everyday Elegance" ? t("everydayElegance") : item.label === "Office Wear" ? t("officeWear") : t("partyWear")}</Link>) : null}
             <Link to="/auth" onClick={closeMenus}>{t("myAccount")}</Link>
-            {STORY_LINKS.map((item) => <Link key={item.label} to={item.to} onClick={closeMenus}>{item.label}</Link>)}
+            {STORY_LINKS.map((item) => <Link key={item.label} to={item.to} onClick={closeMenus}>{item.label === "Our Story" ? t("ourStory") : t("visitStore")}</Link>)}
           </nav>
         ) : null}
       </div>
