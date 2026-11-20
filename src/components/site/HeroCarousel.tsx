@@ -83,7 +83,7 @@ export function HeroCarousel({ banners }: { banners: Banner[] }) {
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
     >
-      <h1 className="sr-only">Auraluxe — Premium Ladies' Fashion in Nepalgunj</h1>
+      <h1 className="sr-only">{t("homeSeoTitle")}</h1>
       <div className="relative aspect-[3/4] w-full sm:aspect-[16/9] lg:aspect-[2/1]">
         {banners.map((b, i) => (
           <div
