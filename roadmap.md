@@ -7,6 +7,7 @@
 - [x] Final desktop/phone checks: preview home/shop return HTTP 200 without page errors, but catalogue remains loading. Published homepage returns HTTP 200 yet visibly shows “This page didn't load”; live recovery is not complete.
 - [ ] Resume hosted Cloud (owner approved Nov 20), retry managed connection repair and verify the store; resume attempted but blocked by exhausted workspace Cloud credits.
 - [ ] Confirm the missing-settings error is resolved on the published site; no publication requested.
+- [ ] Unfreeze condition (Nov 20, 02:14 UTC): hosted database stays paused until Cloud credits are available — owner tops up in Settings → Plans & credits, or the next monthly grant at the Nov 22, 2026 billing renewal (Pro, billed from Oct 22). Balance then: 4.60 credits, all from the daily grant. Live homepage still serves HTTP 200 with the correct title, but the catalogue fails in the browser; owner has not yet chosen whether to attempt a wake-up on the remaining daily credits.
 
 ## Automatic shared stock with BizSathi (Nov 12)
 - [x] Inspect both apps' existing manual sync, size matching and stock writers; identify absence of live sync history and unresolved catalogue exceptions.
