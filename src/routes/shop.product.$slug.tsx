@@ -385,7 +385,7 @@ function ProductDetail() {
               }}
               className="flex-1 rounded-full bg-primary py-3.5 text-center text-[12px] uppercase tracking-[0.18em] text-primary-foreground"
             >
-              Buy now
+              {t("buyNow")}
             </Link>
           </div>
 
@@ -398,7 +398,7 @@ function ProductDetail() {
             rel="noreferrer"
             className="mt-3 block rounded-full border border-brand/30 bg-secondary py-3.5 text-center text-[12px] uppercase tracking-[0.18em] text-primary"
           >
-            Ask on WhatsApp
+            {t("askWhatsApp")}
           </a>
 
           <div className="auraluxe-product-details mt-7 border-t border-border pt-6">
