@@ -10,13 +10,13 @@
 ## Hosting
 
 - Provider: Cloudflare Workers
-- Existing production Worker: `auraluxenpj`
-- Cloudflare account: `3ecd048ec38302f3c4718c485b0e76d5`
-- Workers subdomain: `auraluxe26`
-- Worker URL: `https://auraluxenpj.auraluxe26.workers.dev`
+- Existing production Worker: `auraluxenp`
+- Cloudflare account: `2a5ced50e8aafc5fbc9b0329cf25f84e`
+- Workers subdomain: `auraluxe-nepalgunj`
+- Worker URL: `https://auraluxenp.auraluxe-nepalgunj.workers.dev`
 - Deployment workflow: `.github/workflows/deploy-cloudflare.yml`
 - Deployment target is intentionally restricted to `main`. Feature-branch workflow dispatch must not deploy production.
-- The workflow must update the existing `auraluxenpj` Worker, never create a differently named production Worker.
+- The workflow must update the existing `auraluxenp` Worker, never create a differently named production Worker.
 
 ## Database and backend
 
@@ -35,7 +35,7 @@
 3. Review the pull request and confirm no production data changes are included unintentionally.
 4. Apply the required Supabase migration to `jsshaoucrjorbyuzagdr` and verify the resulting schema.
 5. Merge the reviewed pull request to `main`.
-6. GitHub Actions builds the application and deploys the existing `auraluxenpj` Cloudflare Worker.
+6. GitHub Actions builds the application and deploys the existing `auraluxenp` Cloudflare Worker.
 7. The same workflow smoke-tests the Worker URL, manifest and favicon.
 
 ## Explicit exclusions
