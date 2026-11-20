@@ -2,7 +2,7 @@
   "id": "/",
   "name": "Auraluxe",
   "short_name": "Auraluxe",
-  "description": "Auraluxe ladies\u2019 fashion, Nepalgunj.",
+  "description": "Auraluxe ladies’ fashion, Nepalgunj.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
@@ -11,22 +11,10 @@
   "lang": "en",
   "icons": [
     {
-      "src": "/__l5e/assets-v1/68365082-fbe8-4524-977d-85d1579277e2/icon-192.png",
-      "sizes": "192x192",
+      "src": "/favicon.png",
+      "sizes": "64x64",
       "type": "image/png",
       "purpose": "any"
-    },
-    {
-      "src": "/__l5e/assets-v1/0a336950-00b4-4d80-8358-b8bf7a95b9bf/icon-512.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "/__l5e/assets-v1/224e2d9e-b064-4048-8afb-bc79facc857e/icon-maskable-512.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "maskable"
     }
   ]
 }
