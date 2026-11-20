@@ -120,7 +120,7 @@ export function QuickPickDialog({
         ) : null}
 
         {missing.length ? (
-          <p className="text-xs text-destructive">{t("pleaseSelect")} {missing.map((v) => v.toLowerCase() === "colour" ? t("colour") : t("size")).join(" र ")}</p>
+          <p className="text-xs text-destructive">{t("pleaseSelect")} {missing.map((v) => ["colour", "color"].includes(v.toLowerCase()) ? t("colour") : t("size")).join(` ${t("and")} `)}</p>
         ) : null}
 
         <button
