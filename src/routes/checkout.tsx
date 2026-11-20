@@ -52,7 +52,7 @@ function PaymentInstructions({ method, orderNumber, total }: { method: CheckoutM
             <strong>{method.merchantName}</strong>.
           </p>
           {method.qrImageUrl ? (
-            <img src={method.qrImageUrl} alt="Payment QR code" className="mx-auto h-48 w-48 rounded-xl border border-border object-contain" />
+            <img src={method.qrImageUrl} alt={t("paymentQrAlt")} className="mx-auto h-48 w-48 rounded-xl border border-border object-contain" />
           ) : null}
           {method.instructions ? <p className="text-muted-foreground">{method.instructions}</p> : null}
         </div>
