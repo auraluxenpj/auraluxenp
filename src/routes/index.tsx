@@ -88,10 +88,10 @@ const FALLBACK_HERO: Banner = {
 
 function SectionHeading({ eyebrow, title }: { eyebrow: string; title: string }) {
   return (
-    <div className="mt-16 flex items-end justify-between">
+    <div className="mt-14 flex items-end justify-between gap-4 border-b border-[#e9e1d8] pb-3">
       <div>
         <p className="eyebrow">{eyebrow}</p>
-        <h2 className="mt-2 font-display text-4xl">{title}</h2>
+        <h2 className="mt-2 font-display text-3xl leading-tight sm:text-4xl">{title}</h2>
       </div>
       <Link
         to="/shop"
@@ -106,7 +106,7 @@ function SectionHeading({ eyebrow, title }: { eyebrow: string; title: string }) 
 function Rail({ products }: { products: StorefrontProduct[] }) {
   if (products.length === 0) return null;
   return (
-    <section className="mt-6 grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-3">
+    <section className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-4 lg:gap-5">
       {products.map((p) => (
         <ProductCard key={p.id} product={p} />
       ))}
@@ -262,7 +262,7 @@ function Home() {
 
   // Each product appears in only ONE section (in page order), so nothing repeats
   const used = new Set<string>();
-  const pick = (list: StorefrontProduct[], n = 3) => {
+  const pick = (list: StorefrontProduct[], n = 4) => {
     const fresh = list.filter((p) => !used.has(p.id)).slice(0, n);
     fresh.forEach((p) => used.add(p.id));
     return fresh;
@@ -322,7 +322,7 @@ function Home() {
       {categoriesLoading ? (
         <>
           <SectionHeading eyebrow="Find your fit" title="Shop by Category" />
-          <section className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-4" aria-hidden="true">
+          <section className="mt-6 grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-4" aria-hidden="true">
             {Array.from({ length: 8 }).map((_, i) => (
               <div key={i} className="aspect-[4/5] w-full animate-pulse rounded-3xl bg-muted" />
             ))}
@@ -345,27 +345,6 @@ function Home() {
               />
             ))}
           </section>
-        </>
-      ) : null}
-
-      {productsLoading ? (
-        <>
-          <SectionHeading eyebrow="Just landed" title="New Arrivals" />
-          <section
-            className="mt-6 grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-3"
-            aria-hidden="true"
-          >
-            {Array.from({ length: 3 }).map((_, i) => (
-              <div key={i} className="aspect-[3/4] w-full animate-pulse rounded-3xl bg-muted" />
-            ))}
-          </section>
-        </>
-      ) : null}
-
-      {newCollection.length > 0 ? (
-        <>
-          <SectionHeading eyebrow="Just landed" title="New Arrivals" />
-          <Rail products={newCollection} />
         </>
       ) : null}
 
@@ -402,6 +381,35 @@ function Home() {
         </section>
       ) : null}
 
+
+      {productsLoading ? (
+        <>
+          <SectionHeading eyebrow="Just landed" title="New Arrivals" />
+          <section
+            className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-4 lg:gap-5"
+            aria-hidden="true"
+          >
+            {Array.from({ length: 3 }).map((_, i) => (
+              <div key={i} className="aspect-[3/4] w-full animate-pulse rounded-3xl bg-muted" />
+            ))}
+          </section>
+        </>
+      ) : null}
+
+      {newCollection.length > 0 ? (
+        <>
+          <SectionHeading eyebrow="Just landed" title="New Arrivals" />
+          <Rail products={newCollection} />
+        </>
+      ) : null}
+
+      {offers.length > 0 ? (
+        <>
+          <SectionHeading eyebrow="Reduced this week" title="Special Offers" />
+          <Rail products={offers} />
+        </>
+      ) : null}
+
       {trending.length > 0 ? (
         <>
           <SectionHeading eyebrow="Loved right now" title="Trending Now" />
@@ -413,13 +421,6 @@ function Home() {
         <>
           <SectionHeading eyebrow="Most wanted" title="Best Sellers" />
           <Rail products={bestSellers} />
-        </>
-      ) : null}
-
-      {offers.length > 0 ? (
-        <>
-          <SectionHeading eyebrow="Reduced this week" title="Special Offers" />
-          <Rail products={offers} />
         </>
       ) : null}
 
