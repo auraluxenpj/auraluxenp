@@ -5,6 +5,7 @@ import { SiteLayout } from "@/components/site/SiteLayout";
 import { ProductCard } from "@/components/site/ProductCard";
 import { effectivePrice, fetchCategories, fetchProducts, hasDiscount } from "@/lib/data";
 import { useMoney } from "@/lib/store";
+import { useLanguage } from "@/lib/i18n";
 
 type ShopSearch = {
   category?: string | undefined;
@@ -65,6 +66,7 @@ function Shop() {
   const search = Route.useSearch();
   const navigate = useNavigate({ from: "/shop/" });
   const money = useMoney();
+  const { t, language } = useLanguage();
   const [query, setQuery] = useState(search.q ?? "");
 
   // Keep the visible search field in sync with browser back/forward navigation.
@@ -192,28 +194,28 @@ function Shop() {
   return (
     <SiteLayout>
       <div className="auraluxe-collection-intro mt-8 sm:mt-12">
-        <p className="auraluxe-kicker">The Auraluxe edit</p>
+        <p className="auraluxe-kicker">{t("auraluxeEdit")}</p>
         <h1 className="mt-3 font-display text-4xl leading-tight text-[#422d2a] sm:text-6xl">
-          {search.category ? categories.find((c) => c.slug === search.category)?.name ?? "The Collection" : "Discover your style"}
+          {search.category ? categories.find((c) => c.slug === search.category)?.name ?? (language === "ne" ? "सङ्ग्रह" : "The Collection") : t("discoverStyle")}
         </h1>
         <p className="mt-3 max-w-2xl text-sm leading-6 text-stone-500 sm:text-base">
-          Thoughtfully chosen ethnic wear for everyday moments, celebrations and everything in between.
+          {t("collectionDescription")}
         </p>
         <div className="mt-5 flex flex-wrap gap-2 text-[10px] uppercase tracking-[.16em] text-stone-500">
-          <span>Home</span><span>/</span><span className="text-[#762b3b]">Shop</span>
+          <span>{t("home")}</span><span>/</span><span className="text-[#762b3b]">{t("shop")}</span>
           {search.category ? <><span>/</span><span className="text-[#762b3b]">{categories.find((c) => c.slug === search.category)?.name}</span></> : null}
         </div>
       </div>
 
       {/* Visual category discovery — temporary editorial imagery until the catalogue is fully photographed. */}
       {categories.some((c) => c.is_active) ? (
-        <section className="mt-8" aria-label="Shop by category">
+        <section className="mt-8" aria-label={t("shopCategory")}>
           <div className="mb-4 flex items-end justify-between gap-3">
             <div>
-              <p className="auraluxe-kicker">Explore the edit</p>
-              <h2 className="mt-2 font-display text-2xl text-[#422d2a] sm:text-3xl">Shop by category</h2>
+              <p className="auraluxe-kicker">{t("exploreEdit")}</p>
+              <h2 className="mt-2 font-display text-2xl text-[#422d2a] sm:text-3xl">{t("shopCategory")}</h2>
             </div>
-            <span className="text-[10px] uppercase tracking-[.16em] text-stone-500">Find your look</span>
+            <span className="text-[10px] uppercase tracking-[.16em] text-stone-500">{t("findLook")}</span>
           </div>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
             {categories.filter((c) => c.is_active).map((c, i) => (
@@ -254,7 +256,7 @@ function Shop() {
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search kurtis, co-ords, fabrics…"
+            placeholder={t("searchPlaceholder")}
             className="w-full rounded-full border border-border bg-input px-5 py-3 text-sm outline-none placeholder:text-muted-foreground"
           />
           <button
@@ -267,9 +269,9 @@ function Shop() {
 
         <div className="mt-4 flex flex-wrap gap-2">
           {[
-            { label: "All", value: undefined },
-            { label: "New arrivals", value: "new-arrivals" },
-            { label: "Sale", value: "sale" },
+            { label: t("all"), value: undefined },
+            { label: t("newArrivals"), value: "new-arrivals" },
+            { label: t("sale"), value: "sale" },
           ].map((item) => (
             <button
               key={item.label}
