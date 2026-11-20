@@ -130,26 +130,43 @@ function ProductEditor() {
       sale_price: f.sale_price === "" ? null : Number(f.sale_price), stock: Number(f.stock),
     });
     if (!parsed.success) { toast.error(parsed.error.issues[0]?.message ?? "Check the form"); return; }
-    const row = {
+    const baseRow = {
       ...parsed.data,
-      sku, model_code: f.model_code.trim().slice(0, 64) || null, description: f.description.trim() || null, description_ne: f.description_ne.trim() || null, name_ne: f.name_ne.trim() || null, fabric: f.fabric.trim() || null, fabric_ne: f.fabric_ne.trim() || null,
+      sku, model_code: f.model_code.trim().slice(0, 64) || null, description: f.description.trim() || null, fabric: f.fabric.trim() || null,
       category_id: f.category_id || null, low_stock_threshold: Number(f.low_stock_threshold) || 0,
       sizes: list(f.sizes), colors: list(f.colors), images: list(f.images),
       size_chart: f.size_chart.trim() || null, is_new: f.is_new, is_bestseller: f.is_bestseller,
       is_featured: f.is_featured, is_published: f.is_published,
       meta_title: f.meta_title.trim() || null, meta_description: f.meta_description.trim() || null,
     };
+    const row = {
+      ...baseRow,
+      description_ne: f.description_ne.trim() || null,
+      name_ne: f.name_ne.trim() || null,
+      fabric_ne: f.fabric_ne.trim() || null,
+    };
     // With per-size tracking on, the overall stock is always the sum of the sizes.
     if (trackBySize) {
-      row.stock = list(f.sizes).reduce(
+      const total = list(f.sizes).reduce(
         (n, s) => n + (Math.max(0, Math.floor(Number(sizeStock[s] ?? "0")) || 0)),
         0,
       );
+      baseRow.stock = total;
+      row.stock = total;
     }
     setSaving(true);
-    const { data: saved, error } = isNew
+    let saveResult = isNew
       ? await supabase.from("products").insert(row).select("id").single()
       : await supabase.from("products").update(row).eq("id", id).select("id").single();
+    const hasNepaliContent = !!(f.name_ne.trim() || f.description_ne.trim() || f.fabric_ne.trim());
+    if (isMissingBilingualCatalogueColumn(saveResult.error) && !hasNepaliContent) {
+      // Empty optional Nepali fields must not block English-only edits on the
+      // legacy schema. Retry without them; populated Nepali content is never dropped.
+      saveResult = isNew
+        ? await supabase.from("products").insert(baseRow).select("id").single()
+        : await supabase.from("products").update(baseRow).eq("id", id).select("id").single();
+    }
+    const { data: saved, error } = saveResult;
     if (error || !saved) {
       setSaving(false);
       toast.error(isMissingBilingualCatalogueColumn(error) ? BILINGUAL_MIGRATION_REQUIRED : error?.code === "23505" ? "That link or SKU is already used" : error?.message ?? "Couldn't save");
