@@ -72,8 +72,33 @@ export async function fetchProducts(): Promise<StorefrontProduct[]> {
     )
     .eq("is_published", true)
     .order("created_at", { ascending: false });
-  if (error) throw error;
-  return data ?? [];
+
+  if (!error) return data ?? [];
+
+  // Keep the English storefront usable while an older database is waiting for
+  // the additive bilingual migration. Do not mask unrelated API or network errors.
+  const missingBilingualField =
+    (error.code === "PGRST204" || error.code === "42703") &&
+    ["name_ne", "description_ne", "fabric_ne"].some((field) => error.message.includes(field));
+
+  if (!missingBilingualField) throw error;
+
+  const legacy = await supabase
+    .from("products")
+    .select(
+      "id, name, slug, category_id, price, sale_price, stock, sizes, colors, images, fabric, description, is_new, is_featured, is_bestseller, is_published, created_at",
+    )
+    .eq("is_published", true)
+    .order("created_at", { ascending: false });
+
+  if (legacy.error) throw legacy.error;
+
+  return (legacy.data ?? []).map((product) => ({
+    ...product,
+    name_ne: null,
+    description_ne: null,
+    fabric_ne: null,
+  }));
 }
 
 export async function fetchAllProducts(): Promise<Product[]> {
