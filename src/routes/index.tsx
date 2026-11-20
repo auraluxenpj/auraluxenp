@@ -88,7 +88,7 @@ const FALLBACK_HERO: Banner = {
 };
 
 function SectionHeading({ eyebrow, title }: { eyebrow: string; title: string }) {
-  const { language, t } = useLanguage();
+  const { t } = useLanguage();
   const translatedEyebrow: Record<string, string> = { "Find your fit": t("findFit"), "Just landed": t("justLanded"), "Loved right now": t("lovedNow"), "Most wanted": t("mostWanted"), "Reduced this week": t("specialOffers"), "In their words": t("inTheirWords") };
   const translatedTitle: Record<string, string> = { "Shop by Category": t("shopByCategory"), "New Arrivals": t("newArrivalsTitle"), "Trending Now": t("trendingNow"), "Best Sellers": t("bestSellers"), "Special Offers": t("specialOffers"), "Customer Stories": t("customerStories") };
   return (
@@ -101,7 +101,7 @@ function SectionHeading({ eyebrow, title }: { eyebrow: string; title: string }) 
         to="/shop"
         className="hidden text-[13px] uppercase tracking-[0.18em] text-foreground/60 underline decoration-accent decoration-2 underline-offset-4 hover:text-brand sm:block"
       >
-        View all
+        {t("viewAll")}
       </Link>
     </div>
   );
