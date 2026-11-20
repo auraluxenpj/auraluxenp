@@ -408,7 +408,25 @@ function ProductDetail() {
             {displayDescription ? <p className="whitespace-pre-line text-[15px] leading-relaxed text-muted-foreground">{displayDescription}</p> : null}
             <p className="mt-4 text-xs leading-relaxed text-muted-foreground">{PHOTO_DISCLAIMER}</p>
           </div>
-          <div className="mt-6 grid grid-cols-2 gap-2 border-t border-border pt-5 text-center sm:grid-cols-4 lg:grid-cols-2 2xl:grid-cols-4">\n            <div className="auraluxe-service-item"><span>✓</span><small>{t("qualityChecked")}</small></div>\n            <div className="auraluxe-service-item"><span>↗</span><small>{t("secureCheckout")}</small></div>\n            <div className="auraluxe-service-item"><span>⌂</span><small>{t("deliveryNepal")}</small></div>\n            <div className="auraluxe-service-item"><span>♡</span><small>{t("personalAssistance")}</small></div>\n          </div>\n          <WomensSizeGuide customChart={product.size_chart} />
+          <div className="mt-6 grid grid-cols-2 gap-2 border-t border-border pt-5 text-center sm:grid-cols-4 lg:grid-cols-2 2xl:grid-cols-4">
+            <div className="auraluxe-service-item">
+              <span aria-hidden="true">✓</span>
+              <small>{t("qualityChecked")}</small>
+            </div>
+            <div className="auraluxe-service-item">
+              <span aria-hidden="true">↗</span>
+              <small>{t("secureCheckout")}</small>
+            </div>
+            <div className="auraluxe-service-item">
+              <span aria-hidden="true">⌂</span>
+              <small>{t("deliveryNepal")}</small>
+            </div>
+            <div className="auraluxe-service-item">
+              <span aria-hidden="true">♡</span>
+              <small>{t("personalAssistance")}</small>
+            </div>
+          </div>
+          <WomensSizeGuide customChart={product.size_chart} />
         </div>
       </section>
 
