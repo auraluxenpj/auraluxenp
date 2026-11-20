@@ -75,3 +75,25 @@ All reviewed `SECURITY DEFINER` functions should have a fixed, safe `search_path
 ## Scope of this checkpoint
 
 This commit is documentation only. No production database, Cloudflare Worker, DNS, storefront content, or payment settings were changed.
+
+## Function-level security review (read-only)
+
+A focused review of the live definitions for POS, checkout, order tracking, and role helpers found:
+
+- The reviewed functions are owned by `postgres`, marked `SECURITY DEFINER`, and set `search_path = public`.
+- Their current ACLs include EXECUTE for `anon`, `authenticated`, and `service_role` (and the owner). This is broader than least privilege for several administrative functions, even where the function body performs an authorization check.
+- `complete_pos_sale`, `record_pos_repayment`, `get_pos_catalog`, `get_pos_customer_balances`, and `get_pos_qr` check POS/admin authorization inside the function body. `get_business_day_summary` and `get_khata_statement` also check admin access. `restock_order` checks the admin role. These checks are useful defense-in-depth, but they do not remove the need to scope EXECUTE grants correctly.
+- `place_order` is intentionally a public checkout RPC and performs server-side customer, payment-method, price, stock, coupon, and idempotency validation. Its anonymous execution is an expected public path and must not be removed without replacing the checkout flow.
+- `track_order` is intentionally public and checks an order number plus a contact value. Its phone comparison accepts a matching suffix of at least seven digits. This deserves a privacy-focused review because a seven-digit suffix is a relatively short proof of possession for access to order status, totals, and item names. Do not change the customer-facing contract until an alternative verification flow is designed.
+- `has_role(uuid, app_role)` is executable by anonymous and authenticated roles and accepts an arbitrary user UUID supplied by the caller. Its body only tests whether that UUID has the requested role. This does not grant that role, but it can expose role membership as an enumeration oracle. RLS policies currently call it, including policies evaluated for anonymous reads, so a safe remediation must consider policy dependencies rather than simply revoking anon EXECUTE.
+- Trigger functions and functions intended for authenticated/service-role use must be reviewed separately from public RPCs.
+
+### Recommended security remediation order
+
+1. Trace every SQL RPC call in the app and every RLS policy dependency.
+2. Add regression tests for anonymous storefront reads, checkout, order tracking, POS staff/admin authorization, and admin operations.
+3. Design a safer order-tracking verification factor (for example, a one-time code or stronger contact proof) before tightening `track_order`.
+4. Replace caller-selected identity in role-checking interfaces where feasible, or isolate the helper behind carefully designed policy functions; validate anonymous policy behavior.
+5. Revoke or narrow EXECUTE grants only for functions proven not to require public access, in a dedicated migration with tests and rollback notes.
+
+No grants, function definitions, policies, or production data were changed during this review.
