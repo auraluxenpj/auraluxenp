@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Heart } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { effectivePrice, hasDiscount, productImage, type StorefrontProduct } from "@/lib/data";
 import { useCart, useMoney } from "@/lib/store";
@@ -18,7 +19,7 @@ export function ProductCard({
   const displayName = localizedContent(product.name, product.name_ne, language);
   const displayFabric = localizedContent(product.fabric, product.fabric_ne, language);
   const displayProduct = { ...product, name: displayName, fabric: displayFabric };
-  const { add } = useCart();
+  const { add, toggleWishlist, isWishlisted } = useCart();
   const price = effectivePrice(product);
   const cardImage = product.images?.[0] ?? fallbackImage ?? productImage(product);
   const discounted = hasDiscount(product);
@@ -49,7 +50,7 @@ export function ProductCard({
   };
 
   return (
-    <article className="group glass rounded-2xl p-2 transition hover:-translate-y-1 sm:rounded-3xl sm:p-3">
+    <article className="group glass relative rounded-2xl p-2 transition hover:-translate-y-1 sm:rounded-3xl sm:p-3">
       <Link to="/shop/product/$slug" params={{ slug: product.slug }} className="relative block">
         <img
           src={cardImage}
@@ -76,6 +77,15 @@ export function ProductCard({
           </span>
         ) : null}
       </Link>
+      <button
+        type="button"
+        onClick={() => toggleWishlist(product.id)}
+        aria-label={isWishlisted(product.id) ? "Remove from wishlist" : "Add to wishlist"}
+        aria-pressed={isWishlisted(product.id)}
+        className="absolute right-4 top-4 z-10 grid size-9 place-items-center rounded-full bg-white/95 text-[#762b3b] shadow-sm transition hover:scale-105 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#762b3b]"
+      >
+        <Heart className={`size-[18px] ${isWishlisted(product.id) ? "fill-current" : ""}`} />
+      </button>
       <div className="px-1 pb-1 pt-2 sm:px-2 sm:pb-2 sm:pt-4">
         <h3 className="line-clamp-2 min-h-[2.5rem] font-display text-sm leading-tight sm:min-h-0 sm:text-xl">
           <Link to="/shop/product/$slug" params={{ slug: product.slug }}>
