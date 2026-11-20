@@ -6,7 +6,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
-import { fetchCategories, slugify, type Category } from "@/lib/data";
+import { BILINGUAL_MIGRATION_REQUIRED, fetchCategories, isMissingBilingualCatalogueColumn, slugify, type Category } from "@/lib/data";
 import { categoryCanDelete, categorySchema, moveCategory } from "@/lib/category-management";
 
 const categoriesQuery = queryOptions({ queryKey: ["categories"], queryFn: fetchCategories });
@@ -89,7 +89,7 @@ function Categories() {
       await refresh();
       setEditor(null);
       toast.success(existing ? "Category updated" : "Category created");
-    } catch (error) { toast.error(error instanceof Error ? error.message : "Couldn't save the category"); }
+    } catch (error) { toast.error(isMissingBilingualCatalogueColumn(error as { code?: string; message?: string }) ? BILINGUAL_MIGRATION_REQUIRED : error instanceof Error ? error.message : "Couldn't save the category"); }
     finally { setBusy(false); }
   }
 
