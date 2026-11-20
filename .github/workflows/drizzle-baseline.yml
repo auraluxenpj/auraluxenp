@@ -87,19 +87,80 @@ jobs:
           GRANT SELECT, INSERT, UPDATE, DELETE ON storage.objects TO anon, authenticated, service_role;
           SQL
 
-      - name: Apply the 18 repository migrations to the temporary database
+      - name: Apply the 19 repository migrations to the temporary database
         run: |
           set -euo pipefail
           shopt -s nullglob
           migrations=(drizzle/migrations/[0-9][0-9][0-9][0-9]_*.sql)
-          if [ "${#migrations[@]}" -ne 18 ]; then
-            echo "Expected exactly 18 numbered SQL migrations; found ${#migrations[@]}."
+          if [ "${#migrations[@]}" -ne 19 ]; then
+            echo "Expected exactly 19 numbered SQL migrations; found ${#migrations[@]}."
             exit 1
           fi
           for migration in "${migrations[@]}"; do
             echo "Applying $migration to ephemeral PostgreSQL"
             psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f "$migration"
           done
+
+      - name: Verify security migration behavior in the temporary database
+        run: |
+          set -euo pipefail
+          psql "$DATABASE_URL" -v ON_ERROR_STOP=1 <<'SQL'
+          INSERT INTO auth.users (id, email, raw_user_meta_data)
+          VALUES
+            ('00000000-0000-0000-0000-000000000001', 'admin@example.invalid', '{}'::jsonb),
+            ('00000000-0000-0000-0000-000000000002', 'customer@example.invalid', '{}'::jsonb)
+          ON CONFLICT (id) DO NOTHING;
+
+          INSERT INTO public.user_roles (user_id, role)
+          VALUES
+            ('00000000-0000-0000-0000-000000000001', 'admin'),
+            ('00000000-0000-0000-0000-000000000002', 'customer')
+          ON CONFLICT (user_id, role) DO NOTHING;
+
+          DO $test$
+          BEGIN
+            PERFORM set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000002', false);
+            IF public.has_role('00000000-0000-0000-0000-000000000002', 'customer') IS NOT TRUE THEN
+              RAISE EXCEPTION 'A user must be able to verify their own role';
+            END IF;
+            IF public.has_role('00000000-0000-0000-0000-000000000001', 'admin') IS NOT FALSE THEN
+              RAISE EXCEPTION 'A non-admin must not query another user role';
+            END IF;
+
+            PERFORM set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000001', false);
+            IF public.has_role('00000000-0000-0000-0000-000000000002', 'customer') IS NOT TRUE THEN
+              RAISE EXCEPTION 'An admin must retain cross-user role lookup';
+            END IF;
+
+            PERFORM set_config('request.jwt.claim.sub', '', false);
+            IF public.has_role('00000000-0000-0000-0000-000000000002', 'customer') IS NOT FALSE THEN
+              RAISE EXCEPTION 'An anonymous caller must not query arbitrary user roles';
+            END IF;
+
+            IF has_function_privilege('anon', 'public.complete_pos_sale(jsonb)', 'EXECUTE') THEN
+              RAISE EXCEPTION 'Anonymous POS execution must be revoked';
+            END IF;
+            IF NOT has_function_privilege('authenticated', 'public.complete_pos_sale(jsonb)', 'EXECUTE') THEN
+              RAISE EXCEPTION 'Authenticated POS execution must remain available';
+            END IF;
+            IF NOT has_function_privilege('anon', 'public.place_order(text,text,jsonb,jsonb,text)', 'EXECUTE') THEN
+              RAISE EXCEPTION 'Guest checkout must remain available';
+            END IF;
+            IF NOT has_function_privilege('anon', 'public.track_order(text,text)', 'EXECUTE') THEN
+              RAISE EXCEPTION 'Guest order tracking must remain available';
+            END IF;
+            IF has_function_privilege('authenticated', 'public.audit_payment_settings()', 'EXECUTE') THEN
+              RAISE EXCEPTION 'Trigger helper direct execution must be revoked';
+            END IF;
+            IF has_function_privilege('authenticated', 'public.inv_sync_push(jsonb)', 'EXECUTE') THEN
+              RAISE EXCEPTION 'Inventory sync must remain unavailable to browser users';
+            END IF;
+            IF NOT has_function_privilege('service_role', 'public.inv_sync_push(jsonb)', 'EXECUTE') THEN
+              RAISE EXCEPTION 'Service-role inventory sync access must remain available';
+            END IF;
+          END
+          $test$;
+          SQL
 
       - name: Generate Drizzle schema and snapshot in a temporary output directory
         run: |
