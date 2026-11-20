@@ -19,4 +19,5 @@ export function LanguageProvider({children}:{children:ReactNode}){
 export function useLanguage(){const value=useContext(Context);if(!value)throw new Error("useLanguage must be used inside LanguageProvider");return value;}
 
 const categoryTranslations:Record<string,string>={kurtis:"कुर्ती", "co-ord-sets":"को-अर्ड सेट",suits:"सुट",dresses:"ड्रेस", "party-wear":"पार्टी वेयर","new-arrivals":"नयाँ आगमन",sale:"छुट","seasonal-collections":"मौसमी सङ्ग्रह"};
-export function categoryLabel(slug:string,name:string,language:Language){return language==="ne"?(categoryTranslations[slug]??name):name;}
+export function localizedContent(english:string|null|undefined,nepali:string|null|undefined,language:Language){return language==="ne"?(nepali?.trim()||english||""):(english||"");}
+export function categoryLabel(slug:string,name:string,language:Language,nepaliName?:string|null){return language==="ne"?(nepaliName?.trim()||categoryTranslations[slug]||name):name;}
