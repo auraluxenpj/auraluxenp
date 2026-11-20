@@ -221,7 +221,7 @@ function ProductDetail() {
                 <button key={img + i} type="button" onClick={() => goTo(i)} aria-label={`Show image ${i + 1} of ${images.length}`} aria-current={i === active ? "true" : undefined}>
                   <img
                     src={img}
-                    alt={`${product.name} view ${i + 1}`}
+                    alt={`${displayName} view ${i + 1}`}
                     loading="lazy"
                     width={256}
                     height={256}
@@ -368,7 +368,7 @@ function ProductDetail() {
               }}
               className="flex-1 rounded-full border border-brand/30 bg-secondary py-3.5 text-[12px] uppercase tracking-[0.18em] text-primary disabled:opacity-50"
             >
-              Add to bag
+              {t("addToBag")}
             </button>
             <Link
               to="/checkout"
@@ -395,7 +395,7 @@ function ProductDetail() {
           <a
             href={whatsappLink(
               settings["whatsapp"] ?? "",
-              `Hello Auraluxe! I'm interested in ${product.name} (${product.sku ?? product.slug}).`,
+              `Hello Auraluxe! I'm interested in ${displayName} (${product.sku ?? product.slug}).`,
             )}
             target="_blank"
             rel="noreferrer"
@@ -425,7 +425,7 @@ function ProductDetail() {
           </section>
         </>
       ) : null}
-      {zoomed ? <PhotoZoom src={images[active] ?? images[0] ?? ""} alt={`${product.name} view ${active + 1}`} onClose={() => setZoomed(false)} /> : null}
+      {zoomed ? <PhotoZoom src={images[active] ?? images[0] ?? ""} alt={`${displayName} view ${active + 1}`} onClose={() => setZoomed(false)} /> : null}
     </SiteLayout>
   );
 }
