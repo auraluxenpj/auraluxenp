@@ -130,7 +130,8 @@ jobs:
           source = schema.read_text()
           # drizzle-kit 0.31.11 emits an unterminated default for empty-string
           # PostgreSQL defaults. Normalize only this exact malformed sequence.
-          source, repaired = re.subn(r"default\\('\)\\.notNull\\(\\)", "default('')\\.notNull()", source)
+          repaired = source.count("default(').notNull()")
+          source = source.replace("default(').notNull()", "default('').notNull()")
           schema.write_text(source)
 
           if "default(')" in source:
