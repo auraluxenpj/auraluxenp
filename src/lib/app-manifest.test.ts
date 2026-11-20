@@ -19,13 +19,16 @@ describe("home-screen launch configuration", () => {
     expect(manifest.display).toBe("standalone");
   });
 
-  it("provides the required regular and independently marked maskable sizes", () => {
-    expect(manifest.icons.map((icon: { sizes: string; purpose: string }) => [icon.sizes, icon.purpose]))
-      .toEqual([["192x192", "any"], ["512x512", "any"], ["512x512", "maskable"]]);
-    for (const filename of ["icon-192", "icon-512", "icon-maskable-512"]) {
-      const asset = JSON.parse(readFileSync(resolve(`src/assets/${filename}.png.asset.json`), "utf8"));
-      expect(manifest.icons.some((icon: { src: string; type: string }) => icon.src === asset.url && icon.type === "image/png")).toBe(true);
-    }
+  it("references only a real, locally served PNG icon", () => {
+    expect(manifest.icons).toEqual([
+      {
+        src: "/favicon.png",
+        sizes: "64x64",
+        type: "image/png",
+        purpose: "any",
+      },
+    ]);
+    expect(existsSync(resolve("public/favicon.png"))).toBe(true);
   });
 
   it("does not introduce offline workers for home-screen installation", () => {
