@@ -41,7 +41,7 @@ export function SiteLayout({ children }: { children: ReactNode }) {
           <div className="min-w-0">
             <p className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground">{t("bag")}</p>
             <p className="truncate font-display text-base">
-              {count} {t("bagItems")} · {money(subtotal)}
+              {count} {count === 1 ? t("bagItem") : t("bagItems")} · {money(subtotal)}
             </p>
           </div>
           <Link
