@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { SiteLayout } from "@/components/site/SiteLayout";
 import { itemKey, useCart, useMoney, useSettings } from "@/lib/store";
+import { useLanguage } from "@/lib/i18n";
 
 export const Route = createFileRoute("/cart")({
   head: () => ({
@@ -18,6 +19,7 @@ function CartPage() {
   const { items, setQuantity, remove, subtotal } = useCart();
   const money = useMoney();
   const s = useSettings();
+  const { t } = useLanguage();
 
   const shippingCharge = Number(s["shipping_charge"] ?? 0);
   const threshold = Number(s["free_shipping_threshold"] ?? 0);
@@ -27,18 +29,18 @@ function CartPage() {
   return (
     <SiteLayout>
       <div className="mt-10">
-        <p className="eyebrow">Your selection</p>
-        <h1 className="mt-2 font-display text-5xl">Shopping Bag</h1>
+        <p className="eyebrow">{t("yourSelection")}</p>
+        <h1 className="mt-2 font-display text-5xl">{t("shoppingBag")}</h1>
       </div>
 
       {items.length === 0 ? (
         <div className="glass mt-6 rounded-3xl p-8">
-          <p className="text-sm text-muted-foreground">Your bag is empty.</p>
+          <p className="text-sm text-muted-foreground">{t("bagEmpty")}</p>
           <Link
             to="/shop"
             className="mt-5 inline-block rounded-full bg-primary px-7 py-3.5 text-[12px] uppercase tracking-[0.18em] text-primary-foreground"
           >
-            Start shopping
+            {t("startShopping")}
           </Link>
         </div>
       ) : (
@@ -93,7 +95,7 @@ function CartPage() {
                         onClick={() => remove(key)}
                         className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground hover:text-destructive"
                       >
-                        Remove
+                        {t("remove")}
                       </button>
                     </div>
                   </div>
@@ -103,15 +105,15 @@ function CartPage() {
           </div>
 
           <aside className="glass-strong h-fit rounded-3xl p-6 lg:col-span-4">
-            <h2 className="font-display text-2xl">Order summary</h2>
+            <h2 className="font-display text-2xl">{t("orderSummary")}</h2>
             <dl className="mt-5 space-y-3 text-sm">
               <div className="flex justify-between">
-                <dt className="text-muted-foreground">Subtotal</dt>
+                <dt className="text-muted-foreground">{t("subtotal")}</dt>
                 <dd>{money(subtotal)}</dd>
               </div>
               <div className="flex justify-between">
-                <dt className="text-muted-foreground">Shipping</dt>
-                <dd>{shipping === 0 ? "Free" : money(shipping)}</dd>
+                <dt className="text-muted-foreground">{t("shipping")}</dt>
+                <dd>{shipping === 0 ? t("free") : money(shipping)}</dd>
               </div>
               {threshold > 0 && subtotal < threshold ? (
                 <p className="text-[11px] uppercase tracking-[0.15em] text-brand">
@@ -127,10 +129,10 @@ function CartPage() {
               to="/checkout"
               className="mt-6 block rounded-full bg-primary py-3.5 text-center text-[12px] uppercase tracking-[0.18em] text-primary-foreground"
             >
-              Proceed to checkout
+              {t("proceedCheckout")}
             </Link>
             <p className="mt-3 text-center text-[11px] uppercase tracking-[0.15em] text-muted-foreground">
-              Coupon codes apply at checkout
+              {t("couponNote")}
             </p>
           </aside>
         </div>
