@@ -79,7 +79,7 @@ export function ProductCard({
       <div className="px-1 pb-1 pt-2 sm:px-2 sm:pb-2 sm:pt-4">
         <h3 className="line-clamp-2 min-h-[2.5rem] font-display text-sm leading-tight sm:min-h-0 sm:text-xl">
           <Link to="/shop/product/$slug" params={{ slug: product.slug }}>
-            {product.name}
+            {displayName}
           </Link>
         </h3>
         <div className="mt-2 flex min-h-8 items-end justify-between gap-2">
