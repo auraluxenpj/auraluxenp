@@ -14,6 +14,7 @@ concurrency:
 
 jobs:
   deploy:
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -49,7 +50,7 @@ jobs:
         uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: 2a5ced50e8aafc5fbc9b0329cf25f84e
+          accountId: 3ecd048ec38302f3c4718c485b0e76d5
           command: deploy .output/server/index.mjs --assets .output/public --name auraluxenp --compatibility-date 2026-11-20 --compatibility-flags nodejs_compat --var SUPABASE_URL:https://jsshaoucrjorbyuzagdr.supabase.co --var SUPABASE_PUBLISHABLE_KEY:sb_publishable_ti84mMAfbpf5l2a6n-czjw_8OLu-OJA
 
       - name: Smoke-test deployed storefront and PWA icon
