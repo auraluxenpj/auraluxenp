@@ -467,7 +467,7 @@ Do not create fake buttons or placeholder admin functionality. All core CRUD ope
 ## Architecture and deployment
 
 - **Source control and CI:** GitHub repository `auraluxenpj/auraluxenp`. Work on feature branches and merge reviewed pull requests to `main`.
-- **Application hosting:** Cloudflare Workers. Production deploys through `.github/workflows/deploy-cloudflare.yml` to the existing Worker `auraluxenpj` in the `auraluxe26` Workers subdomain. Do not create a duplicate Worker.
+- **Application hosting:** Cloudflare Workers. Production deploys through `.github/workflows/deploy-cloudflare.yml` to the existing Worker `auraluxenp` in the `auraluxe-nepalgunj` Workers subdomain. Do not create a duplicate Worker.
 - **Database and backend:** Supabase production project `jsshaoucrjorbyuzagdr`.
 - **Production deployment:** A push to `main` triggers GitHub Actions to build and deploy the existing Cloudflare Worker. Manual workflow dispatch is restricted to `main`.
 - **No Vercel or Lovable deployment:** Neither service is part of the development, hosting, or release path.
