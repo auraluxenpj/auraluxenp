@@ -4,6 +4,7 @@ import { effectivePrice, hasDiscount, productImage, type StorefrontProduct } fro
 import { useCart, useMoney } from "@/lib/store";
 import { toast } from "sonner";
 import { QuickPickDialog } from "@/components/site/QuickPickDialog";
+import { useLanguage } from "@/lib/i18n";
 
 export function ProductCard({
   product,
@@ -13,6 +14,7 @@ export function ProductCard({
   fallbackImage?: string;
 }) {
   const money = useMoney();
+  const { t } = useLanguage();
   const { add } = useCart();
   const price = effectivePrice(product);
   const cardImage = product.images?.[0] ?? fallbackImage ?? productImage(product);
@@ -24,7 +26,7 @@ export function ProductCard({
   // choose them before anything goes into the bag.
   const needsPick = (product.sizes?.length ?? 0) > 1 || (product.colors?.length ?? 0) > 1;
 
-  const badge = product.is_new ? "New" : product.is_bestseller ? "Best Seller" : null;
+  const badge = product.is_new ? t("newBadge") : product.is_bestseller ? t("bestSellerBadge") : null;
   const discountPercent = discounted
     ? Math.round((1 - price / Number(product.price)) * 100)
     : 0;
@@ -40,7 +42,7 @@ export function ProductCard({
       color: product.colors?.[0] ?? null,
       quantity: 1,
     });
-    toast.success(`${product.name} added to your bag`);
+    toast.success(`${product.name} ${t("addedToBag")}`);
   };
 
   return (
@@ -62,7 +64,7 @@ export function ProductCard({
         ) : null}
         {discounted && !outOfStock ? (
           <span className="absolute right-2 top-2 rounded-full bg-primary px-2.5 py-1 text-[10px] font-semibold tracking-wide text-primary-foreground shadow-sm sm:right-3 sm:top-3 sm:px-3 sm:text-xs">
-            {discountPercent}% OFF
+            {discountPercent}% {t("off")}
           </span>
         ) : null}
         {outOfStock ? (
@@ -88,12 +90,12 @@ export function ProductCard({
           </div>
           {discounted ? (
             <span className="shrink-0 text-[10px] font-semibold uppercase tracking-wide text-primary sm:text-xs">
-              Save {discountPercent}%
+              {t("save")} {discountPercent}%
             </span>
           ) : null}
         </div>
         <p className="mt-2 line-clamp-1 min-h-4 text-[10px] uppercase tracking-[0.1em] text-muted-foreground sm:text-xs">
-          {[product.fabric, product.sizes?.join(" ")].filter(Boolean).join(" · ") || "Explore the collection"}
+          {[product.fabric, product.sizes?.join(" ")].filter(Boolean).join(" · ") || t("exploreCollection")}
         </p>
         <button
           type="button"
@@ -101,7 +103,7 @@ export function ProductCard({
           onClick={() => (needsPick ? setPicking(true) : quickAdd())}
           className="mt-2 min-h-11 w-full rounded-full border border-brand/30 bg-secondary px-2 py-2 text-[10px] font-semibold uppercase tracking-[0.12em] text-primary backdrop-blur transition group-hover:bg-primary group-hover:text-primary-foreground disabled:cursor-not-allowed disabled:opacity-50 sm:mt-4 sm:py-3 sm:text-[12px] sm:tracking-[0.18em]"
         >
-          {outOfStock ? "Sold out" : needsPick ? "Choose options" : "Add to bag"}
+          {outOfStock ? t("soldOut") : needsPick ? t("chooseOptions") : t("addToBag")}
         </button>
       </div>
       <QuickPickDialog product={product} open={picking} onOpenChange={setPicking} />
