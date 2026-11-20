@@ -109,7 +109,7 @@ export function Header() {
                     <p className="auraluxe-kicker mb-4">{activeMenu === "women" ? t("shopCategory") : t("shopEdit")}</p>
                     <div className="grid grid-cols-2 gap-x-6 gap-y-3">
                       {(activeMenu === "women" ? activeCategories : OCCASION_LINKS.map((item) => ({ id: item.label, name: item.label, slug: item.query }))).map((c) => (
-                        <Link key={c.id} to="/shop" search={activeMenu === "women" ? { category: c.slug } : { q: c.slug }} onClick={closeMenus} className="auraluxe-mega-link">{categoryLabel(c.slug, c.name, language)}</Link>
+                        <Link key={c.id} to="/shop" search={activeMenu === "women" ? { category: c.slug } : { q: c.slug }} onClick={closeMenus} className="auraluxe-mega-link">{categoryLabel(c.slug, c.name, language, c.name_ne)}</Link>
                       ))}
                       {activeMenu === "women" ? ["Kurti Sets", "Short Kurtis", "Sarees", "Dresses", "Bags & Accessories"].map((name) => (
                         <Link key={name} to="/shop" onClick={closeMenus} className="auraluxe-mega-link">{name}</Link>
@@ -160,7 +160,7 @@ export function Header() {
         {mobileOpen ? (
           <nav className="auraluxe-mobile-nav xl:hidden" aria-label="Mobile navigation">
             <button type="button" onClick={() => setMobileShopOpen((v) => !v)} aria-expanded={mobileShopOpen}>{t("shopCategory")} <ChevronDown className={`size-4 transition ${mobileShopOpen ? "rotate-180" : ""}`} /></button>
-            {mobileShopOpen ? activeCategories.map((c) => <Link key={c.id} to="/shop" search={{ category: c.slug }} onClick={closeMenus}>{categoryLabel(c.slug, c.name, language)}</Link>) : null}
+            {mobileShopOpen ? activeCategories.map((c) => <Link key={c.id} to="/shop" search={{ category: c.slug }} onClick={closeMenus}>{categoryLabel(c.slug, c.name, language, c.name_ne)}</Link>) : null}
             {QUICK_LINKS.map((item) => <Link key={item.label} to="/shop" search={item.search} onClick={closeMenus}>{item.label === "New Arrivals" ? t("newArrivals") : item.label === "Best Sellers" ? t("bestSellers") : t("sale")}</Link>)}
             <button type="button" onClick={() => setMobileOccasionOpen((v) => !v)} aria-expanded={mobileOccasionOpen}>{t("shopOccasion")} <ChevronDown className={`size-4 transition ${mobileOccasionOpen ? "rotate-180" : ""}`} /></button>
             {mobileOccasionOpen ? OCCASION_LINKS.map((item) => <Link key={item.label} to="/shop" search={{ q: item.query }} onClick={closeMenus}>{item.label === "Festive Edit" ? t("festiveEdit") : item.label === "Wedding Guest" ? t("weddingGuest") : item.label === "Everyday Elegance" ? t("everydayElegance") : item.label === "Office Wear" ? t("officeWear") : t("partyWear")}</Link>) : null}
