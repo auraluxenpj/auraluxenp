@@ -79,24 +79,25 @@ function Shop() {
     queryFn: fetchProducts,
   });
   const { data: categories = [] } = useQuery({ queryKey: ["categories"], queryFn: fetchCategories });
+  const publishedProducts = useMemo(() => products.filter((product) => product.is_published), [publishedProducts]);
 
   const update = (patch: Partial<ShopSearch>) =>
     navigate({ search: (prev) => ({ ...prev, ...patch }) });
 
   const sizes = useMemo(
-    () => Array.from(new Set(products.flatMap((p) => p.sizes ?? []))).sort(),
-    [products],
+    () => Array.from(new Set(publishedProducts.flatMap((p) => p.sizes ?? []))).sort(),
+    [publishedProducts],
   );
   const colors = useMemo(
-    () => Array.from(new Set(products.flatMap((p) => p.colors ?? []))).sort(),
+    () => Array.from(new Set(publishedProducts.flatMap((p) => p.colors ?? []))).sort(),
     [products],
   );
   const fabrics = useMemo(
-    () => Array.from(new Set(products.map((p) => p.fabric).filter((v): v is string => Boolean(v)))).sort(),
+    () => Array.from(new Set(publishedProducts.map((p) => p.fabric).filter((v): v is string => Boolean(v)))).sort(),
     [products],
   );
   const maxPrice = useMemo(
-    () => Math.max(10000, ...products.map((p) => Number(p.price))),
+    () => Math.max(10000, ...publishedProducts.map((p) => Number(p.price))),
     [products],
   );
 
@@ -112,7 +113,7 @@ function Shop() {
 
   const filtered = useMemo(() => {
     // Never expose admin drafts or unpublished catalogue records on the public storefront.
-    let list = products.filter((p) => p.is_published);
+    let list = [...publishedProducts];
     if (search.category === "sale") {
       list = list.filter(hasDiscount);
     } else if (search.category === "new-arrivals") {
