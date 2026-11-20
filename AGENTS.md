@@ -1,7 +1,7 @@
 ## Project workflow
 
 - Source of truth is the existing GitHub repository and its pull requests. Do not use Lovable or Vercel for development, builds, hosting, or deployment.
-- Production deployment is performed by the GitHub Actions Cloudflare workflow to the existing Worker `auraluxenpj`; never create a second production Worker.
+- Production deployment is performed by the GitHub Actions Cloudflare workflow to the existing Worker `auraluxenp`; never create a second production Worker.
 - Supabase project `jsshaoucrjorbyuzagdr` is the production database. Treat production schema and customer/business data as protected; review additive migrations and verify them before deployment.
 
 - Category management reuses the protected admin layout and existing category RLS; invalidate the shared categories query after writes so shop and product forms reflect changes.
