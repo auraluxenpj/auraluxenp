@@ -166,7 +166,7 @@ function Shop() {
         list.sort((a, b) => (a.created_at < b.created_at ? 1 : -1));
     }
     return list;
-  }, [products, search, categoryId]);
+  }, [publishedProducts, search, categoryId]);
 
   const [limit, setLimit] = useState(PER_PAGE);
   const sentinelRef = useRef<HTMLDivElement | null>(null);
