@@ -79,7 +79,7 @@ function Shop() {
     queryFn: fetchProducts,
   });
   const { data: categories = [] } = useQuery({ queryKey: ["categories"], queryFn: fetchCategories });
-  const publishedProducts = useMemo(() => products.filter((product) => product.is_published), [publishedProducts]);
+  const publishedProducts = useMemo(() => products.filter((product) => product.is_published), [products]);
 
   const update = (patch: Partial<ShopSearch>) =>
     navigate({ search: (prev) => ({ ...prev, ...patch }) });
@@ -90,15 +90,15 @@ function Shop() {
   );
   const colors = useMemo(
     () => Array.from(new Set(publishedProducts.flatMap((p) => p.colors ?? []))).sort(),
-    [products],
+    [publishedProducts],
   );
   const fabrics = useMemo(
     () => Array.from(new Set(publishedProducts.map((p) => p.fabric).filter((v): v is string => Boolean(v)))).sort(),
-    [products],
+    [publishedProducts],
   );
   const maxPrice = useMemo(
     () => Math.max(10000, ...publishedProducts.map((p) => Number(p.price))),
-    [products],
+    [publishedProducts],
   );
 
   const activeCategories = categories.filter((c) => c.is_active);
