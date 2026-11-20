@@ -47,6 +47,15 @@ export const DEFAULT_SETTINGS: SettingsMap = {
   tax_percent: "0",
 };
 
+export function isMissingBilingualCatalogueColumn(error: { code?: string; message?: string } | null | undefined): boolean {
+  return !!error &&
+    (error.code === "PGRST204" || error.code === "42703") &&
+    ["name_ne", "description_ne", "fabric_ne"].some((field) => error.message?.includes(field));
+}
+
+export const BILINGUAL_MIGRATION_REQUIRED =
+  "Nepali catalogue fields are not available in the connected database yet. Apply the bilingual catalogue migration before saving Nepali product or category content. Your changes were not saved.";
+
 export async function fetchSettings(): Promise<SettingsMap> {
   const { data, error } = await supabase.from("site_settings").select("key, value");
   if (error) throw error;
