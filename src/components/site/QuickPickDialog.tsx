@@ -129,7 +129,7 @@ export function QuickPickDialog({
           disabled={!canAdd}
           className="w-full rounded-full bg-primary py-3 text-[12px] uppercase tracking-[0.18em] text-primary-foreground transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
         >
-          Add to bag
+          {t("addToBag")}
         </button>
       </DialogContent>
     </Dialog>
