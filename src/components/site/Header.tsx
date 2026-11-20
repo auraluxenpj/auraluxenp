@@ -1,7 +1,7 @@
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState, type FormEvent } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { ChevronDown, Menu, Search, ShoppingBag, UserRound, X, ArrowUpRight, Heart } from "lucide-react";
+import { ChevronDown, Menu, Search, ShoppingBag, X, ArrowUpRight, Heart } from "lucide-react";
 import { useCart } from "@/lib/store";
 import { fetchCategories } from "@/lib/data";
 import { categoryLabel, useLanguage } from "@/lib/i18n";
@@ -137,7 +137,6 @@ export function Header() {
               <button type="button" onClick={() => setLanguage("ne")} aria-pressed={language === "ne"}>ने</button>
             </div>
             <button type="button" aria-label={t("searchProducts")} aria-expanded={searchOpen} onClick={() => { const next = !searchOpen; setSearchOpen(next); if (next) { setMobileOpen(false); setActiveMenu(null); setMobileShopOpen(false); setMobileOccasionOpen(false); } }} className="auraluxe-icon-link"><Search className="size-[18px]" /></button>
-            <Link to="/auth" aria-label={t("myAccount")} className="auraluxe-icon-link hidden sm:grid"><UserRound className="size-[18px]" /></Link>
             <Link to="/wishlist" aria-label="Wishlist" className="auraluxe-icon-link"><Heart className="size-[18px]" /></Link>
             <Link to="/cart" aria-label={`${t("shoppingBag")}, ${count}`} className="auraluxe-icon-link relative">
               <ShoppingBag className="size-[18px]" />
@@ -165,7 +164,6 @@ export function Header() {
             {QUICK_LINKS.map((item) => <Link key={item.label} to="/shop" search={item.search} onClick={closeMenus}>{item.label === "New Arrivals" ? t("newArrivals") : item.label === "Best Sellers" ? t("bestSellers") : t("sale")}</Link>)}
             <button type="button" onClick={() => setMobileOccasionOpen((v) => !v)} aria-expanded={mobileOccasionOpen}>{t("shopOccasion")} <ChevronDown className={`size-4 transition ${mobileOccasionOpen ? "rotate-180" : ""}`} /></button>
             {mobileOccasionOpen ? OCCASION_LINKS.map((item) => <Link key={item.label} to="/shop" search={{ q: item.query }} onClick={closeMenus}>{item.label === "Festive Edit" ? t("festiveEdit") : item.label === "Wedding Guest" ? t("weddingGuest") : item.label === "Everyday Elegance" ? t("everydayElegance") : item.label === "Office Wear" ? t("officeWear") : t("partyWear")}</Link>) : null}
-            <Link to="/auth" onClick={closeMenus}>{t("myAccount")}</Link>
             {STORY_LINKS.map((item) => <Link key={item.label} to={item.to} onClick={closeMenus}>{item.label === "Our Story" ? t("ourStory") : t("visitStore")}</Link>)}
           </nav>
         ) : null}
