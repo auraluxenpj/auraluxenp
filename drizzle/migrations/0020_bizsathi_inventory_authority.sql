@@ -102,7 +102,9 @@ BEGIN
   IF jsonb_typeof(_items) IS DISTINCT FROM 'array' OR jsonb_array_length(_items) NOT BETWEEN 1 AND 100 THEN
     RAISE EXCEPTION 'Invalid projection batch';
   END IF;
+  IF NOT public.website_inventory_authority_enabled() THEN RAISE EXCEPTION 'BizSathi inventory authority is not enabled'; END IF;
   FOR item IN SELECT value FROM jsonb_array_elements(_items) LOOP
+    current_stock:=NULL; product_id:=NULL;
     sku:=btrim(item->>'sku'); key:=lower(sku);
     wanted:=(item->>'stock')::integer; expected:=(item->>'expected')::integer;
     IF coalesce(key,'')='' OR wanted IS NULL OR wanted<0 OR expected IS NULL OR expected<0 THEN
