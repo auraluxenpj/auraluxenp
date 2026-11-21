@@ -113,11 +113,15 @@ export const placeOrder = createServerFn({ method: "POST" })
       try {
         await registerWebsiteInventoryProof(inventoryOperationId, "order", data.checkoutKey);
       } catch (proofError) {
-        await callBizSathiInventory({
-          action: "cancel",
-          operationId: inventoryOperationId,
-          reference: data.checkoutKey,
-        }).catch(() => undefined);
+        try {
+          await callBizSathiInventory({
+            action: "cancel",
+            operationId: inventoryOperationId,
+            reference: data.checkoutKey,
+          });
+        } catch {
+          throw new Error("The inventory reservation was created but could not be released after an order setup error. It remains held for reconciliation.");
+        }
         throw proofError;
       }
     }
