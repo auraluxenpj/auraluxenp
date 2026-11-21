@@ -168,6 +168,16 @@ jobs:
             IF NOT has_function_privilege('service_role', 'public.register_website_inventory_proof(uuid,text,text)', 'EXECUTE') THEN
               RAISE EXCEPTION 'Service role must register server-side inventory proofs';
             END IF;
+            IF has_function_privilege('anon', 'public.bizsathi_inventory_projection_state(text[])', 'EXECUTE')
+               OR has_function_privilege('authenticated', 'public.bizsathi_inventory_projection_state(text[])', 'EXECUTE')
+               OR has_function_privilege('anon', 'public.bizsathi_inventory_project(jsonb)', 'EXECUTE')
+               OR has_function_privilege('authenticated', 'public.bizsathi_inventory_project(jsonb)', 'EXECUTE') THEN
+              RAISE EXCEPTION 'Browser users must not call BizSathi projection RPCs';
+            END IF;
+            IF NOT has_function_privilege('service_role', 'public.bizsathi_inventory_projection_state(text[])', 'EXECUTE')
+               OR NOT has_function_privilege('service_role', 'public.bizsathi_inventory_project(jsonb)', 'EXECUTE') THEN
+              RAISE EXCEPTION 'Service role must own BizSathi projection RPC access';
+            END IF;
             IF has_table_privilege('authenticated', 'public.website_inventory_reservation_proofs', 'SELECT') THEN
               RAISE EXCEPTION 'Browser users must not read inventory reservation proofs';
             END IF;
