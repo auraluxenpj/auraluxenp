@@ -37,7 +37,7 @@ export const Route = createFileRoute('/api/public/bizsathi-inventory')({
         const expected = process.env['WEBSITE_INVENTORY_SYNC_SECRET'];
         const authorization = request.headers.get('authorization') ?? '';
         const supplied = authorization.startsWith('Bearer ') ? authorization.slice(7) : '';
-        if (!expected || !supplied || !equalSecret(expected, supplied)) return json({ error: 'Unauthorized' }, 401);
+        if (!expected || expected.length < 24 || !supplied || !equalSecret(expected, supplied)) return json({ error: 'Unauthorized' }, 401);
 
         const length = Number(request.headers.get('content-length') ?? 0);
         if (Number.isFinite(length) && length > MAX_BODY_BYTES) return json({ error: 'Request too large' }, 413);
