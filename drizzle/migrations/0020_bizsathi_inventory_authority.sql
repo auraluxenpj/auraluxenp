@@ -151,7 +151,10 @@ BEGIN
   body:=replace(body,' FOR item IN SELECT * FROM jsonb_array_elements(receipt_items) LOOP',
     ' IF v_authority_enabled THEN UPDATE public.website_inventory_reservation_proofs SET consumed_reference=''pos:''||sale_id::text,consumed_at=now() WHERE operation_id=req_key; END IF;'||nl||
     ' FOR item IN SELECT * FROM jsonb_array_elements(receipt_items) LOOP');
-  start_pos:=position(' FOR agg IN SELECT (i->>''product_id'')::uuid AS id,sum((i->>''quantity'')::int)::int AS qty FROM jsonb_array_elements(items) i GROUP BY 1 ORDER BY 1 LOOP' IN body);
+  anchor_pos:=position(' FOR item IN SELECT * FROM jsonb_array_elements(receipt_items) LOOP' IN body);
+  IF anchor_pos=0 THEN RAISE EXCEPTION 'Could not locate POS item write'; END IF;
+  start_pos:=anchor_pos+position(' FOR agg IN SELECT (i->>''product_id'')::uuid AS id,sum((i->>''quantity'')::int)::int AS qty FROM jsonb_array_elements(items) i GROUP BY 1 ORDER BY 1 LOOP' IN substring(body FROM anchor_pos+1));
+  IF start_pos<=anchor_pos THEN RAISE EXCEPTION 'Could not locate POS stock deduction'; END IF;
   end_pos:=position(' IF method=''credit'' THEN INSERT INTO public.pos_credit_entries' IN body);
   IF start_pos=0 OR end_pos<=start_pos THEN RAISE EXCEPTION 'Could not isolate POS stock deduction block'; END IF;
   deduct_block:=substring(body FROM start_pos FOR end_pos-start_pos);
