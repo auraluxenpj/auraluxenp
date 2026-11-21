@@ -17,7 +17,7 @@ export const syncRequest = z.discriminatedUnion('action', [
     name: z.string().trim().min(1).max(200),
     category: z.string().trim().max(100),
     variant_name: z.string().trim().min(1).max(100),
-    sku: z.string().trim().min(1).max(80).regex(/^\\S+$/, 'SKU cannot contain spaces'),
+    sku: z.string().trim().min(1).max(80).regex(/^\S+$/, 'SKU cannot contain spaces'),
     selling_price: z.number().finite().min(0).max(100_000_000),
   }).strict()).min(1).max(500) }).strict(),
 ]);
