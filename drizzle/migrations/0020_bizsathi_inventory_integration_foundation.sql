@@ -25,6 +25,21 @@ CREATE INDEX IF NOT EXISTS order_items_bizsathi_variant_id_idx
   ON public.order_items (bizsathi_variant_id)
   WHERE bizsathi_variant_id IS NOT NULL;
 
+-- Fail-closed gate: mapped products cannot be purchased online until the
+-- BizSathi reserve/commit/cancel/return saga is implemented and explicitly enabled.
+CREATE TABLE IF NOT EXISTS public.bizsathi_checkout_reservation_config (
+  id smallint PRIMARY KEY DEFAULT 1 CHECK (id = 1),
+  enabled boolean NOT NULL DEFAULT false,
+  updated_at timestamptz NOT NULL DEFAULT now()
+);
+INSERT INTO public.bizsathi_checkout_reservation_config (id, enabled)
+VALUES (1, false)
+ON CONFLICT (id) DO NOTHING;
+ALTER TABLE public.bizsathi_checkout_reservation_config ENABLE ROW LEVEL SECURITY;
+REVOKE ALL ON public.bizsathi_checkout_reservation_config FROM PUBLIC, anon, authenticated, service_role;
+COMMENT ON TABLE public.bizsathi_checkout_reservation_config IS
+  'Fail-closed switch for mapped BizSathi products. Keep disabled until the website checkout reserve-first saga is live and verified. Only a reviewed migration may enable it.';
+
 CREATE TABLE IF NOT EXISTS public.bizsathi_inventory_outbox (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   event_type text NOT NULL CHECK (event_type IN ('order_item_created', 'order_state_changed')),
