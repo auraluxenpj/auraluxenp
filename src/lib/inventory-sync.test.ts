@@ -34,7 +34,7 @@ describe('inventory sync endpoint', () => {
       [{ action: 'ack', skus: ['A1'] }, 'inv_sync_ack', { _skus: ['A1'] }],
       [{ action: 'recorded', ids: [id] }, 'inv_sync_recorded', { _ids: [id] }],
       [{ action: 'push', items: [{ sku: 'A1', stock: 5, expected: 7 }] }, 'inv_sync_push', { _items: [{ sku: 'A1', stock: 5, expected: 7 }] }],
-      [{ action: 'catalogue_drafts', items: [{ product_id: id, variant_id: id, name: 'Test Dress', category: 'Dress', variant_name: 'Standard', sku: 'AL-TEST-001', selling_price: 1200 }] }, 'upsert_bizsathi_catalogue_drafts', { _items: [{ product_id: id, variant_id: id, name: 'Test Dress', category: 'Dress', variant_name: 'Standard', sku: 'AL-TEST-001', selling_price: 1200 }] }],
+      [{ action: 'catalogue_drafts', items: [{ product_id: id, variant_id: id, name: 'Test Dress', category: 'Dress', variant_name: 'Standard', model_code: 'MODEL-001', sku: 'AL-TEST-001', selling_price: 1200 }] }, 'upsert_bizsathi_catalogue_drafts', { _items: [{ product_id: id, variant_id: id, name: 'Test Dress', category: 'Dress', variant_name: 'Standard', sku: 'AL-TEST-001', selling_price: 1200 }] }],
     ];
     for (const [body, fn, args] of cases) {
       const { db, rpc } = fakeDb([{ ok: true }]);
