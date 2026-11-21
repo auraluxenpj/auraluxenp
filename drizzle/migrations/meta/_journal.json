@@ -134,6 +134,13 @@
       "when": 1795281000000,
       "tag": "0021_bizsathi_draft_catalogue_import",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1795282000000,
+      "tag": "0022_checkout_bizsathi_identity",
+      "breakpoints": true
     }
   ]
 }
