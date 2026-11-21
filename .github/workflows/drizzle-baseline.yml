@@ -87,13 +87,13 @@ jobs:
           GRANT SELECT, INSERT, UPDATE, DELETE ON storage.objects TO anon, authenticated, service_role;
           SQL
 
-      - name: Apply the 22 repository migrations to the temporary database
+      - name: Apply the 23 repository migrations to the temporary database
         run: |
           set -euo pipefail
           shopt -s nullglob
           migrations=(drizzle/migrations/[0-9][0-9][0-9][0-9]_*.sql)
-          if [ "${#migrations[@]}" -ne 22 ]; then
-            echo "Expected exactly 22 numbered SQL migrations; found ${#migrations[@]}."
+          if [ "${#migrations[@]}" -ne 23 ]; then
+            echo "Expected exactly 23 numbered SQL migrations; found ${#migrations[@]}."
             exit 1
           fi
           for migration in "${migrations[@]}"; do
@@ -227,6 +227,118 @@ jobs:
                WHERE bizsathi_variant_id = variant_id AND stock = 5 AND bizsathi_model_code = 'MODEL-TEST-001'
             ) THEN
               RAISE EXCEPTION 'Repeat import must preserve publication state and local stock';
+            END IF;
+          END
+          $test$;
+          SQL
+
+
+      - name: Verify checkout captures BizSathi identity and enqueues a PII-minimized event
+        run: |
+          set -euo pipefail
+          psql "$DATABASE_URL" -v ON_ERROR_STOP=1 <<'SQL'
+          DO $test$
+          DECLARE
+            product_id uuid;
+            variant_id uuid;
+            order_result jsonb;
+            duplicate_result jsonb;
+            customer jsonb := jsonb_build_object(
+              'customer_name', 'Integration Test',
+              'customer_phone', '123456789',
+              'customer_email', null,
+              'address', 'Test address',
+              'city', 'Nepalgunj',
+              'state', null,
+              'country', 'Nepal',
+              'postal_code', null,
+              'delivery_notes', null
+            );
+            items jsonb;
+            checkout_key text := 'integration-checkout-key-0001';
+          BEGIN
+            ALTER TABLE public.payment_settings DISABLE TRIGGER payment_settings_audit_trigger;
+            UPDATE public.payment_settings
+               SET qr_enabled = true,
+                   qr_image_path = 'integration-test-qr.png',
+                   qr_merchant_name = 'Integration Test Merchant'
+             WHERE id = 'main';
+            ALTER TABLE public.payment_settings ENABLE TRIGGER payment_settings_audit_trigger;
+
+            INSERT INTO public.products (
+              name, slug, price, stock, sizes, colors, images, is_published, bizsathi_product_id
+            ) VALUES (
+              'Mapped Checkout Test', 'mapped-checkout-test', 1200, 5, '{}', '{}', '{}', true,
+              '33333333-3333-4333-8333-333333333333'
+            ) RETURNING id INTO product_id;
+
+            INSERT INTO public.product_variants (
+              product_id, size, color, sku, stock, bizsathi_variant_id, bizsathi_variant_name, bizsathi_model_code
+            ) VALUES (
+              product_id, null, null, 'AL-CHECKOUT-TEST-001', 0,
+              '44444444-4444-4444-8444-444444444444', 'Standard', 'MODEL-CHECKOUT-001'
+            ) RETURNING id INTO variant_id;
+
+            items := jsonb_build_array(jsonb_build_object(
+              'product_id', product_id,
+              'size', null,
+              'color', null,
+              'quantity', 1
+            ));
+
+            order_result := public.place_order(checkout_key, 'qr', customer, items, null);
+            IF order_result->>'duplicate' <> 'false' THEN
+              RAISE EXCEPTION 'First checkout must create a new order';
+            END IF;
+
+            IF NOT EXISTS (
+              SELECT 1 FROM public.order_items
+               WHERE order_id = (order_result->>'order_id')::uuid
+                 AND bizsathi_product_id = '33333333-3333-4333-8333-333333333333'
+                 AND bizsathi_variant_id = '44444444-4444-4444-8444-444444444444'
+                 AND source_sku = 'AL-CHECKOUT-TEST-001'
+            ) THEN
+              RAISE EXCEPTION 'Checkout line must preserve the verified BizSathi product, variant and SKU';
+            END IF;
+
+            IF (SELECT count(*) FROM public.bizsathi_inventory_outbox
+                 WHERE idempotency_key = 'order-item-created:' ||
+                   (SELECT id::text FROM public.order_items WHERE order_id = (order_result->>'order_id')::uuid)) <> 1 THEN
+              RAISE EXCEPTION 'Mapped checkout line must create one durable outbox event';
+            END IF;
+
+            IF EXISTS (
+              SELECT 1 FROM public.bizsathi_inventory_outbox
+               WHERE order_id = (order_result->>'order_id')::uuid
+                 AND (payload ? 'customer_name' OR payload ? 'customer_phone' OR payload ? 'customer_email' OR payload ? 'address')
+            ) THEN
+              RAISE EXCEPTION 'Inventory outbox must not contain customer personal data';
+            END IF;
+
+            duplicate_result := public.place_order(checkout_key, 'qr', customer, items, null);
+            IF duplicate_result->>'duplicate' <> 'true'
+               OR duplicate_result->>'order_id' <> order_result->>'order_id' THEN
+              RAISE EXCEPTION 'Repeated checkout must return the original order';
+            END IF;
+
+            INSERT INTO public.product_variants (
+              product_id, size, color, sku, stock, bizsathi_variant_id, bizsathi_variant_name
+            ) VALUES (
+              product_id, null, null, 'AL-CHECKOUT-TEST-002', 0,
+              '55555555-5555-4555-8555-555555555555', 'Standard'
+            );
+
+            BEGIN
+              PERFORM public.place_order('integration-checkout-key-0002', 'qr', customer, items, null);
+              RAISE EXCEPTION 'Ambiguous variant mapping should have rejected checkout';
+            EXCEPTION WHEN raise_exception THEN
+              IF SQLERRM NOT LIKE 'Inventory mapping is missing or ambiguous%' THEN
+                RAISE;
+              END IF;
+            END;
+
+            IF EXISTS (SELECT 1 FROM public.orders WHERE checkout_key = 'integration-checkout-key-0002') THEN
+              RAISE EXCEPTION 'Rejected ambiguous checkout must not leave an order';
             END IF;
           END
           $test$;
