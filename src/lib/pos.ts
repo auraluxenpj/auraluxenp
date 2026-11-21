@@ -1,6 +1,6 @@
 import type { Product, ProductVariant, Category } from './data';
 import { stockForSize } from './size-stock';
-export type PosCatalog = { products: Product[]; variants: ProductVariant[]; categories: Category[]; tax_rate: number };
+export type PosCatalog = { products: Product[]; variants: ProductVariant[]; categories: Category[]; tax_rate: number; inventoryAuthorityEnabled?: boolean };
 export type PosLine = { product_id: string; size: string | null; color: string | null; quantity: number; discount: number };
 export type PosCustomer = { id: string; name: string; phone: string; balance: number };
 export type ReceiptItem = PosLine & { product_name: string; sku: string | null; unit_price: number; line_total: number };
@@ -29,4 +29,5 @@ export function validatePosPayment(method: string, customerId: string | null, to
   if (method === 'cash' && (!Number.isFinite(tendered) || tendered < total)) throw new Error('Cash received is below the total');
   if (method === 'qr' && (!qrReady || !confirmed)) throw new Error('Confirm funds received in merchant account');
 }
-export function nepalDay(iso: string) { return new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kathmandu', year:'numeric', month:'2-digit', day:'2-digit' }).format(new Date(iso)); }
+export function nepalDay(iso: string) { return new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kathmandu', year:'numeric', month:'2-digit', day:'2-digit' }).format(new Date(iso)); 
+}

@@ -292,6 +292,7 @@ export type Database = {
           product_name: string
           quantity: number
           size: string | null
+          source_sku: string | null
           unit_price: number
         }
         Insert: {
@@ -304,6 +305,7 @@ export type Database = {
           product_name: string
           quantity?: number
           size?: string | null
+          source_sku?: string | null
           unit_price?: number
         }
         Update: {
@@ -316,6 +318,7 @@ export type Database = {
           product_name?: string
           quantity?: number
           size?: string | null
+          source_sku?: string | null
           unit_price?: number
         }
         Relationships: [
@@ -349,6 +352,7 @@ export type Database = {
           delivery_notes: string | null
           discount: number
           id: string
+          inventory_operation_id: string | null
           order_number: string
           payment_method: string
           payment_status: Database["public"]["Enums"]["payment_status"]
@@ -377,6 +381,7 @@ export type Database = {
           delivery_notes?: string | null
           discount?: number
           id?: string
+          inventory_operation_id?: string | null
           order_number?: string
           payment_method?: string
           payment_status?: Database["public"]["Enums"]["payment_status"]
@@ -405,6 +410,7 @@ export type Database = {
           delivery_notes?: string | null
           discount?: number
           id?: string
+          inventory_operation_id?: string | null
           order_number?: string
           payment_method?: string
           payment_status?: Database["public"]["Enums"]["payment_status"]
