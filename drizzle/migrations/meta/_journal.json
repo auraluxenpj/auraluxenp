@@ -125,14 +125,14 @@
       "idx": 17,
       "version": "7",
       "when": 1795280000000,
-      "tag": "0017_bizsathi_inventory_integration_foundation",
+      "tag": "0020_bizsathi_inventory_integration_foundation",
       "breakpoints": true
     },
     {
       "idx": 18,
       "version": "7",
       "when": 1795281000000,
-      "tag": "0018_bizsathi_draft_catalogue_import",
+      "tag": "0021_bizsathi_draft_catalogue_import",
       "breakpoints": true
     }
   ]
