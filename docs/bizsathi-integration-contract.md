@@ -25,6 +25,7 @@ The staged bizsathi_inventory_outbox is a PII-minimized transactional outbox. It
 
 This outbox is a foundation, not an activated stock writer. It must not be connected to a worker until the BizSathi side implements an idempotent reserve/commit/cancel/return API and the website checkout is changed to use a reserve-first saga. Cross-database transactions are not atomic: the intended sequence is reserve in BizSathi, place the website order, then commit the reservation; if website placement fails, cancel the reservation. Ambiguous outcomes must be queried by operation ID rather than blindly retried or released.
 
+- Mapped products are blocked from online checkout by a fail-closed database switch until the reserve-first saga is deployed and explicitly enabled.
 - Checkout must reserve stock in BizSathi before confirming the website order.
 - Payment confirmation commits the reservation according to the agreed order/payment policy.
 - Checkout failure cancels the reservation.
@@ -39,7 +40,7 @@ This outbox is a foundation, not an activated stock writer. It must not be conne
 2. Apply this additive website schema migration only after review; it does not import catalogue rows or alter stock.
 3. Review the draft-only catalogue export/upsert implementation in BizSathi PR #178 and website PR #26; its current supported fields are product name, category, variant label, model code, SKU and selling price. Only one of 407 active BizSathi products has an image path, and all 407 active variant labels are Standard/STANDARD. Description, actual size and colour values are not present in the current source schema.
 4. Reconcile the existing 13 website products against BizSathi's active catalogue; manually resolve ambiguous matches. Exact SKU intersection was zero in the initial audit, so existing products are not auto-linked by suffix or approximate name.
-5. Implement BizSathi reservation/commit/cancel/return RPCs and the website server-side checkout saga.
+5. Implement BizSathi reservation/commit/cancel/return RPCs and the website server-side checkout saga; only then enable the database checkout-reservation switch.
 6. Implement the outbox worker, retry/dead-letter visibility, and reconciliation reports.
 7. Test in isolated/staging databases, including duplicate requests, concurrent checkout, payment failure, cancellation, partial return, timeout after remote commit, and replay.
 8. Only then activate the integration. Production stock sync and product publishing remain manual gates.
@@ -49,5 +50,6 @@ This outbox is a foundation, not an activated stock writer. It must not be conne
 - No production migration application.
 - No stock import, stock overwrite, or automatic stock adjustment.
 - No automatic product publishing.
+- Mapped-product online checkout remains disabled until the reserve-first flow is active.
 - No use of customer personal data in the inventory event payload.
 - No activation of the old Auraluxe-authoritative SHARED_INVENTORY.md proposal.
