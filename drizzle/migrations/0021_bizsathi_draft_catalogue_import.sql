@@ -25,6 +25,7 @@ DECLARE
   v_price numeric;
   v_product_price numeric;
   v_product_sku text;
+  v_product_model_code text;
   v_created_products integer := 0;
   v_updated_products integer := 0;
   v_created_variants integer := 0;
@@ -73,8 +74,9 @@ BEGIN
     v_sku := nullif(btrim(r->>'sku'), '');
     v_price := (r->>'selling_price')::numeric;
     SELECT min((e.value->>'selling_price')::numeric),
-           CASE WHEN count(*) = 1 THEN max(e.value->>'sku') ELSE NULL END
-      INTO v_product_price, v_product_sku
+           CASE WHEN count(*) = 1 THEN max(e.value->>'sku') ELSE NULL END,
+           CASE WHEN count(*) = 1 THEN max(e.value->>'model_code') ELSE NULL END
+      INTO v_product_price, v_product_sku, v_product_model_code
       FROM jsonb_array_elements(_items) AS e(value)
      WHERE e.value->>'product_id' = v_product_id::text;
 
@@ -126,10 +128,10 @@ BEGIN
       v_slug := left(v_slug, 160) || '-' || left(replace(v_product_id::text, '-', ''), 8);
 
       INSERT INTO public.products (
-        name, slug, sku, category_id, price, stock, sizes, colors, images,
+        name, slug, sku, category_id, price, stock, sizes, colors, images, model_code,
         is_published, bizsathi_product_id
       ) VALUES (
-        v_name, v_slug, v_product_sku, v_category_id, v_product_price, 0, '{}', '{}', '{}',
+        v_name, v_slug, v_product_sku, v_category_id, v_product_price, 0, '{}', '{}', '{}', v_product_model_code,
         false, v_product_id
       )
       RETURNING id INTO v_existing_product_id;
@@ -139,7 +141,8 @@ BEGIN
          SET name = v_name,
              sku = v_product_sku,
              category_id = v_category_id,
-             price = v_product_price
+             price = v_product_price,
+             model_code = v_product_model_code
        WHERE id = v_existing_product_id;
       v_updated_products := v_updated_products + 1;
     END IF;
