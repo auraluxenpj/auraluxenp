@@ -87,7 +87,7 @@ jobs:
           GRANT SELECT, INSERT, UPDATE, DELETE ON storage.objects TO anon, authenticated, service_role;
           SQL
 
-      - name: Apply the 20 repository migrations to the temporary database
+      - name: Apply the 21 repository migrations to the temporary database
         run: |
           set -euo pipefail
           shopt -s nullglob
