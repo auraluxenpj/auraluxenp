@@ -9,7 +9,7 @@ import {
   registerWebsiteInventoryProof,
 } from './bizsathi-inventory.server';
 export const getPosCatalog = createServerFn({ method:'GET' }).middleware([requireSupabaseAuth]).handler(async ({context}) => {
-  const { data, error } = await context.supabase.rpc('get_pos_catalog'); if (error) throw new Error(error.message); return data as unknown as PosCatalog;
+  const { data, error } = await context.supabase.rpc('get_pos_catalog'); if (error) throw new Error(error.message);\n  const { data: authority, error: authorityError } = await context.supabase.rpc('website_inventory_authority_enabled');\n  if (authorityError) throw new Error('Could not verify inventory authority');\n  return { ...(data as unknown as PosCatalog), inventoryAuthorityEnabled: authority === true };
 });
 export const getPosCustomers = createServerFn({method:'GET'}).middleware([requireSupabaseAuth]).handler(async ({context}) => {
   const {data,error}=await context.supabase.rpc('get_pos_customer_balances');if(error)throw new Error(error.message);return data as unknown as PosCustomer[];
