@@ -3,7 +3,7 @@ import { z } from 'zod';
 
 const MAX_BODY_BYTES = 64 * 1024;
 const itemSchema = z.object({
-  sku: z.string().trim().min(1).max(64).regex(/^\\S+$/),
+  sku: z.string().trim().min(1).max(64).regex(/^\S+$/),
   stock: z.number().int().min(0).max(1_000_000),
 }).strict();
 const requestSchema = z.object({ items: z.array(itemSchema).min(1).max(100) }).strict();
