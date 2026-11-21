@@ -91,7 +91,10 @@ export const updateOrderStatus = createServerFn({ method: 'POST' })
       .single();
     if (readError || !order) throw new Error('Order not found or access denied');
 
-    if (order.inventory_operation_id && data.status === 'returned') {\n      throw new Error('Process the returned stock in BizSathi before marking this order as returned.');\n    }\n    if (order.inventory_operation_id && (data.status === 'confirmed' || data.status === 'cancelled')) {
+    if (order.inventory_operation_id && data.status === 'returned') {
+      throw new Error('Process the returned stock in BizSathi before marking this order as returned.');
+    }
+    if (order.inventory_operation_id && (data.status === 'confirmed' || data.status === 'cancelled')) {
       const action = data.status === 'confirmed' ? 'commit' : 'cancel';
       try {
         await callBizSathiInventory({
