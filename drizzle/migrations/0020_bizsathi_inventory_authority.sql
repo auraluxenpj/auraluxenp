@@ -93,47 +93,36 @@ CREATE TRIGGER bizsathi_authority_variant_stock_guard
 
 -- Upgrade checkout in place while preserving the old five-argument RPC via a default NULL operation ID.
 DO $place_order_patch$
-DECLARE body text; start_pos integer; end_pos integer; stock_block text; deduct_block text;
+DECLARE body text; start_pos integer; end_pos integer; stock_block text; deduct_block text; nl text:=chr(10);
 BEGIN
   SELECT pg_get_functiondef('public.place_order(text,text,jsonb,jsonb,text)'::regprocedure) INTO body;
-  body:=replace(body,
-    'p_coupon text DEFAULT NULL::text)',
-    'p_coupon text DEFAULT NULL::text, p_inventory_operation_id uuid DEFAULT NULL::uuid)');
-  body:=replace(body,
-    '  v_size_tracked boolean;',
-    '  v_size_tracked boolean;\n  v_authority_enabled boolean := false;');
-  body:=replace(body,
-    'begin\n  -- ---- customer validation',
-    'begin\n  SELECT enabled INTO v_authority_enabled FROM public.website_inventory_authority WHERE id=1;\n  v_authority_enabled:=coalesce(v_authority_enabled,false);\n  -- ---- customer validation');
-  body:=replace(body,
-    'select id, order_number, total, request_fingerprint into v_existing',
-    'select id, order_number, total, request_fingerprint, inventory_operation_id into v_existing');
-  body:=replace(body,
-    'if v_existing.request_fingerprint = v_fingerprint then',
-    'if v_existing.request_fingerprint = v_fingerprint AND v_existing.inventory_operation_id IS NOT DISTINCT FROM p_inventory_operation_id then');
-  IF position('p_inventory_operation_id' IN body)=0 THEN RAISE EXCEPTION 'Could not add checkout reservation argument'; END IF;
-  body:=replace(body,
-    '  -- ---- items: real products, real prices, real stock (rows locked) ----',
-    '  IF v_authority_enabled THEN\n    IF p_inventory_operation_id IS NULL THEN RAISE EXCEPTION ''Website inventory reservation is required''; END IF;\n    PERFORM 1 FROM public.website_inventory_reservation_proofs WHERE operation_id=p_inventory_operation_id AND source_type=''order'' AND source_key=p_checkout_key AND consumed_at IS NULL AND cancelled_at IS NULL FOR UPDATE;\n    IF NOT FOUND THEN RAISE EXCEPTION ''Valid BizSathi reservation proof is required''; END IF;\n  ELSIF p_inventory_operation_id IS NOT NULL THEN RAISE EXCEPTION ''Inventory reservation supplied while BizSathi authority is disabled'';\n  END IF;\n\n  -- ---- items: real products, real prices, real stock (rows locked) ----');
+  body:=replace(body,'p_coupon text DEFAULT NULL::text)','p_coupon text DEFAULT NULL::text, p_inventory_operation_id uuid DEFAULT NULL::uuid)');
+  body:=replace(body,'  v_size_tracked boolean;','  v_size_tracked boolean; v_authority_enabled boolean := false;');
+  body:=replace(body,'select id, order_number, total, request_fingerprint into v_existing','select id, order_number, total, request_fingerprint, inventory_operation_id into v_existing');
+  body:=replace(body,'if v_existing.request_fingerprint = v_fingerprint then','if v_existing.request_fingerprint = v_fingerprint AND v_existing.inventory_operation_id IS NOT DISTINCT FROM p_inventory_operation_id then');
+  body:=replace(body,'  -- ---- customer validation','  SELECT enabled INTO v_authority_enabled FROM public.website_inventory_authority WHERE id=1; v_authority_enabled:=coalesce(v_authority_enabled,false);'||nl||'  -- ---- customer validation');
+  body:=replace(body,'  -- ---- items: real products, real prices, real stock (rows locked) ----',
+    '  IF v_authority_enabled THEN'||nl||
+    '    IF p_inventory_operation_id IS NULL THEN RAISE EXCEPTION ''Website inventory reservation is required''; END IF;'||nl||
+    '    PERFORM 1 FROM public.website_inventory_reservation_proofs WHERE operation_id=p_inventory_operation_id AND source_type=''order'' AND source_key=p_checkout_key AND consumed_at IS NULL AND cancelled_at IS NULL FOR UPDATE;'||nl||
+    '    IF NOT FOUND THEN RAISE EXCEPTION ''Valid BizSathi reservation proof is required''; END IF;'||nl||
+    '  ELSIF p_inventory_operation_id IS NOT NULL THEN RAISE EXCEPTION ''Inventory reservation supplied while BizSathi authority is disabled'';'||nl||
+    '  END IF;'||nl||'  -- ---- items: real products, real prices, real stock (rows locked) ----');
   start_pos:=position('  -- ---- stock: aggregate duplicate lines, honour per-size variant stock ----' IN body);
   end_pos:=position('  -- ---- coupon: validated against trusted records ----' IN body);
   IF start_pos=0 OR end_pos<=start_pos THEN RAISE EXCEPTION 'Could not isolate checkout stock validation block'; END IF;
   stock_block:=substring(body FROM start_pos FOR end_pos-start_pos);
-  body:=replace(body,stock_block,'  IF NOT v_authority_enabled THEN\n'||stock_block||'  END IF;\n\n');
-  body:=replace(body,
-    '    checkout_key, request_fingerprint, user_id,',
-    '    checkout_key, request_fingerprint, user_id, inventory_operation_id,');
-  body:=replace(body,
-    '    p_checkout_key, v_fingerprint, auth.uid(),',
-    '    p_checkout_key, v_fingerprint, auth.uid(), p_inventory_operation_id,');
-  body:=replace(body,
-    '  returning id, order_number into v_order_id, v_order_number;',
-    '  returning id, order_number into v_order_id, v_order_number;\n  IF v_authority_enabled THEN UPDATE public.website_inventory_reservation_proofs SET consumed_reference=''order:''||v_order_id::text,consumed_at=now() WHERE operation_id=p_inventory_operation_id; END IF;');
+  body:=substring(body FROM 1 FOR start_pos-1)||'  IF NOT v_authority_enabled THEN'||nl||stock_block||'  END IF;'||nl||nl||substring(body FROM end_pos);
+  body:=replace(body,'    checkout_key, request_fingerprint, user_id,','    checkout_key, request_fingerprint, user_id, inventory_operation_id,');
+  body:=replace(body,'    p_checkout_key, v_fingerprint, auth.uid(),','    p_checkout_key, v_fingerprint, auth.uid(), p_inventory_operation_id,');
+  body:=replace(body,'  returning id, order_number into v_order_id, v_order_number;',
+    '  returning id, order_number into v_order_id, v_order_number;'||nl||
+    '  IF v_authority_enabled THEN UPDATE public.website_inventory_reservation_proofs SET consumed_reference=''order:''||v_order_id::text,consumed_at=now() WHERE operation_id=p_inventory_operation_id; END IF;');
   start_pos:=position('  -- ---- deduct stock:' IN body);
   end_pos:=position('  if v_coupon_code is not null then' IN body);
   IF start_pos=0 OR end_pos<=start_pos THEN RAISE EXCEPTION 'Could not isolate checkout stock deduction block'; END IF;
   deduct_block:=substring(body FROM start_pos FOR end_pos-start_pos);
-  body:=replace(body,deduct_block,'  IF NOT v_authority_enabled THEN\n'||deduct_block||'  END IF;\n\n');
+  body:=substring(body FROM 1 FOR start_pos-1)||'  IF NOT v_authority_enabled THEN'||nl||deduct_block||'  END IF;'||nl||nl||substring(body FROM end_pos);
   DROP FUNCTION public.place_order(text,text,jsonb,jsonb,text);
   EXECUTE body;
 END
@@ -141,33 +130,32 @@ $place_order_patch$;
 REVOKE ALL ON FUNCTION public.place_order(text,text,jsonb,jsonb,text,uuid) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.place_order(text,text,jsonb,jsonb,text,uuid) TO anon,authenticated;
 
--- Website POS uses request_key as the idempotent reservation operation ID.
 DO $pos_patch$
-DECLARE body text; start_pos integer; end_pos integer; stock_block text; deduct_block text;
+DECLARE body text; start_pos integer; end_pos integer; stock_block text; deduct_block text; nl text:=chr(10);
 BEGIN
   SELECT pg_get_functiondef('public.complete_pos_sale(jsonb)'::regprocedure) INTO body;
-  body:=replace(body,
-    ' sale_id uuid := gen_random_uuid(); receipt_no text;',
-    ' sale_id uuid := gen_random_uuid(); receipt_no text; v_authority_enabled boolean := false;');
-  body:=replace(body,
-    'BEGIN\n IF NOT public.can_use_pos() THEN',
-    'BEGIN\n SELECT enabled INTO v_authority_enabled FROM public.website_inventory_authority WHERE id=1; v_authority_enabled:=coalesce(v_authority_enabled,false);\n IF NOT public.can_use_pos() THEN');
-  body:=replace(body,
-    ' method := p_request->>''payment_method'';',
-    ' IF v_authority_enabled THEN\n  PERFORM 1 FROM public.website_inventory_reservation_proofs WHERE operation_id=req_key AND source_type=''pos'' AND source_key=req_key::text AND consumed_at IS NULL AND cancelled_at IS NULL FOR UPDATE;\n  IF NOT FOUND THEN RAISE EXCEPTION ''Valid BizSathi POS reservation proof is required''; END IF;\n END IF;\n method := p_request->>''payment_method'';');
+  body:=replace(body,'receipt_no text;','receipt_no text; v_authority_enabled boolean := false;');
+  body:=replace(body,' IF NOT public.can_use_pos() THEN',
+    ' SELECT enabled INTO v_authority_enabled FROM public.website_inventory_authority WHERE id=1; v_authority_enabled:=coalesce(v_authority_enabled,false);'||nl||
+    ' IF NOT public.can_use_pos() THEN');
+  body:=replace(body,' method := p_request->>''payment_method'';',
+    ' IF v_authority_enabled THEN'||nl||
+    '  PERFORM 1 FROM public.website_inventory_reservation_proofs WHERE operation_id=req_key AND source_type=''pos'' AND source_key=req_key::text AND consumed_at IS NULL AND cancelled_at IS NULL FOR UPDATE;'||nl||
+    '  IF NOT FOUND THEN RAISE EXCEPTION ''Valid BizSathi POS reservation proof is required''; END IF;'||nl||
+    ' END IF;'||nl||' method := p_request->>''payment_method'';');
   start_pos:=position(' FOR agg IN SELECT (i->>''product_id'')::uuid AS id,sum((i->>''quantity'')::int)::int AS qty FROM jsonb_array_elements(items) i GROUP BY 1 ORDER BY 1 LOOP' IN body);
   end_pos:=position(' SELECT coalesce(nullif(value,'''')::numeric,0) INTO tax_rate' IN body);
   IF start_pos=0 OR end_pos<=start_pos THEN RAISE EXCEPTION 'Could not isolate POS stock validation block'; END IF;
   stock_block:=substring(body FROM start_pos FOR end_pos-start_pos);
-  body:=replace(body,stock_block,' IF NOT v_authority_enabled THEN\n'||stock_block||' END IF;\n');
-  body:=replace(body,
-    ' INSERT INTO public.pos_sales(id,receipt_number,request_key,request_fingerprint,operator_id,customer_id,payment_method,subtotal,item_discount,cart_discount,tax_rate,tax,total,tendered,change_due,receipt) VALUES(sale_id,receipt_no,req_key,fingerprint,actor,customer_id,method,subtotal,item_discount,cart_discount,tax_rate,tax,total,tender,CASE WHEN method=''cash'' THEN tender-total ELSE 0 END,receipt);',
-    ' INSERT INTO public.pos_sales(id,receipt_number,request_key,request_fingerprint,operator_id,customer_id,payment_method,subtotal,item_discount,cart_discount,tax_rate,tax,total,tendered,change_due,receipt) VALUES(sale_id,receipt_no,req_key,fingerprint,actor,customer_id,method,subtotal,item_discount,cart_discount,tax_rate,tax,total,tender,CASE WHEN method=''cash'' THEN tender-total ELSE 0 END,receipt);\n IF v_authority_enabled THEN UPDATE public.website_inventory_reservation_proofs SET consumed_reference=''pos:''||sale_id::text,consumed_at=now() WHERE operation_id=req_key; END IF;');
+  body:=substring(body FROM 1 FOR start_pos-1)||' IF NOT v_authority_enabled THEN'||nl||stock_block||' END IF;'||nl||substring(body FROM end_pos);
+  body:=replace(body,' FOR item IN SELECT * FROM jsonb_array_elements(receipt_items) LOOP',
+    ' IF v_authority_enabled THEN UPDATE public.website_inventory_reservation_proofs SET consumed_reference=''pos:''||sale_id::text,consumed_at=now() WHERE operation_id=req_key; END IF;'||nl||
+    ' FOR item IN SELECT * FROM jsonb_array_elements(receipt_items) LOOP');
   start_pos:=position(' FOR agg IN SELECT (i->>''product_id'')::uuid AS id,sum((i->>''quantity'')::int)::int AS qty FROM jsonb_array_elements(items) i GROUP BY 1 ORDER BY 1 LOOP' IN body);
   end_pos:=position(' IF method=''credit'' THEN INSERT INTO public.pos_credit_entries' IN body);
   IF start_pos=0 OR end_pos<=start_pos THEN RAISE EXCEPTION 'Could not isolate POS stock deduction block'; END IF;
   deduct_block:=substring(body FROM start_pos FOR end_pos-start_pos);
-  body:=replace(body,deduct_block,' IF NOT v_authority_enabled THEN\n'||deduct_block||' END IF;\n');
+  body:=substring(body FROM 1 FOR start_pos-1)||' IF NOT v_authority_enabled THEN'||nl||deduct_block||' END IF;'||nl||substring(body FROM end_pos);
   EXECUTE body;
 END
 $pos_patch$;
