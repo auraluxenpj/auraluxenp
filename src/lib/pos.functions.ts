@@ -75,7 +75,11 @@ export const completePosSale = createServerFn({method:'POST'}).middleware([requi
       await registerWebsiteInventoryProof(data.request_key,'pos',data.request_key);
       reserved=true;
     }catch(error){
-      await callBizSathiInventory({action:'cancel',operationId:data.request_key,reference:`POS-${data.request_key}-CANCELLED`}).catch(()=>undefined);
+      try{
+        await callBizSathiInventory({action:'cancel',operationId:data.request_key,reference:`POS-${data.request_key}-CANCELLED`});
+      }catch{
+        throw new Error('The POS reservation was created but could not be released after setup failed. It remains held for reconciliation.');
+      }
       throw error;
     }
   }
