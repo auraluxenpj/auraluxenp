@@ -1,5 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { createClient } from "@supabase/supabase-js";
+import { getRequestHeader } from '@tanstack/react-start/server';
+import { callBizSathiInventory } from './bizsathi-inventory.server';
 import { z } from "zod";
 import type { Database } from "@/integrations/supabase/types";
 
@@ -46,9 +48,6 @@ export const trackOrder = createServerFn({ method: "POST" })
     return (result as TrackedOrder | null) ?? null;
   });
 
-
-import { getRequestHeader } from '@tanstack/react-start/server';
-import { callBizSathiInventory } from './bizsathi-inventory.server';
 
 const statusInputSchema = z.object({
   orderId: z.string().uuid(),
