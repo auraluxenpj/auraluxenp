@@ -131,7 +131,7 @@ REVOKE ALL ON FUNCTION public.place_order(text,text,jsonb,jsonb,text,uuid) FROM 
 GRANT EXECUTE ON FUNCTION public.place_order(text,text,jsonb,jsonb,text,uuid) TO anon,authenticated;
 
 DO $pos_patch$
-DECLARE body text; start_pos integer; end_pos integer; stock_block text; deduct_block text; nl text:=chr(10);
+DECLARE body text; start_pos integer; end_pos integer; anchor_pos integer; stock_block text; deduct_block text; nl text:=chr(10);
 BEGIN
   SELECT pg_get_functiondef('public.complete_pos_sale(jsonb)'::regprocedure) INTO body;
   body:=replace(body,'receipt_no text;','receipt_no text; v_authority_enabled boolean := false;');
