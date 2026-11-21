@@ -143,7 +143,7 @@ jobs:
             IF NOT has_function_privilege('authenticated', 'public.complete_pos_sale(jsonb)', 'EXECUTE') THEN
               RAISE EXCEPTION 'Authenticated POS execution must remain available';
             END IF;
-            IF NOT has_function_privilege('anon', 'public.place_order(text,text,jsonb,jsonb,text)', 'EXECUTE') THEN
+            IF NOT has_function_privilege('anon', 'public.place_order(text,text,jsonb,jsonb,text,uuid)', 'EXECUTE') THEN
               RAISE EXCEPTION 'Guest checkout must remain available';
             END IF;
             IF NOT has_function_privilege('anon', 'public.track_order(text,text)', 'EXECUTE') THEN
