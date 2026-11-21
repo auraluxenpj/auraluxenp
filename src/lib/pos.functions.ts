@@ -27,6 +27,32 @@ const saleSchema = z.object({request_key:z.string().uuid(),customer_id:z.string(
 export const completePosSale = createServerFn({method:'POST'}).middleware([requireSupabaseAuth]).inputValidator((input:unknown)=>saleSchema.parse(input)).handler(async ({data,context})=>{
   const {data:enabled,error:authorityError}=await context.supabase.rpc('website_inventory_authority_enabled');
   if(authorityError) throw new Error('Could not verify the inventory authority setting');
+  const db=context.supabase as unknown as {
+    from:(table:string)=>{
+      select:(columns:string)=>{
+        eq:(column:string,value:string)=>{
+          maybeSingle:()=>Promise<{data:{id:string;receipt:unknown;inventory_operation_id:string|null}|null;error:{message:string}|null}>;
+        };
+      };
+    };
+  };
+  if(enabled===true){
+    const {data:existing,error:lookupError}=await db.from('pos_sales')
+      .select('id,receipt,inventory_operation_id').eq('request_key',data.request_key).maybeSingle();
+    if(lookupError) throw new Error('POS sale status is uncertain. Check the sales ledger before retrying.');
+    if(existing){
+      if(existing.inventory_operation_id){
+        const status=await callBizSathiInventory({action:'status',operationId:existing.inventory_operation_id}).catch(()=>null);
+        if(status&&'status' in status&&status.status==='reserved'){
+          await callBizSathiInventory({action:'commit',operationId:existing.inventory_operation_id,reference:`POS-${data.request_key}-CONFIRMED`});
+        }else if(!status||!('status' in status)||status.status!=='committed'){
+          throw new Error('Existing POS sale has an unresolved BizSathi stock operation. It remains held for reconciliation.');
+        }
+      }
+      return existing.receipt as unknown as PosReceipt;
+    }
+  }
+
   let reserved=false;
   if(enabled===true){
     const productIds=[...new Set(data.items.map(item=>item.product_id))];
@@ -50,33 +76,50 @@ export const completePosSale = createServerFn({method:'POST'}).middleware([requi
       throw error;
     }
   }
+
   const {data:id,error}=await context.supabase.rpc('complete_pos_sale',{p_request:data as Json});
+  let saleId=id as string;
   if(error){
     if(reserved){
-      const {data:existing,error:lookupError}=await context.supabase.from('pos_sales').select('id').eq('request_key',data.request_key).maybeSingle();
+      const {data:existing,error:lookupError}=await db.from('pos_sales')
+        .select('id,receipt,inventory_operation_id').eq('request_key',data.request_key).maybeSingle();
       if(lookupError) throw new Error('POS sale status is uncertain. The stock reservation remains safely held for reconciliation.');
-      if(!existing){
-        try{
+      if(existing?.inventory_operation_id===data.request_key){
+        saleId=existing.id;
+      }else{
+        if(!existing){
+          try{
+            await callBizSathiInventory({action:'cancel',operationId:data.request_key,reference:`POS-${data.request_key}-CANCELLED`});
+            await cancelWebsiteInventoryProof(data.request_key);
+          }catch{
+            throw new Error('POS sale failed, but the inventory reservation could not be released. It remains reserved for review.');
+          }
+        }else{
           await callBizSathiInventory({action:'cancel',operationId:data.request_key,reference:`POS-${data.request_key}-CANCELLED`});
           await cancelWebsiteInventoryProof(data.request_key);
-        }catch{
-          throw new Error('POS sale failed, but the inventory reservation could not be released. It remains reserved for review.');
+          return existing.receipt as unknown as PosReceipt;
         }
+        throw new Error(error.message);
       }
+    }else{
+      throw new Error(error.message);
     }
-    throw new Error(error.message);
   }
   if(reserved){
     try{
       await callBizSathiInventory({action:'commit',operationId:data.request_key,reference:`POS-${data.request_key}-CONFIRMED`});
     }catch{
       const status=await callBizSathiInventory({action:'status',operationId:data.request_key}).catch(()=>null);
-      if(!status||!('status' in status)||status.status!=='committed'){
+      if(status&&'status' in status&&status.status==='reserved'){
+        await callBizSathiInventory({action:'commit',operationId:data.request_key,reference:`POS-${data.request_key}-CONFIRMED`}).catch(()=>undefined);
+      }
+      const verified=await callBizSathiInventory({action:'status',operationId:data.request_key}).catch(()=>null);
+      if(!verified||!('status' in verified)||verified.status!=='committed'){
         throw new Error('POS sale was saved, but BizSathi stock commit is pending. Retry this same sale; do not create a new sale.');
       }
     }
   }
-  const {data:sale,error:readError}=await context.supabase.from('pos_sales').select('receipt').eq('id',id).single();
+  const {data:sale,error:readError}=await context.supabase.from('pos_sales').select('receipt').eq('id',saleId).single();
   if(readError) throw new Error('Sale saved; open the sales ledger to retrieve the receipt');
   return sale.receipt as unknown as PosReceipt;
 });
