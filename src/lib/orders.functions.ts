@@ -85,12 +85,17 @@ export const updateOrderStatus = createServerFn({ method: 'POST' })
         };
       };
     };
+    const { data: authorityEnabled, error: authorityError } = await client.rpc('website_inventory_authority_enabled');
+    if (authorityError) throw new Error('Could not verify the inventory authority setting');
     const { data: order, error: readError } = await db.from('orders')
       .select('id,status,checkout_key,inventory_operation_id')
       .eq('id', data.orderId)
       .single();
     if (readError || !order) throw new Error('Order not found or access denied');
 
+    if (authorityEnabled === true && !order.inventory_operation_id && order.status === 'pending') {
+      throw new Error('This pre-integration order needs stock reconciliation in BizSathi before its status can change.');
+    }
     if (order.inventory_operation_id && data.status === 'returned') {
       throw new Error('Process the returned stock in BizSathi before marking this order as returned.');
     }
