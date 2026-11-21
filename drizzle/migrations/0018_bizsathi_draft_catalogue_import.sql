@@ -74,11 +74,18 @@ BEGIN
       RAISE EXCEPTION 'Invalid catalogue row';
     END IF;
 
-    v_slug := trim(both '-' from regexp_replace(lower(v_category), '[^a-z0-9]+', '-', 'g'));
+    v_slug := CASE lower(v_category)
+      WHEN 'kurti' THEN 'kurtis'
+      WHEN 'kurti set' THEN 'kurtis'
+      WHEN 'dress' THEN 'dresses'
+      WHEN 'suit' THEN 'suits'
+      WHEN 'co-ord set' THEN 'co-ord-sets'
+      ELSE trim(both '-' from regexp_replace(lower(v_category), '[^a-z0-9]+', '-', 'g'))
+    END;
     IF v_slug = '' THEN v_slug := 'uncategorised'; END IF;
     INSERT INTO public.categories(name, slug)
     VALUES (v_category, v_slug)
-    ON CONFLICT (slug) DO UPDATE SET name = public.categories.name
+    ON CONFLICT (slug) DO UPDATE SET name = categories.name
     RETURNING id INTO v_category_id;
 
     SELECT id INTO v_existing_product_id
