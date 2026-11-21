@@ -233,7 +233,7 @@ jobs:
           SQL
 
 
-      - name: Verify checkout captures BizSathi identity and enqueues a PII-minimized event
+      - name: Verify checkout captures BizSathi identity and enqueues a PII-minimized idempotent event
         run: |
           set -euo pipefail
           psql "$DATABASE_URL" -v ON_ERROR_STOP=1 <<'SQL'
