@@ -212,7 +212,7 @@ jobs:
             UPDATE public.product_variants SET stock = 5
              WHERE bizsathi_variant_id = variant_id;
 
-            result := public.upsert_bizsathi_catalogue_drafts(payload || '[]'::jsonb);
+            result := public.upsert_bizsathi_catalogue_drafts(payload);
             IF (result->>'updated_products')::integer <> 1
                OR (result->>'updated_variants')::integer <> 1 THEN
               RAISE EXCEPTION 'Repeat import must update existing source mappings';
