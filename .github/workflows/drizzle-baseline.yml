@@ -158,6 +158,22 @@ jobs:
             IF NOT has_function_privilege('service_role', 'public.inv_sync_push(jsonb)', 'EXECUTE') THEN
               RAISE EXCEPTION 'Service-role inventory sync access must remain available';
             END IF;
+            IF public.website_inventory_authority_enabled() IS NOT FALSE THEN
+              RAISE EXCEPTION 'BizSathi authority must remain disabled until cutover approval';
+            END IF;
+            IF has_function_privilege('anon', 'public.register_website_inventory_proof(uuid,text,text)', 'EXECUTE')
+               OR has_function_privilege('authenticated', 'public.register_website_inventory_proof(uuid,text,text)', 'EXECUTE') THEN
+              RAISE EXCEPTION 'Browser users must not register inventory reservation proofs';
+            END IF;
+            IF NOT has_function_privilege('service_role', 'public.register_website_inventory_proof(uuid,text,text)', 'EXECUTE') THEN
+              RAISE EXCEPTION 'Service role must register server-side inventory proofs';
+            END IF;
+            IF has_table_privilege('authenticated', 'public.website_inventory_reservation_proofs', 'SELECT') THEN
+              RAISE EXCEPTION 'Browser users must not read inventory reservation proofs';
+            END IF;
+            IF (SELECT count(*) FROM pg_trigger WHERE tgname IN ('bizsathi_authority_product_stock_guard','bizsathi_authority_variant_stock_guard') AND NOT tgisinternal) <> 2 THEN
+              RAISE EXCEPTION 'Both legacy website stock writers must be guarded at cutover';
+            END IF;
           END
           $test$;
           SQL
