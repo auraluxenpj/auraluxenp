@@ -1,41 +1,69 @@
-# Shared inventory implementation status
+# BizSathi-authoritative shared inventory
 
-## Prepared, not activated
-`src/lib/shared-inventory-contract.ts` defines the proposed version 1 request validation and pure safety rules. No handler, migration, stock writer or job uses it yet. Tests verify protocol rules only; they do not establish database atomicity, durable retries, authorization or two-app behavior.
+## Implementation status
 
-The existing `/api/public/inventory-sync` remains the manual legacy protocol. Do not point BizSathi at the proposed protocol until its endpoints, mappings and transaction changes have been tested and explicitly activated. No automatic stock link is enabled by this preparation.
+**Prepared, not activated.** `src/lib/shared-inventory-contract.ts` defines version 1 request validation and pure safety rules. Its tests verify protocol validation only; no endpoint, database migration, stock writer, or recovery worker currently executes this protocol. The existing `/api/public/inventory-sync` is the legacy manual comparison/absolute-push protocol and must not be treated as the new transaction protocol.
 
-## Authority and integration contract
-- Auraluxe owns the authoritative on-hand and reserved balances. Its available count is on-hand minus active reservations. BizSathi caches those balances with revisions; cached stock never authorizes a sale.
-- Version 1 actions: `balances`, `movements`, `status`, `reserve`, `commit`, `cancel`, `receive`, `return`. No absolute stock pushes or remotely supplied actor/admin role.
-- Mutation requests carry an operation UUID, the linked branch UUID and explicit item mapping UUIDs. Scope keys by verified integration and action. Store a server-calculated fingerprint of the canonical payload and the original result in the same transaction as the mutation. Matching retries return that result; changed payloads fail.
-- Verify integration identity server-side and enforce its linked branch, active mappings and per-action permission before calling privileged functions. Browser role fields are never accepted. The contract's schema validation is not authorization.
-- Reservation line quantities are fixed at creation. Commit/cancel finalize that same reservation. Repeated identical finalization is safe; contradictory finalization fails. No automatic expiry may release an uncertain local financial posting.
-- Returns must reference committed original sale lines and cannot exceed sold quantity less prior returns. This bound must be checked while locking original lines in the database, not only in TypeScript.
-- Emit immutable movement IDs and sequence/cursor values from the same stock transaction. Movement reads use a safe durable commit-ordered cursor or overlap/ack scheme: a plain sequence allocated before transaction commit is insufficient because transactions can commit out of order.
-- Replays must be deduplicated by movement ID in BizSathi. Lost responses are recovered by status using the original operation ID.
-- Receiving retries are bounded by a reviewed receipt reference/operation. Corrections and mapping activation are separate admin-only actions with revision checks, not a generic integration stock-setting privilege.
-- Preserve stable size IDs; lock products then variants in deterministic order. Tracked totals derive from colour-agnostic size rows. Route checkout and every stock writer through this contract before activation.
+BizSathi is the single source of truth for Auraluxe inventory. The Auraluxe website is a sales channel and availability projection. The BizSathi Nepalgunj branch is the fulfilment branch for this integration. No stock authority changes or live synchronization are enabled by this preparation.
 
-## Cross-app sale sequence
-1. BizSathi persists a pending local operation with a retry key.
-2. It reserves authoritative stock using that key and the reviewed mappings.
-3. It posts its local financial document once, recording the reservation reference.
-4. It commits the reservation and reconciles unknown responses via status. Local failure cancels only when posting is conclusively absent. Ambiguous outcomes stay pending for recovery.
+## Authority and mapping contract
 
-The two databases do not share an atomic transaction. No financial record should be deleted to disguise a partial outcome. A durable recovery worker reconciles it. Background refresh updates displays but does not prevent overselling; authoritative reservations do.
+- BizSathi owns on-hand quantity, reservations, committed stock movements, purchase receipts, returns, and authorized adjustments.
+- Website availability is a projection of BizSathi sellable stock. It is never an independent source of stock truth.
+- SKU is the only product-mapping key. Each published website SKU must map one-to-one to exactly one active BizSathi variant SKU. No product-name, size, or colour matching is permitted. No automatic mapping is permitted.
+- Mapping activation is an explicit reviewed admin action. Missing, duplicate, normalized-collision, inactive, or ambiguous SKUs are blocked and surfaced for reconciliation.
+- Website stock is SKU-level. It does not promise size- or colour-specific availability.
+- Website catalogue publication is separate from mapping and inventory activation. Unmapped products must not become orderable through the integration.
 
-## Evidence and blocking gates — November 12, 2026
-- The existing environment baseline says preview and published app share the backend. Verified isolation and fresh recovery export/storage evidence are still required.
-- Read-only migration-history inspection reports a core SQL hash mismatch, unmatched historical database row, and missing recorded rows for `0015_inventory_sync`/`0016_inventory_sync_push_guard`. The tool cannot safely auto-repair this history. Existing sync tables alone do not prove migration provenance or the exact live function definitions. Reconcile history before new schema application; do not replay these migrations blindly.
-- Auraluxe sync state, acknowledgements and push log were all empty during the preceding read-only review.
-- AL-PW-678 and AL-PW-685 have duplicate product SKUs. AL-OTH-999 has overall stock 1 versus size total 5. Both size-tracked products have zero size-row SKUs. Explicit mappings and reviewed opening quantities are required; do not auto-merge or auto-correct.
-- BizSathi is accessible only as a read-only cross-project snapshot from this chat. Its code/database/deployment changes must run in the BizSathi project. Source checkout does not grant access to its live private records or settings.
+## Versioned protocol preparation
 
-## Next implementation checkpoints
-1. Confirm fresh recovery and isolation; reconcile migration history with verified original definitions.
-2. Present exact additive SQL for owner review, then apply in isolation using the migration tool.
-3. Implement authoritative database operations, reservation-aware checkout, safe editors/import/restock and stock-writer access closure.
-4. Wire authenticated versioned endpoints and admin mapping/movement/pending-operation views with legacy sync disabled for activated mappings.
-5. Implement BizSathi's pending-state protocol and recovery from its project; configure matching credentials without copying or revealing secret values.
-6. Run real two-app and concurrent transaction tests in isolation. Publish compatible snapshots only with owner approval; activate reviewed mappings after a fresh cutover snapshot.
+The current version 1 contract defines: `balances`, `movements`, `status`, `reserve`, `commit`, `cancel`, `receive`, and `return`. It rejects absolute stock pushes and caller-supplied actor/admin role fields.
+
+Mutation requests carry an operation UUID, the linked branch UUID, and explicit mapping IDs. The server must verify the integration identity, branch binding, mapping state, and action permissions before calling privileged database functions. Browser-supplied roles or business IDs are never authorization.
+
+The server must calculate a canonical request fingerprint and store it with the original result in the same transaction as each mutation. An identical retry returns the original result; reusing an operation ID with changed input fails. Unknown outcomes are resolved through `status` using the original operation ID.
+
+## Required transaction semantics
+
+1. **Website checkout:** create an atomic reservation in BizSathi before accepting the order. A reservation reduces sellable availability but does not yet create the permanent sale movement.
+2. **Order confirmation:** commit that exact reservation once, creating the permanent stock-ledger movement. Repeated commit requests are idempotent.
+3. **Cancellation:** release only that order's own reservation. A cancellation after commitment is a return workflow, not a reservation release.
+4. **BizSathi POS:** use the same stock ledger and reservation/commit discipline where a sale can race with a website checkout. A POS sale must not write a separate shadow stock balance.
+5. **Publication:** publish revised sellable quantities and a durable revision/cursor to the website after the BizSathi transaction commits. Retries must not create duplicate movements or regress a newer website revision.
+6. **Returns:** reference the original committed sale and line; accepted return quantities cannot exceed sold quantity less prior returns. Stock is restored only after the return is accepted.
+7. **Purchases and corrections:** purchase receipts and authorized stock corrections update the BizSathi ledger and then publish the resulting availability.
+8. **Offline POS:** offline drafts do not reserve or decrement stock. Stock is committed only when the transaction is successfully posted online.
+9. **Uncertain outcomes:** do not release a reservation or retry a financial posting when its outcome is unknown. Keep it pending and reconcile through the operation status and durable event log.
+10. **Mismatches:** SKU mismatches, stale revisions, insufficient stock, duplicate events, and ambiguous transaction states are visible exceptions. Never auto-map, silently overwrite, or silently adjust quantities.
+
+## Cross-system reliability and security
+
+- The two databases do not share an atomic transaction. Use durable operation records, idempotency, outbox/inbox processing, bounded retries, and explicit reconciliation.
+- A lost response is not evidence of failure. Resolve the original operation ID before creating another operation.
+- Movement cursors must be commit-ordered or use a durable overlap/acknowledgement strategy. A plain sequence allocated before transaction commit can skip transactions that commit out of order.
+- Keep integration credentials server-side only. Never expose service-role keys or shared secrets to browser code, logs, or user-visible output.
+- Privileged database functions must enforce the fixed Auraluxe business and Nepalgunj branch, least privilege, mapping state, and service-to-service identity. They must not trust a caller-supplied tenant, actor, or role.
+- Preserve append-only movement and acknowledgement evidence. Do not delete financial records to disguise partial failure.
+- The legacy absolute stock-push endpoint must be disabled for any SKU once that SKU is activated under the transactional protocol, preventing two competing write paths.
+
+## Known cutover blockers
+
+- The previous live data review found 13 website products, all unpublished, with zero website variant rows; six had SKUs and seven did not. The six existing website SKUs did not match BizSathi SKUs at that review. These are not eligible for automatic mapping.
+- BizSathi Auraluxe previously had 407 active products and 407 active variants with unique non-empty SKUs. A current cutover comparison is still required before activation.
+- Previous website project checks reported catalogue-loading/backend health concerns. Verify current website database health before enabling checkout reservations or publishing quantities.
+- Existing website checkout and POS functions still deduct website `products.stock` / `product_variants.stock`; admin inventory and restock paths also write those columns. They must be migrated to the BizSathi transaction flow or disabled for activated SKUs before cutover.
+- BizSathi's existing manual website sync is not the transactional reservation protocol. Its old tenant binding was corrected in a Git-only migration, but that migration remains unapplied pending review.
+- Do not assume the existing shared-secret configuration is matched or valid. Verify connection health without revealing the secret.
+- Initial baseline sync requires a separate reviewed discrepancy report and explicit owner approval.
+
+## Implementation checkpoints
+
+1. Complete the BizSathi reservation/commit/cancel ledger and service-to-service identity model.
+2. Implement website reservation-before-order checkout, idempotent confirmation/cancellation, and remove legacy stock writes for activated mappings.
+3. Route BizSathi POS, purchase receipts, accepted returns, and authorized adjustments through the same stock ledger and publication outbox.
+4. Add explicit SKU mapping/reconciliation administration and a durable movement consumer with revision checks.
+5. Add automated unit, SQL security, concurrent oversell, lost-response, duplicate-delivery, cancellation, partial-return, and recovery tests.
+6. Review migration history and fresh recovery evidence before any database migration.
+7. Produce a cutover discrepancy report; only after separate approval apply migrations, configure secrets, deploy compatible code, baseline reviewed mappings, and activate live synchronization.
+
+**Safety boundary:** This document and the protocol preparation are not authorization to apply database migrations, change secrets, deploy, publish products, write stock, or run a baseline sync.
