@@ -3,6 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { updateOrderStatus } from "@/lib/orders.functions";
 
 export const Route = createFileRoute("/_authenticated/admin/orders")({
   component: Orders,
@@ -74,12 +75,29 @@ function OrderCard({ o }: { o: Order }) {
 
   async function update(patch: { status?: Status; payment_status?: PayStatus; tracking_number?: string | null }, msg: string) {
     setBusy(true);
-    const { error } = await supabase.from("orders").update(patch).eq("id", o.id);
-    setBusy(false);
-    if (error) {
-      toast.error(error.message);
-      return;
+    if (patch.status) {
+      try {
+        await updateOrderStatus({
+          data: {
+            orderId: o.id,
+            status: patch.status,
+            trackingNumber: patch.tracking_number,
+          },
+        });
+      } catch (error) {
+        setBusy(false);
+        toast.error(error instanceof Error ? error.message : "Order update failed");
+        return;
+      }
+    } else {
+      const { error } = await supabase.from("orders").update(patch).eq("id", o.id);
+      if (error) {
+        setBusy(false);
+        toast.error(error.message);
+        return;
+      }
     }
+    setBusy(false);
     toast.success(msg);
     qc.invalidateQueries({ queryKey: ["admin", "orders"] });
   }
