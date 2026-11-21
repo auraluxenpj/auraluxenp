@@ -1,4 +1,7 @@
 -- Draft-only BizSathi catalogue import. No stock is imported and no product is published.
+ALTER TABLE public.product_variants
+  ADD COLUMN IF NOT EXISTS bizsathi_variant_name text;
+
 CREATE OR REPLACE FUNCTION public.upsert_bizsathi_catalogue_drafts(_items jsonb)
 RETURNS jsonb
 LANGUAGE plpgsql
@@ -18,6 +21,8 @@ DECLARE
   v_variant_name text;
   v_sku text;
   v_price numeric;
+  v_product_price numeric;
+  v_product_sku text;
   v_created_products integer := 0;
   v_updated_products integer := 0;
   v_created_variants integer := 0;
@@ -64,6 +69,11 @@ BEGIN
     v_variant_name := coalesce(nullif(btrim(r->>'variant_name'), ''), 'Standard');
     v_sku := nullif(btrim(r->>'sku'), '');
     v_price := (r->>'selling_price')::numeric;
+    SELECT min((e.value->>'selling_price')::numeric),
+           CASE WHEN count(*) = 1 THEN max(e.value->>'sku') ELSE NULL END
+      INTO v_product_price, v_product_sku
+      FROM jsonb_array_elements(_items) AS e(value)
+     WHERE e.value->>'product_id' = v_product_id::text;
 
     IF v_name IS NULL OR length(v_name) > 200
        OR length(v_category) > 100
@@ -102,7 +112,7 @@ BEGIN
         name, slug, sku, category_id, price, stock, sizes, colors, images,
         is_published, bizsathi_product_id
       ) VALUES (
-        v_name, v_slug, v_sku, v_category_id, v_price, 0, '{}', '{}', '{}',
+        v_name, v_slug, v_product_sku, v_category_id, v_product_price, 0, '{}', '{}', '{}',
         false, v_product_id
       )
       RETURNING id INTO v_existing_product_id;
@@ -110,9 +120,9 @@ BEGIN
     ELSE
       UPDATE public.products
          SET name = v_name,
-             sku = v_sku,
+             sku = v_product_sku,
              category_id = v_category_id,
-             price = v_price
+             price = v_product_price
        WHERE id = v_existing_product_id;
       v_updated_products := v_updated_products + 1;
     END IF;
@@ -124,9 +134,9 @@ BEGIN
 
     IF v_existing_variant_id IS NULL THEN
       INSERT INTO public.product_variants (
-        product_id, size, color, sku, stock, bizsathi_variant_id
+        product_id, size, color, sku, stock, bizsathi_variant_id, bizsathi_variant_name
       ) VALUES (
-        v_existing_product_id, null, null, v_sku, 0, v_variant_id
+        v_existing_product_id, null, null, v_sku, 0, v_variant_id, v_variant_name
       );
       v_created_variants := v_created_variants + 1;
     ELSE
@@ -138,7 +148,8 @@ BEGIN
         RAISE EXCEPTION 'Mapped BizSathi variant belongs to a different website product';
       END IF;
       UPDATE public.product_variants
-         SET sku = v_sku
+         SET sku = v_sku,
+             bizsathi_variant_name = v_variant_name
        WHERE id = v_existing_variant_id;
       v_updated_variants := v_updated_variants + 1;
     END IF;
