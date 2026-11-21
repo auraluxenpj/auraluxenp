@@ -286,6 +286,20 @@ jobs:
               'quantity', 1
             ));
 
+            BEGIN
+              PERFORM public.place_order('integration-checkout-disabled-0001', 'qr', customer, items, null);
+              RAISE EXCEPTION 'Mapped checkout should remain blocked until reservations are activated';
+            EXCEPTION WHEN raise_exception THEN
+              IF SQLERRM NOT LIKE 'Online checkout for this product is paused%' THEN
+                RAISE;
+              END IF;
+            END;
+            IF EXISTS (SELECT 1 FROM public.orders AS o WHERE o.checkout_key = 'integration-checkout-disabled-0001') THEN
+              RAISE EXCEPTION 'Disabled mapped checkout must not create an order';
+            END IF;
+
+            UPDATE public.bizsathi_checkout_reservation_config SET enabled = true WHERE id = 1;
+
             order_result := public.place_order(checkout_key, 'qr', customer, items, null);
             IF order_result->>'duplicate' <> 'false' THEN
               RAISE EXCEPTION 'First checkout must create a new order';
@@ -340,6 +354,7 @@ jobs:
             IF EXISTS (SELECT 1 FROM public.orders AS o WHERE o.checkout_key = 'integration-checkout-key-0002') THEN
               RAISE EXCEPTION 'Rejected ambiguous checkout must not leave an order';
             END IF;
+            UPDATE public.bizsathi_checkout_reservation_config SET enabled = false WHERE id = 1;
           END
           $test$;
           SQL
