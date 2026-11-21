@@ -87,13 +87,13 @@ jobs:
           GRANT SELECT, INSERT, UPDATE, DELETE ON storage.objects TO anon, authenticated, service_role;
           SQL
 
-      - name: Apply the 21 repository migrations to the temporary database
+      - name: Apply the 22 repository migrations to the temporary database
         run: |
           set -euo pipefail
           shopt -s nullglob
           migrations=(drizzle/migrations/[0-9][0-9][0-9][0-9]_*.sql)
-          if [ "${#migrations[@]}" -ne 21 ]; then
-            echo "Expected exactly 21 numbered SQL migrations; found ${#migrations[@]}."
+          if [ "${#migrations[@]}" -ne 22 ]; then
+            echo "Expected exactly 22 numbered SQL migrations; found ${#migrations[@]}."
             exit 1
           fi
           for migration in "${migrations[@]}"; do
@@ -157,6 +157,75 @@ jobs:
             END IF;
             IF NOT has_function_privilege('service_role', 'public.inv_sync_push(jsonb)', 'EXECUTE') THEN
               RAISE EXCEPTION 'Service-role inventory sync access must remain available';
+            END IF;
+          END
+          $test$;
+          SQL
+
+
+      - name: Verify BizSathi draft catalogue import is service-only and never writes stock
+        run: |
+          set -euo pipefail
+          psql "$DATABASE_URL" -v ON_ERROR_STOP=1 <<'SQL'
+          DO $test$
+          DECLARE
+            product_id uuid := '11111111-1111-4111-8111-111111111111';
+            variant_id uuid := '22222222-2222-4222-8222-222222222222';
+            payload jsonb;
+            result jsonb;
+          BEGIN
+            IF has_function_privilege('authenticated', 'public.upsert_bizsathi_catalogue_drafts(jsonb)', 'EXECUTE') THEN
+              RAISE EXCEPTION 'Authenticated browser users must not execute catalogue import';
+            END IF;
+            IF NOT has_function_privilege('service_role', 'public.upsert_bizsathi_catalogue_drafts(jsonb)', 'EXECUTE') THEN
+              RAISE EXCEPTION 'Service role must execute catalogue import';
+            END IF;
+
+            payload := jsonb_build_array(jsonb_build_object(
+              'product_id', product_id,
+              'variant_id', variant_id,
+              'name', 'Integration Test Dress',
+              'category', 'Dress',
+              'variant_name', 'Standard',
+              'sku', 'AL-INTEGRATION-TEST-001',
+              'selling_price', 1200
+            ));
+
+            result := public.upsert_bizsathi_catalogue_drafts(payload);
+            IF (result->>'created_products')::integer <> 1
+               OR (result->>'created_variants')::integer <> 1
+               OR result->>'stock_imported' <> 'false'
+               OR result->>'products_published' <> 'false' THEN
+              RAISE EXCEPTION 'Catalogue import did not create a safe unpublished draft';
+            END IF;
+
+            IF NOT EXISTS (
+              SELECT 1 FROM public.products
+               WHERE bizsathi_product_id = product_id
+                 AND is_published = false AND stock = 0
+            ) THEN
+              RAISE EXCEPTION 'New catalogue product must remain unpublished with zero local stock';
+            END IF;
+
+            UPDATE public.products SET is_published = true, stock = 7
+             WHERE bizsathi_product_id = product_id;
+            UPDATE public.product_variants SET stock = 5
+             WHERE bizsathi_variant_id = variant_id;
+
+            result := public.upsert_bizsathi_catalogue_drafts(payload || '[]'::jsonb);
+            IF (result->>'updated_products')::integer <> 1
+               OR (result->>'updated_variants')::integer <> 1 THEN
+              RAISE EXCEPTION 'Repeat import must update existing source mappings';
+            END IF;
+            IF NOT EXISTS (
+              SELECT 1 FROM public.products
+               WHERE bizsathi_product_id = product_id
+                 AND is_published = true AND stock = 7
+            ) OR NOT EXISTS (
+              SELECT 1 FROM public.product_variants
+               WHERE bizsathi_variant_id = variant_id AND stock = 5
+            ) THEN
+              RAISE EXCEPTION 'Repeat import must preserve publication state and local stock';
             END IF;
           END
           $test$;
