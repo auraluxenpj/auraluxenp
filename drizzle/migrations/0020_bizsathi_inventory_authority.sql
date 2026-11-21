@@ -73,6 +73,67 @@ $proof_cancel$;
 REVOKE ALL ON FUNCTION public.cancel_website_inventory_proof(uuid) FROM PUBLIC,anon,authenticated;
 GRANT EXECUTE ON FUNCTION public.cancel_website_inventory_proof(uuid) TO service_role;
 
+-- SKU-level website availability maps to products only, never to size/colour rows.
+CREATE FUNCTION public.bizsathi_inventory_projection_state(_skus text[])
+RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=public AS $projection_state$
+DECLARE sku text; matches integer; current_stock integer; pending integer; result jsonb:='[]'::jsonb;
+BEGIN
+  IF coalesce(array_length(_skus,1),0)>100 THEN RAISE EXCEPTION 'Too many SKUs'; END IF;
+  FOREACH sku IN ARRAY coalesce(_skus,ARRAY[]::text[]) LOOP
+    SELECT count(*) INTO matches FROM public.products p WHERE lower(btrim(p.sku))=lower(btrim(sku));
+    current_stock:=NULL;
+    IF matches=1 THEN SELECT p.stock INTO current_stock FROM public.products p WHERE lower(btrim(p.sku))=lower(btrim(sku)); END IF;
+    SELECT coalesce(sum(a.delta),0) INTO pending FROM public.inventory_sync_acks a
+      WHERE a.sku=lower(btrim(sku)) AND a.status='pending';
+    result:=result||jsonb_build_array(jsonb_build_object(
+      'sku',sku,'match',CASE WHEN matches=1 THEN 'product' WHEN matches>1 THEN 'ambiguous' ELSE 'none' END,
+      'current',current_stock,'pending',pending));
+  END LOOP;
+  RETURN result;
+END
+$projection_state$;
+REVOKE ALL ON FUNCTION public.bizsathi_inventory_projection_state(text[]) FROM PUBLIC,anon,authenticated;
+GRANT EXECUTE ON FUNCTION public.bizsathi_inventory_projection_state(text[]) TO service_role;
+
+CREATE FUNCTION public.bizsathi_inventory_project(_items jsonb)
+RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=public AS $projection_write$
+DECLARE item jsonb; sku text; key text; wanted integer; expected integer; matches integer; product_id uuid; current_stock integer; pending integer; outcome text; result jsonb:='[]'::jsonb;
+BEGIN
+  IF jsonb_typeof(_items) IS DISTINCT FROM 'array' OR jsonb_array_length(_items) NOT BETWEEN 1 AND 100 THEN
+    RAISE EXCEPTION 'Invalid projection batch';
+  END IF;
+  FOR item IN SELECT value FROM jsonb_array_elements(_items) LOOP
+    sku:=btrim(item->>'sku'); key:=lower(sku);
+    wanted:=(item->>'stock')::integer; expected:=(item->>'expected')::integer;
+    IF coalesce(key,'')='' OR wanted IS NULL OR wanted<0 OR expected IS NULL OR expected<0 THEN
+      RAISE EXCEPTION 'Invalid projected stock for SKU';
+    END IF;
+    SELECT count(*) INTO matches FROM public.products p WHERE lower(btrim(p.sku))=key;
+    IF matches=0 THEN outcome:='no-match';
+    ELSIF matches>1 THEN outcome:='ambiguous';
+    ELSE
+      SELECT p.id,p.stock INTO product_id,current_stock FROM public.products p
+        WHERE lower(btrim(p.sku))=key FOR UPDATE;
+      SELECT coalesce(sum(a.delta),0) INTO pending FROM public.inventory_sync_acks a
+        WHERE a.sku=key AND a.status='pending';
+      IF pending<>0 THEN outcome:='pending';
+      ELSIF current_stock<>expected THEN outcome:='changed';
+      ELSE
+        UPDATE public.products SET stock=wanted,updated_at=now() WHERE id=product_id;
+        INSERT INTO public.inventory_sync_state(sku,last_stock) VALUES(key,wanted)
+          ON CONFLICT(sku) DO UPDATE SET last_stock=EXCLUDED.last_stock,updated_at=now();
+        INSERT INTO public.inventory_sync_log(sku,before_stock,after_stock) VALUES(key,current_stock,wanted);
+        outcome:='applied';
+      END IF;
+    END IF;
+    result:=result||jsonb_build_array(jsonb_build_object('sku',sku,'result',outcome,'before',current_stock,'after',CASE WHEN outcome='applied' THEN wanted ELSE current_stock END));
+  END LOOP;
+  RETURN result;
+END
+$projection_write$;
+REVOKE ALL ON FUNCTION public.bizsathi_inventory_project(jsonb) FROM PUBLIC,anon,authenticated;
+GRANT EXECUTE ON FUNCTION public.bizsathi_inventory_project(jsonb) TO service_role;
+
 CREATE FUNCTION public.guard_bizsathi_inventory_authority_stock()
 RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path=public AS $stock_guard$
 BEGIN
