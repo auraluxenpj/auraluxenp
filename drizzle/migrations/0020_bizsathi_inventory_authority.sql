@@ -26,6 +26,8 @@ REVOKE ALL ON public.website_inventory_reservation_proofs FROM PUBLIC,anon,authe
 GRANT ALL ON public.website_inventory_reservation_proofs TO service_role;
 
 ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS inventory_operation_id uuid;
+ALTER TABLE public.pos_sales ADD COLUMN IF NOT EXISTS inventory_operation_id uuid;
+CREATE UNIQUE INDEX IF NOT EXISTS pos_sales_inventory_operation_id_uniq ON public.pos_sales(inventory_operation_id) WHERE inventory_operation_id IS NOT NULL;
 CREATE UNIQUE INDEX IF NOT EXISTS orders_inventory_operation_id_uniq
   ON public.orders(inventory_operation_id) WHERE inventory_operation_id IS NOT NULL;
 
@@ -135,6 +137,8 @@ DECLARE body text; start_pos integer; end_pos integer; anchor_pos integer; stock
 BEGIN
   SELECT pg_get_functiondef('public.complete_pos_sale(jsonb)'::regprocedure) INTO body;
   body:=replace(body,'receipt_no text;','receipt_no text; v_authority_enabled boolean := false;');
+  body:=replace(body,'request_key,request_fingerprint,operator_id','request_key,inventory_operation_id,request_fingerprint,operator_id');
+  body:=replace(body,'req_key,fingerprint,actor','req_key,CASE WHEN v_authority_enabled THEN req_key ELSE NULL END,fingerprint,actor');
   body:=replace(body,' IF NOT public.can_use_pos() THEN',
     ' SELECT enabled INTO v_authority_enabled FROM public.website_inventory_authority WHERE id=1; v_authority_enabled:=coalesce(v_authority_enabled,false);'||nl||
     ' IF NOT public.can_use_pos() THEN');
