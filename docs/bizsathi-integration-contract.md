@@ -37,7 +37,7 @@ This outbox is a foundation, not an activated stock writer. It must not be conne
 
 1. Review and merge the BizSathi workspace-ID correction after CI.
 2. Apply this additive website schema migration only after review; it does not import catalogue rows or alter stock.
-3. Review the draft-only catalogue export/upsert implementation in BizSathi PR #178 and website PR #26; its current supported fields are product name, category, variant label, SKU and selling price. Image, description, size and colour transfer remain unavailable where BizSathi has no source values.
+3. Review the draft-only catalogue export/upsert implementation in BizSathi PR #178 and website PR #26; its current supported fields are product name, category, variant label, model code, SKU and selling price. Only one of 407 active BizSathi products has an image path, and all 407 active variant labels are Standard/STANDARD. Description, actual size and colour values are not present in the current source schema.
 4. Reconcile the existing 13 website products against BizSathi's active catalogue; manually resolve ambiguous matches. Exact SKU intersection was zero in the initial audit, so existing products are not auto-linked by suffix or approximate name.
 5. Implement BizSathi reservation/commit/cancel/return RPCs and the website server-side checkout saga.
 6. Implement the outbox worker, retry/dead-letter visibility, and reconciliation reports.
