@@ -40,6 +40,7 @@ declare
   v_bizsathi_variant_id uuid;
   v_bizsathi_sku text;
   v_mapped_variant_count integer;
+  v_bizsathi_checkout_enabled boolean := false;
 begin
   -- ---- customer validation (server-side, never trusting the browser) ----
   v_name := nullif(trim(p_customer->>'customer_name'), '');
@@ -74,6 +75,10 @@ begin
   if not found then
     raise exception 'Online payment is not configured yet';
   end if;
+
+  IF EXISTS (SELECT 1 FROM public.bizsathi_checkout_reservation_config WHERE id = 1 AND enabled) THEN
+    v_bizsathi_checkout_enabled := true;
+  END IF;
 
   if p_payment_method = 'qr' then
     if not (v_settings.qr_enabled
@@ -121,6 +126,9 @@ begin
     if not found then
       raise exception 'A product in your bag is no longer available';
     end if;
+    IF v_product.bizsathi_product_id IS NOT NULL AND NOT v_bizsathi_checkout_enabled THEN
+      RAISE EXCEPTION 'Online checkout for this product is paused until BizSathi stock reservations are activated';
+    END IF;
 
     if array_length(v_product.sizes, 1) is not null
        and not (coalesce(v_item->>'size', '') = any(v_product.sizes)) then
