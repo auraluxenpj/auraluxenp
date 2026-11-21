@@ -93,6 +93,9 @@ export const updateOrderStatus = createServerFn({ method: 'POST' })
       .single();
     if (readError || !order) throw new Error('Order not found or access denied');
 
+    if (authorityEnabled === true && order.inventory_operation_id && order.status === 'pending' && !['confirmed', 'cancelled'].includes(data.status)) {
+      throw new Error('A pending order must be confirmed or cancelled before fulfilment status can advance.');
+    }
     if (authorityEnabled === true && !order.inventory_operation_id && order.status === 'pending') {
       throw new Error('This pre-integration order needs stock reconciliation in BizSathi before its status can change.');
     }
