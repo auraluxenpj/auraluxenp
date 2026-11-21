@@ -120,6 +120,13 @@
       "when": 1792820280865,
       "tag": "0016_inventory_sync_push_guard",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1795280000000,
+      "tag": "0017_bizsathi_inventory_integration_foundation",
+      "breakpoints": true
     }
   ]
 }
