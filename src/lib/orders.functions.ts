@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { createClient } from "@supabase/supabase-js";
 import { getRequestHeader } from '@tanstack/react-start/server';
-import { callBizSathiInventory } from './bizsathi-inventory.server';
+import { callBizSathiInventory, deriveInventoryOperationId } from './bizsathi-inventory.server';
 import { z } from "zod";
 import type { Database } from "@/integrations/supabase/types";
 
