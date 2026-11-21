@@ -337,7 +337,7 @@ jobs:
               END IF;
             END;
 
-            IF EXISTS (SELECT 1 FROM public.orders WHERE checkout_key = 'integration-checkout-key-0002') THEN
+            IF EXISTS (SELECT 1 FROM public.orders AS o WHERE o.checkout_key = 'integration-checkout-key-0002') THEN
               RAISE EXCEPTION 'Rejected ambiguous checkout must not leave an order';
             END IF;
           END
