@@ -2,7 +2,15 @@
 
 ## Implementation status
 
-**Prepared, not activated.** `src/lib/shared-inventory-contract.ts` defines version 1 request validation and pure safety rules. Its tests verify protocol validation only; no endpoint, database migration, stock writer, or recovery worker currently executes this protocol. The existing `/api/public/inventory-sync` is the legacy manual comparison/absolute-push protocol and must not be treated as the new transaction protocol.
+**Implemented in feature branches; not activated.** The website branch now includes:
+
+- A cutover switch, server-only reservation proof table, and service-role proof RPCs in migration `0020_bizsathi_inventory_authority.sql`. The switch is seeded disabled.
+- Checkout server flow that reserves SKU quantities in BizSathi before creating an order, preserves guest checkout, registers a server-only proof, and leaves the reservation pending until confirmation.
+- Order status handling that commits on confirmation and releases on pending-order cancellation. Pre-cutover pending orders are blocked for reconciliation after activation; committed orders cannot be cancelled as if their reservation were still open.
+- Website POS reserve/commit integration using the POS request key as the idempotency key.
+- A guarded website projection endpoint at `/api/public/bizsathi-inventory`. It accepts only service-authenticated SKU-level quantities, checks current website stock and pending acknowledgements, and uses compare-and-set stock updates.
+- Database guards that block legacy website product/variant stock writes when BizSathi authority is enabled. The old checkout/POS stock checks and deductions are bypassed only under that explicit switch.
+- The old `/api/public/inventory-sync` remains the legacy manual comparison/absolute-push protocol and must not be treated as the new transaction protocol.
 
 BizSathi is the single source of truth for Auraluxe inventory. The Auraluxe website is a sales channel and availability projection. The BizSathi Nepalgunj branch is the fulfilment branch for this integration. No stock authority changes or live synchronization are enabled by this preparation.
 
