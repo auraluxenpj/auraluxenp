@@ -318,6 +318,7 @@ export type Database = {
           product_name?: string
           quantity?: number
           size?: string | null
+          source_sku?: string | null
           unit_price?: number
         }
         Relationships: [
