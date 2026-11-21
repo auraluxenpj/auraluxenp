@@ -3,6 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { updateOrderStatus } from "@/lib/orders.functions";
 
 export const Route = createFileRoute("/_authenticated/admin/orders")({
   component: Orders,
@@ -35,6 +36,15 @@ type Order = Awaited<ReturnType<typeof fetchOrders>>[number];
 
 function Orders() {
   const { data: orders = [], isLoading } = useQuery({ queryKey: ["admin", "orders"], queryFn: fetchOrders });
+  const authorityQuery = useQuery({
+    queryKey: ["inventory-authority"],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("website_inventory_authority_enabled");
+      if (error) throw error;
+      return data === true;
+    },
+  });
+  const inventoryAuthorityEnabled = authorityQuery.data !== false;
   const [q, setQ] = useState("");
   const [filter, setFilter] = useState<Status | "all">("all");
 
@@ -74,12 +84,29 @@ function OrderCard({ o }: { o: Order }) {
 
   async function update(patch: { status?: Status; payment_status?: PayStatus; tracking_number?: string | null }, msg: string) {
     setBusy(true);
-    const { error } = await supabase.from("orders").update(patch).eq("id", o.id);
-    setBusy(false);
-    if (error) {
-      toast.error(error.message);
-      return;
+    if (patch.status) {
+      try {
+        await updateOrderStatus({
+          data: {
+            orderId: o.id,
+            status: patch.status,
+            trackingNumber: patch.tracking_number,
+          },
+        });
+      } catch (error) {
+        setBusy(false);
+        toast.error(error instanceof Error ? error.message : "Order update failed");
+        return;
+      }
+    } else {
+      const { error } = await supabase.from("orders").update(patch).eq("id", o.id);
+      if (error) {
+        setBusy(false);
+        toast.error(error.message);
+        return;
+      }
     }
+    setBusy(false);
     toast.success(msg);
     qc.invalidateQueries({ queryKey: ["admin", "orders"] });
   }
@@ -148,7 +175,7 @@ function OrderCard({ o }: { o: Order }) {
             {o.tracking_number ? <p className="text-muted-foreground">Tracking: {o.tracking_number}</p> : null}
           </div>
 
-          {(status === "cancelled" || status === "returned") ? <Restock o={o} /> : null}
+          {(status === "cancelled" || status === "returned") ? <Restock o={o} inventoryAuthorityEnabled={inventoryAuthorityEnabled} /> : null}
 
           <div className="space-y-2">
             <p className="label-caps text-muted-foreground">Payment</p>
@@ -167,7 +194,7 @@ function OrderCard({ o }: { o: Order }) {
   );
 }
 
-function Restock({ o }: { o: Order }) {
+function Restock({ o, inventoryAuthorityEnabled }: { o: Order; inventoryAuthorityEnabled: boolean }) {
   const qc = useQueryClient();
   const [reviewing, setReviewing] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -175,6 +202,9 @@ function Restock({ o }: { o: Order }) {
 
   if (o.restocked_at) {
     return <p className="text-sm text-muted-foreground">Items restored to stock on {new Date(o.restocked_at).toLocaleString()}.</p>;
+  }
+  if (inventoryAuthorityEnabled) {
+    return <p className="text-sm text-muted-foreground">BizSathi is the stock authority. Process returned or damaged items in BizSathi; website restocking is disabled.</p>;
   }
 
   async function save() {
