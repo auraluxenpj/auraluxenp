@@ -75,6 +75,19 @@ BEGIN
       FROM jsonb_array_elements(_items) AS e(value)
      WHERE e.value->>'product_id' = v_product_id::text;
 
+    IF EXISTS (
+      SELECT 1 FROM public.product_variants pv
+       WHERE lower(btrim(pv.sku)) = lower(v_sku)
+         AND pv.bizsathi_variant_id IS DISTINCT FROM v_variant_id
+    ) OR EXISTS (
+      SELECT 1 FROM public.products p
+       WHERE p.sku IS NOT NULL
+         AND lower(btrim(p.sku)) = lower(v_sku)
+         AND p.bizsathi_product_id IS DISTINCT FROM v_product_id
+    ) THEN
+      RAISE EXCEPTION 'SKU already exists on an unmapped or different website record; manual identity review required';
+    END IF;
+
     IF v_name IS NULL OR length(v_name) > 200
        OR length(v_category) > 100
        OR length(v_variant_name) > 100
