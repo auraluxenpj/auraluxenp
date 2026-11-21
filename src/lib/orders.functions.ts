@@ -141,3 +141,135 @@ export const updateOrderStatus = createServerFn({ method: 'POST' })
     if (updateError) throw new Error(updateError.message || 'Order status update failed');
     return { success: true };
   });
+
+
+const acceptReturnInputSchema = z.object({
+  orderId: z.string().uuid(),
+  items: z.array(z.object({
+    orderItemId: z.string().uuid(),
+    quantity: z.number().int().min(0).max(99),
+    restockQuantity: z.number().int().min(0).max(99),
+  }).strict()).min(1).max(50),
+}).strict();
+
+type ReturnOrderRow = { id: string; status: string; inventory_operation_id: string | null };
+type ReturnOrderItemRow = { id: string; source_sku: string | null; quantity: number };
+
+export const acceptOrderReturn = createServerFn({ method: 'POST' })
+  .inputValidator((input: unknown) => acceptReturnInputSchema.parse(input))
+  .handler(async ({ data }) => {
+    const url = process.env['SUPABASE_URL'];
+    const key = process.env['SUPABASE_PUBLISHABLE_KEY'];
+    if (!url || !key) throw new Error('Store database is not configured');
+    const authHeader = getRequestHeader('authorization');
+    const bearerToken = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : '';
+    if (!bearerToken) throw new Error('Administrator access required');
+    const client = createClient<Database>(url, key, {
+      auth: { persistSession: false, autoRefreshToken: false },
+      global: { headers: { Authorization: authHeader! } },
+    });
+    const { data: authData, error: authError } = await client.auth.getUser(bearerToken);
+    if (authError || !authData.user) throw new Error('Administrator access required');
+    const { data: isAdmin, error: roleError } = await client.rpc('has_role', {
+      _user_id: authData.user.id,
+      _role: 'admin',
+    });
+    if (roleError || isAdmin !== true) throw new Error('Administrator access required');
+
+    type QueryResult<T> = { data: T | null; error: { message: string } | null };
+    type ReturnDb = {
+      from: (table: string) => {
+        select: (columns: string) => {
+          eq: (column: string, value: string) => {
+            single: () => Promise<QueryResult<unknown>>;
+          };
+        };
+        update: (values: Record<string, unknown>) => {
+          eq: (column: string, value: string) => Promise<{ error: { message: string } | null }>;
+        };
+      };
+    };
+    const db = client as unknown as ReturnDb;
+    const { data: orderValue, error: orderError } = await db.from('orders')
+      .select('id,status,inventory_operation_id')
+      .eq('id', data.orderId)
+      .single();
+    const order = orderValue as ReturnOrderRow | null;
+    if (orderError || !order) throw new Error('Order not found or access denied');
+    if (!['delivered', 'returned'].includes(order.status)) {
+      throw new Error('Only delivered orders can be returned');
+    }
+    if (!order.inventory_operation_id) {
+      throw new Error('This order has no verified BizSathi reservation. Reconcile it before accepting a return.');
+    }
+
+    const { data: itemValue, error: itemError } = await db.from('order_items')
+      .select('id,source_sku,quantity')
+      .eq('order_id', data.orderId)
+      .single();
+    if (itemError || !itemValue) {
+      // order_items is a collection; use the dedicated list query below.
+      const listDb = client as unknown as {
+        from: (table: string) => {
+          select: (columns: string) => {
+            eq: (column: string, value: string) => Promise<QueryResult<unknown[]>>;
+          };
+        };
+      };
+      const listed = await listDb.from('order_items').select('id,source_sku,quantity').eq('order_id', data.orderId);
+      if (listed.error || !listed.data) throw new Error('Could not verify the items in this order');
+      const orderItems = listed.data as ReturnOrderItemRow[];
+      return await submitReturn(orderItems, order, data, db);
+    }
+    throw new Error('Could not verify the order items');
+  });
+
+async function submitReturn(
+  orderItems: ReturnOrderItemRow[],
+  order: ReturnOrderRow,
+  data: z.infer<typeof acceptReturnInputSchema>,
+  db: {
+    from: (table: string) => {
+      update: (values: Record<string, unknown>) => {
+        eq: (column: string, value: string) => Promise<{ error: { message: string } | null }>;
+      };
+    };
+  },
+) {
+  const selected = new Map(data.items.map((item) => [item.orderItemId, item]));
+  if (selected.size !== data.items.length) throw new Error('Duplicate order item in return request');
+  const totals = new Map<string, { quantity: number; restockQuantity: number }>();
+  for (const line of orderItems) {
+    const input = selected.get(line.id);
+    if (!input) continue;
+    if (input.quantity > line.quantity || input.restockQuantity > input.quantity) {
+      throw new Error('Returned and restock quantities cannot exceed the purchased quantity');
+    }
+    if (input.quantity === 0) continue;
+    const sku = line.source_sku?.trim();
+    if (!sku) throw new Error('A returned item has no verified BizSathi SKU. Resolve its mapping before accepting the return.');
+    const current = totals.get(sku) ?? { quantity: 0, restockQuantity: 0 };
+    current.quantity += input.quantity;
+    current.restockQuantity += input.restockQuantity;
+    totals.set(sku, current);
+  }
+  if ([...selected.keys()].some((id) => !orderItems.some((line) => line.id === id))) {
+    throw new Error('Return request contains an item that does not belong to this order');
+  }
+  if (totals.size === 0) throw new Error('Enter at least one returned item');
+  const operationId = await deriveInventoryOperationId(`auraluxe:return:${order.id}`);
+  await callBizSathiInventory({
+    action: 'accept_return',
+    operationId,
+    reservationId: order.inventory_operation_id,
+    reference: order.id,
+    items: [...totals.entries()].map(([sku, quantities]) => ({
+      sku,
+      quantity: quantities.quantity,
+      restockQuantity: quantities.restockQuantity,
+    })),
+  });
+  const { error: updateError } = await db.from('orders').update({ status: 'returned' }).eq('id', order.id);
+  if (updateError) throw new Error('BizSathi accepted the return, but the website order status could not be updated. Retry the same return quantities to complete reconciliation.');
+  return { success: true };
+}
