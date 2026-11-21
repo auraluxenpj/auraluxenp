@@ -28,6 +28,10 @@ export const getPosQr = createServerFn({method:'GET'}).middleware([requireSupaba
 });
 const saleSchema = z.object({request_key:z.string().uuid(),customer_id:z.string().uuid().nullable(),payment_method:z.enum(['cash','qr','credit']),cart_discount:z.number().finite().min(0).max(999999999),tendered:z.number().finite().min(0).max(999999999),qr_confirmed:z.boolean(),items:z.array(z.object({product_id:z.string().uuid(),size:z.string().max(100).nullable(),color:z.string().max(100).nullable(),quantity:z.number().int().min(1).max(99),discount:z.number().finite().min(0).max(999999999)})).min(1).max(100)});
 export const completePosSale = createServerFn({method:'POST'}).middleware([requireSupabaseAuth]).inputValidator((input:unknown)=>saleSchema.parse(input)).handler(async ({data,context})=>{
+  // Check POS permission before reserving remote stock; otherwise a signed-in
+  // non-POS user could create temporary BizSathi holds before the local RPC denies the sale.
+  const {data:canUsePos,error:posPermissionError}=await context.supabase.rpc('can_use_pos');
+  if(posPermissionError||canUsePos!==true) throw new Error('POS access denied');
   const {data:enabled,error:authorityError}=await context.supabase.rpc('website_inventory_authority_enabled');
   if(authorityError) throw new Error('Could not verify the inventory authority setting');
   const db=context.supabase as unknown as {
