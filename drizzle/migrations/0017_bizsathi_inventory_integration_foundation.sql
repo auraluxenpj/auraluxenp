@@ -160,5 +160,8 @@ CREATE TRIGGER orders_enqueue_bizsathi_state_event
   FOR EACH ROW
   EXECUTE FUNCTION public.enqueue_bizsathi_order_state_event();
 
+REVOKE ALL ON FUNCTION public.enqueue_bizsathi_order_item_event() FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON FUNCTION public.enqueue_bizsathi_order_state_event() FROM PUBLIC, anon, authenticated;
+
 COMMENT ON TABLE public.bizsathi_inventory_outbox IS
   'Durable, PII-minimized website order events awaiting BizSathi reconciliation. BizSathi remains the inventory authority; this outbox is not activated until the reservation/commit protocol is implemented.';
