@@ -36,6 +36,15 @@ type Order = Awaited<ReturnType<typeof fetchOrders>>[number];
 
 function Orders() {
   const { data: orders = [], isLoading } = useQuery({ queryKey: ["admin", "orders"], queryFn: fetchOrders });
+  const authorityQuery = useQuery({
+    queryKey: ["inventory-authority"],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("website_inventory_authority_enabled");
+      if (error) throw error;
+      return data === true;
+    },
+  });
+  const inventoryAuthorityEnabled = authorityQuery.data !== false;
   const [q, setQ] = useState("");
   const [filter, setFilter] = useState<Status | "all">("all");
 
@@ -166,7 +175,7 @@ function OrderCard({ o }: { o: Order }) {
             {o.tracking_number ? <p className="text-muted-foreground">Tracking: {o.tracking_number}</p> : null}
           </div>
 
-          {(status === "cancelled" || status === "returned") ? <Restock o={o} /> : null}
+          {(status === "cancelled" || status === "returned") ? <Restock o={o} inventoryAuthorityEnabled={inventoryAuthorityEnabled} /> : null}
 
           <div className="space-y-2">
             <p className="label-caps text-muted-foreground">Payment</p>
@@ -185,7 +194,7 @@ function OrderCard({ o }: { o: Order }) {
   );
 }
 
-function Restock({ o }: { o: Order }) {
+function Restock({ o, inventoryAuthorityEnabled }: { o: Order; inventoryAuthorityEnabled: boolean }) {
   const qc = useQueryClient();
   const [reviewing, setReviewing] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -193,6 +202,9 @@ function Restock({ o }: { o: Order }) {
 
   if (o.restocked_at) {
     return <p className="text-sm text-muted-foreground">Items restored to stock on {new Date(o.restocked_at).toLocaleString()}.</p>;
+  }
+  if (inventoryAuthorityEnabled) {
+    return <p className="text-sm text-muted-foreground">BizSathi is the stock authority. Process returned or damaged items in BizSathi; website restocking is disabled.</p>;
   }
 
   async function save() {
