@@ -187,6 +187,7 @@ jobs:
               'name', 'Integration Test Dress',
               'category', 'Dress',
               'variant_name', 'Standard',
+              'model_code', 'MODEL-TEST-001',
               'sku', 'AL-INTEGRATION-TEST-001',
               'selling_price', 1200
             ));
@@ -223,7 +224,7 @@ jobs:
                  AND is_published = true AND stock = 7
             ) OR NOT EXISTS (
               SELECT 1 FROM public.product_variants
-               WHERE bizsathi_variant_id = variant_id AND stock = 5
+               WHERE bizsathi_variant_id = variant_id AND stock = 5 AND bizsathi_model_code = 'MODEL-TEST-001'
             ) THEN
               RAISE EXCEPTION 'Repeat import must preserve publication state and local stock';
             END IF;
