@@ -29,4 +29,5 @@ export function validatePosPayment(method: string, customerId: string | null, to
   if (method === 'cash' && (!Number.isFinite(tendered) || tendered < total)) throw new Error('Cash received is below the total');
   if (method === 'qr' && (!qrReady || !confirmed)) throw new Error('Confirm funds received in merchant account');
 }
-export function nepalDay(iso: string) { return new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kathmandu', year:'numeric', month:'2-digit', day:'2-digit' }).format(new Date(iso)); }
+export function nepalDay(iso: string) { return new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kathmandu', year:'numeric', month:'2-digit', day:'2-digit' }).format(new Date(iso)); 
+  inventoryAuthorityEnabled?: boolean;}
