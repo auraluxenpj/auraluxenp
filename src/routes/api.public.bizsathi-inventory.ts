@@ -61,7 +61,7 @@ export const Route = createFileRoute('/api/public/bizsathi-inventory')({
           const db = supabaseAdmin as unknown as InventoryRpcClient;
           const authority = await db.rpc('website_inventory_authority_enabled', {});
           if (authority.error || authority.data !== true) return json({ error: 'BizSathi inventory authority is not enabled' }, 503);
-          const state = await db.rpc('inv_sync_state', { _skus: parsed.items.map((item) => item.sku) });
+          const state = await db.rpc('bizsathi_inventory_projection_state', { _skus: parsed.items.map((item) => item.sku) });
           if (state.error || !Array.isArray(state.data)) return json({ error: 'Could not verify current website stock' }, 503);
           const bySku = new Map<string, { match?: unknown; current?: unknown; pending?: unknown }>();
           for (const row of state.data) {
@@ -83,7 +83,7 @@ export const Route = createFileRoute('/api/public/bizsathi-inventory')({
           }
           if (mismatches.length) return json({ ok: false, mismatches }, 409);
 
-          const pushed = await db.rpc('inv_sync_push', { _items: pushItems });
+          const pushed = await db.rpc('bizsathi_inventory_project', { _items: pushItems });
           if (pushed.error || !Array.isArray(pushed.data)) return json({ error: 'Website stock projection update failed' }, 503);
           const results = pushed.data as Array<{ sku?: string; result?: string }>;
           const failed = results.filter((row) => row.result !== 'applied').map((row) => row.sku ?? 'unknown');
