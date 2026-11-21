@@ -203,7 +203,7 @@ jobs:
             IF NOT EXISTS (
               SELECT 1 FROM public.products
                WHERE bizsathi_product_id = product_id
-                 AND is_published = false AND stock = 0
+                 AND is_published = false AND stock = 0 AND model_code = 'MODEL-TEST-001'
             ) THEN
               RAISE EXCEPTION 'New catalogue product must remain unpublished with zero local stock';
             END IF;
