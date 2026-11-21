@@ -73,6 +73,19 @@ export const updateOrderStatus = createServerFn({ method: 'POST' })
       auth: { persistSession: false, autoRefreshToken: false },
       global: { headers: authHeader ? { Authorization: authHeader } : {} },
     });
+    // Authorize before any cross-system stock mutation. RLS on the later
+    // orders UPDATE is not sufficient: BizSathi must never be committed or
+    // cancelled for a customer who can only read their own order.
+    const bearerToken = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : '';
+    if (!bearerToken) throw new Error('Administrator access required');
+    const { data: authData, error: authError } = await client.auth.getUser(bearerToken);
+    if (authError || !authData.user) throw new Error('Administrator access required');
+    const { data: isAdmin, error: roleError } = await client.rpc('has_role', {
+      _user_id: authData.user.id,
+      _role: 'admin',
+    });
+    if (roleError || isAdmin !== true) throw new Error('Administrator access required');
+
     const db = client as unknown as {
       from: (table: string) => {
         select: (columns: string) => {
