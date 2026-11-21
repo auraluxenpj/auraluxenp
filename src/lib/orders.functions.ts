@@ -203,25 +203,17 @@ export const acceptOrderReturn = createServerFn({ method: 'POST' })
       throw new Error('This order has no verified BizSathi reservation. Reconcile it before accepting a return.');
     }
 
-    const { data: itemValue, error: itemError } = await db.from('order_items')
-      .select('id,source_sku,quantity')
-      .eq('order_id', data.orderId)
-      .single();
-    if (itemError || !itemValue) {
-      // order_items is a collection; use the dedicated list query below.
-      const listDb = client as unknown as {
-        from: (table: string) => {
-          select: (columns: string) => {
-            eq: (column: string, value: string) => Promise<QueryResult<unknown[]>>;
-          };
+    const listDb = client as unknown as {
+      from: (table: string) => {
+        select: (columns: string) => {
+          eq: (column: string, value: string) => Promise<QueryResult<unknown[]>>;
         };
       };
-      const listed = await listDb.from('order_items').select('id,source_sku,quantity').eq('order_id', data.orderId);
-      if (listed.error || !listed.data) throw new Error('Could not verify the items in this order');
-      const orderItems = listed.data as ReturnOrderItemRow[];
-      return await submitReturn(orderItems, order, data, db);
-    }
-    throw new Error('Could not verify the order items');
+    };
+    const listed = await listDb.from('order_items').select('id,source_sku,quantity').eq('order_id', data.orderId);
+    if (listed.error || !listed.data) throw new Error('Could not verify the items in this order');
+    const orderItems = listed.data as ReturnOrderItemRow[];
+    return await submitReturn(orderItems, order, data, db);
   });
 
 async function submitReturn(
