@@ -3,7 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { updateOrderStatus } from "@/lib/orders.functions";
+import { acceptOrderReturn, updateOrderStatus } from "@/lib/orders.functions";
 
 export const Route = createFileRoute("/_authenticated/admin/orders")({
   component: Orders,
@@ -27,7 +27,7 @@ const PAYMENT_LABEL: Record<string, string> = { cod: "Cash on Delivery (old)", q
 async function fetchOrders() {
   const { data, error } = await supabase
     .from("orders")
-    .select("*, order_items(id, product_id, product_name, size, color, quantity, unit_price, products(stock))")
+    .select("*, order_items(id, product_id, product_name, size, color, quantity, unit_price, source_sku, products(stock))")
     .order("created_at", { ascending: false });
   if (error) throw error;
   return data;
@@ -165,9 +165,7 @@ function OrderCard({ o }: { o: Order }) {
               {status === "shipped" ? (
                 <button disabled={busy} onClick={() => update({ status: "delivered" }, "Marked as delivered")} className={`${btn} bg-primary text-primary-foreground`}>Mark delivered</button>
               ) : null}
-              {status === "delivered" ? (
-                <button disabled={busy} onClick={() => confirm("Mark this order as returned?") && update({ status: "returned" }, "Marked as returned")} className={`${btn} border border-border`}>Mark returned</button>
-              ) : null}
+              {status === "delivered" ? (o.inventory_operation_id ? <ReturnForm o={o} /> : <button disabled={busy} onClick={() => confirm("Mark this legacy order as returned?") && update({ status: "returned" }, "Marked as returned")} className={`${btn} border border-border`}>Mark returned</button>) : null}
               {!done ? (
                 <button disabled={busy} onClick={() => confirm("Cancel this order?") && update({ status: "cancelled" }, "Order cancelled")} className={`${btn} border border-border text-destructive`}>Cancel order</button>
               ) : null}
@@ -191,6 +189,83 @@ function OrderCard({ o }: { o: Order }) {
         </div>
       ) : null}
     </li>
+  );
+}
+
+
+function ReturnForm({ o }: { o: Order }) {
+  const qc = useQueryClient();
+  const [reviewing, setReviewing] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [quantities, setQuantities] = useState<Record<string, number>>(() => Object.fromEntries(o.order_items.map((item) => [item.id, 0])));
+  const [restock, setRestock] = useState<Record<string, number>>(() => Object.fromEntries(o.order_items.map((item) => [item.id, 0])));
+
+  async function submit() {
+    setBusy(true);
+    try {
+      await acceptOrderReturn({
+        data: {
+          orderId: o.id,
+          items: o.order_items.map((item) => ({
+            orderItemId: item.id,
+            quantity: quantities[item.id] ?? 0,
+            restockQuantity: restock[item.id] ?? 0,
+          })),
+        },
+      });
+      toast.success("Return accepted by BizSathi and order marked returned");
+      qc.invalidateQueries({ queryKey: ["admin", "orders"] });
+      setReviewing(false);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Return could not be accepted");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  if (!reviewing) {
+    return <button onClick={() => setReviewing(true)} className="rounded-full border border-border px-4 py-2 text-sm">Review and accept return</button>;
+  }
+
+  return (
+    <div className="space-y-3 rounded-xl border border-border p-3">
+      <p className="text-xs text-muted-foreground">Enter the quantity physically received and how many are sellable. Damaged or unsellable units must have restock quantity 0. Submit all returned lines together; this order supports one accepted return submission.</p>
+      <div className="space-y-3">
+        {o.order_items.map((item) => {
+          const returned = quantities[item.id] ?? 0;
+          const restockable = restock[item.id] ?? 0;
+          return (
+            <div key={item.id} className="grid grid-cols-1 gap-2 border-b border-border pb-3 sm:grid-cols-[minmax(0,1fr)_90px_90px] sm:items-center">
+              <div>
+                <p className="font-medium">{item.product_name}{item.size ? ` · ${item.size}` : ""}{item.color ? ` · ${item.color}` : ""}</p>
+                <p className="text-xs text-muted-foreground">Purchased: {item.quantity} · SKU: {item.source_sku ?? "Not mapped"}</p>
+              </div>
+              <label className="text-xs text-muted-foreground">Returned
+                <input type="number" min={0} max={item.quantity} value={returned}
+                  onChange={(event) => {
+                    const value = Math.max(0, Math.min(item.quantity, Number(event.target.value) || 0));
+                    setQuantities((current) => ({ ...current, [item.id]: value }));
+                    setRestock((current) => ({ ...current, [item.id]: Math.min(current[item.id] ?? 0, value) }));
+                  }}
+                  className="mt-1 w-full rounded-lg border border-border bg-background px-2 py-1 text-sm" />
+              </label>
+              <label className="text-xs text-muted-foreground">Sellable
+                <input type="number" min={0} max={returned} value={restockable}
+                  onChange={(event) => setRestock((current) => ({ ...current, [item.id]: Math.max(0, Math.min(returned, Number(event.target.value) || 0)) }))}
+                  className="mt-1 w-full rounded-lg border border-border bg-background px-2 py-1 text-sm" />
+              </label>
+            </div>
+          );
+        })}
+      </div>
+      <div className="flex flex-wrap gap-2">
+        <button disabled={busy || !o.order_items.some((item) => (quantities[item.id] ?? 0) > 0)} onClick={submit}
+          className="rounded-full bg-primary px-4 py-2 text-sm text-primary-foreground disabled:opacity-50">
+          {busy ? "Submitting…" : "Accept return in BizSathi"}
+        </button>
+        <button disabled={busy} onClick={() => setReviewing(false)} className="rounded-full border border-border px-4 py-2 text-sm">Cancel</button>
+      </div>
+    </div>
   );
 }
 
