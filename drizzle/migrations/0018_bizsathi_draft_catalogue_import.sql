@@ -1,6 +1,7 @@
 -- Draft-only BizSathi catalogue import. No stock is imported and no product is published.
 ALTER TABLE public.product_variants
-  ADD COLUMN IF NOT EXISTS bizsathi_variant_name text;
+  ADD COLUMN IF NOT EXISTS bizsathi_variant_name text,
+  ADD COLUMN IF NOT EXISTS bizsathi_model_code text;
 
 CREATE OR REPLACE FUNCTION public.upsert_bizsathi_catalogue_drafts(_items jsonb)
 RETURNS jsonb
@@ -19,6 +20,7 @@ DECLARE
   v_category text;
   v_name text;
   v_variant_name text;
+  v_model_code text;
   v_sku text;
   v_price numeric;
   v_product_price numeric;
@@ -67,6 +69,7 @@ BEGIN
     v_name := nullif(btrim(r->>'name'), '');
     v_category := coalesce(nullif(btrim(r->>'category'), ''), 'Uncategorised');
     v_variant_name := coalesce(nullif(btrim(r->>'variant_name'), ''), 'Standard');
+    v_model_code := nullif(btrim(r->>'model_code'), '');
     v_sku := nullif(btrim(r->>'sku'), '');
     v_price := (r->>'selling_price')::numeric;
     SELECT min((e.value->>'selling_price')::numeric),
@@ -91,6 +94,7 @@ BEGIN
     IF v_name IS NULL OR length(v_name) > 200
        OR length(v_category) > 100
        OR length(v_variant_name) > 100
+       OR length(v_model_code) > 64
        OR v_sku IS NULL OR length(v_sku) > 80
        OR v_price IS NULL OR v_price < 0
        OR v_price::text IN ('NaN','Infinity','-Infinity') THEN
@@ -147,9 +151,9 @@ BEGIN
 
     IF v_existing_variant_id IS NULL THEN
       INSERT INTO public.product_variants (
-        product_id, size, color, sku, stock, bizsathi_variant_id, bizsathi_variant_name
+        product_id, size, color, sku, stock, bizsathi_variant_id, bizsathi_variant_name, bizsathi_model_code
       ) VALUES (
-        v_existing_product_id, null, null, v_sku, 0, v_variant_id, v_variant_name
+        v_existing_product_id, null, null, v_sku, 0, v_variant_id, v_variant_name, v_model_code
       );
       v_created_variants := v_created_variants + 1;
     ELSE
@@ -162,7 +166,8 @@ BEGIN
       END IF;
       UPDATE public.product_variants
          SET sku = v_sku,
-             bizsathi_variant_name = v_variant_name
+             bizsathi_variant_name = v_variant_name,
+             bizsathi_model_code = v_model_code
        WHERE id = v_existing_variant_id;
       v_updated_variants := v_updated_variants + 1;
     END IF;
