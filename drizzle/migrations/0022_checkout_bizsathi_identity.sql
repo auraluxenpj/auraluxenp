@@ -352,4 +352,4 @@ begin
     'duplicate', false
   );
 end;
-$function$
+$function$;
