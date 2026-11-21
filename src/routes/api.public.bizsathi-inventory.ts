@@ -59,6 +59,8 @@ export const Route = createFileRoute('/api/public/bizsathi-inventory')({
         try {
           const { supabaseAdmin } = await import('@/integrations/supabase/client.server');
           const db = supabaseAdmin as unknown as InventoryRpcClient;
+          const authority = await db.rpc('website_inventory_authority_enabled', {});
+          if (authority.error || authority.data !== true) return json({ error: 'BizSathi inventory authority is not enabled' }, 503);
           const state = await db.rpc('inv_sync_state', { _skus: parsed.items.map((item) => item.sku) });
           if (state.error || !Array.isArray(state.data)) return json({ error: 'Could not verify current website stock' }, 503);
           const bySku = new Map<string, { match?: unknown; current?: unknown; pending?: unknown }>();
