@@ -11,6 +11,15 @@ export const syncRequest = z.discriminatedUnion('action', [
   z.object({ action: z.literal('ack'), skus }),
   z.object({ action: z.literal('recorded'), ids: z.array(z.string().uuid()).min(1).max(2000) }),
   z.object({ action: z.literal('push'), items: z.array(z.object({ sku, stock: z.number().int().min(0).max(1_000_000), expected: z.number().int().min(0).max(1_000_000) })).min(1).max(2000) }),
+  z.object({ action: z.literal('catalogue_drafts'), items: z.array(z.object({
+    product_id: z.string().uuid(),
+    variant_id: z.string().uuid(),
+    name: z.string().trim().min(1).max(200),
+    category: z.string().trim().max(100),
+    variant_name: z.string().trim().min(1).max(100),
+    sku: z.string().trim().min(1).max(80).regex(/^\\S+$/, 'SKU cannot contain spaces'),
+    selling_price: z.number().finite().min(0).max(100_000_000),
+  }).strict()).min(1).max(500) }).strict(),
 ]);
 export type SyncRequest = z.infer<typeof syncRequest>;
 
@@ -41,6 +50,7 @@ export async function runSync(db: RpcClient, req: SyncRequest): Promise<Record<s
     case 'ack': return { acks: await call('inv_sync_ack', { _skus: req.skus }) };
     case 'recorded': return { count: await call('inv_sync_recorded', { _ids: req.ids }) };
     case 'push': return { results: await call('inv_sync_push', { _items: req.items }) };
+    case 'catalogue_drafts': return { result: await call('upsert_bizsathi_catalogue_drafts', { _items: req.items }) };
   }
 }
 
