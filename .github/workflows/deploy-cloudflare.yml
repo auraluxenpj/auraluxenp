@@ -105,7 +105,7 @@ jobs:
           check_peer "https://www.auraluxe.com.np/api/public/inventory-peer-auth-check" "Auraluxe-to-BizSathi"
           check_peer "https://bizsathi-migration.auraluxe26.workers.dev/api/public/inventory-peer-auth-check" "BizSathi-to-Auraluxe"
           if [ "$failures" -ne 0 ]; then exit 1; fi
-          echo "Both Workers authenticated to their peer using the configured shared secret."
+          echo "Both inventory Workers authenticated to their peer using the configured shared secret."
       - name: Smoke-test deployed storefront and PWA icon
         run: |
           set -euo pipefail
