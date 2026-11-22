@@ -95,7 +95,7 @@ jobs:
             body="$(mktemp)"
             status="$(curl --silent --show-error --output "$body" --write-out '%{http_code}' "$url")"
             printf '%s diagnostic: ' "$label"
-            jq -c '{ok, localSecretConfigured, peerHttpStatus, peerAuthenticated, failure}' "$body"
+            jq -c '{ok, localSecretConfigured, peerHttpStatus, peerAuthenticated, failure, errorName, causeCode, causeName}' "$body"
             if [ "$status" != "200" ] || ! jq -e '.ok == true and .localSecretConfigured == true and .peerAuthenticated == true' "$body" >/dev/null; then
               echo "::error::$label authenticated peer check failed (HTTP $status)."
               failures=1
