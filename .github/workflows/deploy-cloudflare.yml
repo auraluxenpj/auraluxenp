@@ -67,6 +67,23 @@ jobs:
             '.success == true and (.result.bindings | any(.[]; .name == "BIZSATHI_INVENTORY_API_URL" and .type == "plain_text" and .text == $expected))' >/dev/null
           echo "BizSathi inventory API URL binding is present on the deployed Worker."
 
+      - name: Verify read-only inventory auth probes reject unauthenticated requests
+        run: |
+          set -euo pipefail
+          check_unauthenticated() {
+            local url="$1"
+            local status
+            status="$(curl --silent --show-error --output /tmp/auth-probe-response --write-out '%{http_code}' "$url")"
+            if [ "$status" != "401" ]; then
+              echo "Expected HTTP 401 from read-only auth probe; received $status."
+              cat /tmp/auth-probe-response
+              exit 1
+            fi
+          }
+          check_unauthenticated "https://www.auraluxe.com.np/api/public/bizsathi-inventory-auth"
+          check_unauthenticated "https://bizsathi-migration.auraluxe26.workers.dev/api/public/website-inventory-auth"
+          echo "Both production auth probes are reachable and reject unauthenticated requests."
+
       - name: Smoke-test deployed storefront and PWA icon
         run: |
           set -euo pipefail
