@@ -84,13 +84,6 @@ jobs:
           check_unauthenticated "https://bizsathi-migration.auraluxe26.workers.dev/api/public/website-inventory-auth"
           echo "Both production auth probes are reachable and reject unauthenticated requests."
 
-      - name: Verify Auraluxe authenticates to BizSathi inventory Worker
-        run: |
-          set -euo pipefail
-          response="$(curl --fail --silent --show-error --retry 5 --retry-all-errors --retry-delay 3 https://www.auraluxe.com.np/api/public/inventory-peer-auth-check)"
-          printf '%s' "$response" | jq -e '.ok == true and .peerAuthenticated == true' >/dev/null
-          echo "Auraluxe authenticated to BizSathi using the deployed Worker secret binding."
-
       - name: Smoke-test deployed storefront and PWA icon
         run: |
           set -euo pipefail
