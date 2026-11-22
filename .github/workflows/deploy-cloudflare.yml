@@ -51,7 +51,7 @@ jobs:
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: 2a5ced50e8aafc5fbc9b0329cf25f84e
-          command: deploy .output/server/index.mjs --assets .output/public --name auraluxenp --compatibility-date 2026-11-20 --compatibility-flags nodejs_compat --compatibility-flags global_fetch_strictly_public --var SUPABASE_URL:https://jsshaoucrjorbyuzagdr.supabase.co --var SUPABASE_PUBLISHABLE_KEY:sb_publishable_ti84mMAfbpf5l2a6n-czjw_8OLu-OJA --var BIZSATHI_INVENTORY_API_URL:https://bizsathi-migration.auraluxe26.workers.dev/api/public/website-inventory
+          command: deploy .output/server/index.mjs --assets .output/public --name auraluxenp --compatibility-date 2026-11-20 --compatibility-flags nodejs_compat global_fetch_strictly_public --var SUPABASE_URL:https://jsshaoucrjorbyuzagdr.supabase.co --var SUPABASE_PUBLISHABLE_KEY:sb_publishable_ti84mMAfbpf5l2a6n-czjw_8OLu-OJA --var BIZSATHI_INVENTORY_API_URL:https://bizsathi-migration.auraluxe26.workers.dev/api/public/website-inventory
 
       - name: Verify BizSathi inventory API URL binding on the active Worker
         env:
