@@ -1,4 +1,6 @@
 {
-  // Preview defaults are intentionally empty; production configuration remains unchanged.
+  // Keep production Worker runtime compatibility in source control.
+  "compatibility_date": "2026-11-20",
+  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
   "previews": {}
 }
