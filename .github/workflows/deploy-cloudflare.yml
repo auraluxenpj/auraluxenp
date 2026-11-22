@@ -87,6 +87,7 @@ jobs:
       - name: Verify authenticated inventory peer connectivity in both directions
         run: |
           set -euo pipefail
+          failures=0
           check_peer() {
             local url="$1"
             local label="$2"
@@ -97,13 +98,13 @@ jobs:
             jq -c '{ok, localSecretConfigured, peerHttpStatus, peerAuthenticated, failure}' "$body"
             if [ "$status" != "200" ] || ! jq -e '.ok == true and .localSecretConfigured == true and .peerAuthenticated == true' "$body" >/dev/null; then
               echo "::error::$label authenticated peer check failed (HTTP $status)."
-              rm -f "$body"
-              return 1
+              failures=1
             fi
             rm -f "$body"
           }
           check_peer "https://www.auraluxe.com.np/api/public/inventory-peer-auth-check" "Auraluxe-to-BizSathi"
           check_peer "https://bizsathi-migration.auraluxe26.workers.dev/api/public/inventory-peer-auth-check" "BizSathi-to-Auraluxe"
+          if [ "$failures" -ne 0 ]; then exit 1; fi
           echo "Both Workers authenticated to their peer using the configured shared secret."
       - name: Smoke-test deployed storefront and PWA icon
         run: |
