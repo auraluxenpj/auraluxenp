@@ -35,7 +35,7 @@ export async function callBizSathiInventory(
       Accept: 'application/json',
     },
     body: JSON.stringify(payload),
-    redirect: 'error',
+    redirect: 'manual',
     signal: AbortSignal.timeout(8000),
   });
   const result: unknown = await response.json().catch(() => null);
