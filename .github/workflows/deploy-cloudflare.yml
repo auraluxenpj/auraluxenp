@@ -53,6 +53,20 @@ jobs:
           accountId: 2a5ced50e8aafc5fbc9b0329cf25f84e
           command: deploy .output/server/index.mjs --assets .output/public --name auraluxenp --compatibility-date 2026-11-20 --compatibility-flags nodejs_compat --var SUPABASE_URL:https://jsshaoucrjorbyuzagdr.supabase.co --var SUPABASE_PUBLISHABLE_KEY:sb_publishable_ti84mMAfbpf5l2a6n-czjw_8OLu-OJA --var BIZSATHI_INVENTORY_API_URL:https://bizsathi-migration.auraluxe26.workers.dev/api/public/website-inventory
 
+      - name: Verify BizSathi inventory API URL binding on the active Worker
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          ACCOUNT_ID: 2a5ced50e8aafc5fbc9b0329cf25f84e
+          EXPECTED_URL: https://bizsathi-migration.auraluxe26.workers.dev/api/public/website-inventory
+        run: |
+          set -euo pipefail
+          response="$(curl --fail --silent --show-error \
+            -H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" \
+            "https://api.cloudflare.com/client/v4/accounts/${ACCOUNT_ID}/workers/scripts/auraluxenp/settings")"
+          printf '%s' "$response" | jq -e --arg expected "$EXPECTED_URL" \
+            '.success == true and (.result.bindings | any(.[]; .name == "BIZSATHI_INVENTORY_API_URL" and .type == "plain_text" and .text == $expected))' >/dev/null
+          echo "BizSathi inventory API URL binding is present on the deployed Worker."
+
       - name: Smoke-test deployed storefront and PWA icon
         run: |
           set -euo pipefail
