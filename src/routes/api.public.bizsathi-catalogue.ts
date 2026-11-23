@@ -3,14 +3,24 @@ import { z } from 'zod';
 
 const MAX_BODY_BYTES = 1_000_000;
 const itemSchema = z.object({
-  product_id: z.string().uuid(),
-  variant_id: z.string().uuid(),
-  name: z.string().trim().min(1).max(200),
-  category: z.string().trim().max(100),
-  variant_name: z.string().trim().min(1).max(100),
-  model_code: z.string().trim().min(1).max(64),
-  sku: z.string().trim().min(1).max(80).regex(/^\S+$/),
-  selling_price: z.number().finite().min(0).max(100_000_000),
+  product_id: z.string().uuid().optional(),
+  variant_id: z.string().uuid().optional(),
+  name: z.string().trim().max(200).optional().nullable(),
+  category: z.string().trim().max(100).optional().nullable(),
+  variant_name: z.string().trim().max(100).optional().nullable(),
+  model_code: z.string().trim().max(64).optional().nullable(),
+  sku: z.string().trim().min(1).max(80).regex(/^\\S+$/),
+  unit: z.string().trim().max(30).optional().nullable(),
+  sizes: z.array(z.string().trim().max(30)).max(30).optional(),
+  qty: z.number().finite().min(0).optional(),
+  purchase_price: z.number().finite().min(0).optional(),
+  mrp: z.number().finite().min(0).optional(),
+  selling_price: z.number().finite().min(0),
+  wholesale_price: z.number().finite().min(0).optional(),
+  reorder_level: z.number().finite().min(0).optional(),
+  published: z.boolean().optional(),
+  notes: z.string().max(2000).optional().nullable(),
+  barcode: z.string().trim().max(80).optional().nullable(),
 }).strict();
 const requestSchema = z.object({ items: z.array(itemSchema).min(1).max(500) }).strict();
 
@@ -66,26 +76,19 @@ export const Route = createFileRoute('/api/public/bizsathi-catalogue')({
           return json({ error: 'Invalid catalogue batch' }, 400);
         }
 
-        const variants = new Set<string>();
         const skus = new Set<string>();
         for (const item of parsed.items) {
-          const variantId = item.variant_id.toLowerCase();
           const sku = item.sku.toLowerCase();
-          if (variants.has(variantId) || skus.has(sku)) {
-            return json({ error: 'Duplicate variant identity or SKU in catalogue batch' }, 400);
-          }
-          variants.add(variantId);
+          if (skus.has(sku)) return json({ error: 'Duplicate SKU in catalogue batch' }, 400);
           skus.add(sku);
         }
 
         try {
           const { supabaseAdmin } = await import('@/integrations/supabase/client.server');
           const db = supabaseAdmin as unknown as RpcClient;
-          const result = await db.rpc('upsert_bizsathi_catalogue_drafts', {
-            _items: parsed.items,
-          });
+          const result = await db.rpc('upsert_shared_catalogue_from_bizsathi', { _items: parsed.items });
           if (result.error || !result.data || typeof result.data !== 'object') {
-            console.error('[bizsathi-catalogue] draft import failed', result.error?.message ?? 'invalid RPC response');
+            console.error('[bizsathi-catalogue] shared import failed', result.error?.message ?? 'invalid RPC response');
             return json({ error: 'Catalogue import failed' }, 503);
           }
           return json({ result: result.data });
