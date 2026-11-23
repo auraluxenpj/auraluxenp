@@ -282,6 +282,28 @@ $new$;
   EXECUTE changed;
 END $patch_pooled_size_checkout$;
 
+
+-- Return exact cross-system IDs from each SKU upsert so BizSathi can persist
+-- the approved Auraluxe mapping before a stock movement is eligible to publish.
+DO $patch_catalogue_mapping_response$
+DECLARE body text; changed text;
+BEGIN
+  SELECT pg_get_functiondef('public.upsert_shared_catalogue_from_bizsathi(jsonb)'::regprocedure) INTO body;
+  changed:=replace(body,
+    '  v_updated_variants integer := 0;',
+    E'  v_updated_variants integer := 0;\n  v_mappings jsonb := ''[]''::jsonb;');
+  changed:=replace(changed,
+    E'    END IF;\n  END LOOP;\n\n  RETURN jsonb_build_object(',
+    E'    END IF;\n    v_mappings:=v_mappings||jsonb_build_array(jsonb_build_object(\n      ''sku'',v_sku,''auraluxe_product_id'',v_product_id,''auraluxe_variant_id'',v_variant_id,\n      ''bizsathi_product_id'',v_remote_product_id,''bizsathi_variant_id'',v_remote_variant_id));\n  END LOOP;\n\n  RETURN jsonb_build_object(');
+  changed:=replace(changed,
+    E'''website_enrichment_preserved'',true);',
+    E'''website_enrichment_preserved'',true,''mappings'',v_mappings);');
+  IF changed=body OR position(''mappings'',v_mappings' in changed)=0 THEN
+    RAISE EXCEPTION 'Could not install catalogue mapping response';
+  END IF;
+  EXECUTE changed;
+END $patch_catalogue_mapping_response$;
+
 COMMENT ON TABLE public.bizsathi_stock_baselines IS
   'Owner-approved physical count baseline for one pooled SKU. Event delivery cannot start until this record exists.';
 COMMENT ON TABLE public.bizsathi_stock_events IS
