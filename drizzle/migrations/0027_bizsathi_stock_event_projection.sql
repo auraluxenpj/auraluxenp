@@ -45,6 +45,7 @@ CREATE TABLE public.bizsathi_stock_baselines (
   auraluxe_variant_id uuid NOT NULL UNIQUE,
   sku text NOT NULL UNIQUE CHECK(length(btrim(sku)) BETWEEN 1 AND 80),
   baseline_quantity integer NOT NULL CHECK(baseline_quantity>=0),
+  bizsathi_ledger_quantity integer NOT NULL CHECK(bizsathi_ledger_quantity>=0 AND bizsathi_ledger_quantity=baseline_quantity),
   last_version bigint NOT NULL DEFAULT 0 CHECK(last_version>=0),
   verification_reference text NOT NULL CHECK(length(btrim(verification_reference)) BETWEEN 1 AND 200),
   verified_by uuid NOT NULL REFERENCES auth.users(id) ON DELETE RESTRICT,
@@ -91,6 +92,7 @@ CREATE OR REPLACE FUNCTION public.register_bizsathi_stock_baseline(
   _auraluxe_variant_id uuid,
   _sku text,
   _quantity integer,
+  _bizsathi_ledger_quantity integer,
   _verification_reference text
 ) RETURNS jsonb
 LANGUAGE plpgsql SECURITY DEFINER SET search_path=public AS $$
@@ -99,8 +101,8 @@ BEGIN
   IF auth.uid() IS NULL OR NOT public.has_role(auth.uid(),'admin') THEN
     RAISE EXCEPTION 'Auraluxe administrator access required';
   END IF;
-  IF _quantity IS NULL OR _quantity<0 OR coalesce(length(btrim(_verification_reference)),0) NOT BETWEEN 1 AND 200 THEN
-    RAISE EXCEPTION 'A verified whole-unit physical count and reference are required';
+  IF _quantity IS NULL OR _quantity<0 OR _bizsathi_ledger_quantity IS NULL OR _bizsathi_ledger_quantity<0 OR _quantity<>_bizsathi_ledger_quantity OR coalesce(length(btrim(_verification_reference)),0) NOT BETWEEN 1 AND 200 THEN
+    RAISE EXCEPTION 'Physical count, matching BizSathi ledger quantity and count reference are required';
   END IF;
   IF coalesce((SELECT stock_enabled FROM public.bizsathi_sync_control WHERE id=1),false) THEN
     RAISE EXCEPTION 'Disable stock event delivery before registering or correcting a baseline';
@@ -130,14 +132,14 @@ BEGIN
   UPDATE public.product_variants SET stock=_quantity WHERE id=_auraluxe_variant_id;
   INSERT INTO public.bizsathi_stock_baselines(
     bizsathi_product_id,bizsathi_variant_id,auraluxe_product_id,auraluxe_variant_id,
-    sku,baseline_quantity,last_version,verification_reference,verified_by
+    sku,baseline_quantity,bizsathi_ledger_quantity,last_version,verification_reference,verified_by
   ) VALUES (
     _bizsathi_product_id,_bizsathi_variant_id,_auraluxe_product_id,_auraluxe_variant_id,
-    lower(btrim(_sku)),_quantity,0,btrim(_verification_reference),auth.uid()
+    lower(btrim(_sku)),_quantity,_bizsathi_ledger_quantity,0,btrim(_verification_reference),auth.uid()
   );
   RETURN jsonb_build_object('ok',true,'duplicate',false,'baselineQuantity',_quantity);
 END $$;
-REVOKE ALL ON FUNCTION public.register_bizsathi_stock_baseline(uuid,uuid,uuid,uuid,text,integer,text) FROM PUBLIC,anon;
+REVOKE ALL ON FUNCTION public.register_bizsathi_stock_baseline(uuid,uuid,uuid,uuid,text,integer,integer,text) FROM PUBLIC,anon;
 GRANT EXECUTE ON FUNCTION public.register_bizsathi_stock_baseline(uuid,uuid,uuid,uuid,text,integer,text) TO authenticated;
 
 CREATE OR REPLACE FUNCTION public.apply_bizsathi_stock_event(
