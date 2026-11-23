@@ -127,7 +127,7 @@ BEGIN
     RAISE EXCEPTION 'A baseline already exists; a reviewed recount workflow is required';
   END IF;
   UPDATE public.products SET stock=_quantity,updated_at=now() WHERE id=_auraluxe_product_id;
-  UPDATE public.product_variants SET stock=_quantity,updated_at=now() WHERE id=_auraluxe_variant_id;
+  UPDATE public.product_variants SET stock=_quantity WHERE id=_auraluxe_variant_id;
   INSERT INTO public.bizsathi_stock_baselines(
     bizsathi_product_id,bizsathi_variant_id,auraluxe_product_id,auraluxe_variant_id,
     sku,baseline_quantity,last_version,verification_reference,verified_by
@@ -201,7 +201,7 @@ BEGIN
   IF p.stock+_delta<0 OR v.stock+_delta<0 THEN RAISE EXCEPTION 'Stock event would make Auraluxe stock negative'; END IF;
 
   UPDATE public.products SET stock=stock+_delta,updated_at=now() WHERE id=_auraluxe_product_id;
-  UPDATE public.product_variants SET stock=stock+_delta,updated_at=now() WHERE id=_auraluxe_variant_id;
+  UPDATE public.product_variants SET stock=stock+_delta WHERE id=_auraluxe_variant_id;
   INSERT INTO public.bizsathi_stock_events(
     event_id,source_table,source_id,bizsathi_product_id,bizsathi_variant_id,
     auraluxe_product_id,auraluxe_variant_id,sku,sku_version,delta
