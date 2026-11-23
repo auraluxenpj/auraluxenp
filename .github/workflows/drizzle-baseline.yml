@@ -243,6 +243,7 @@ jobs:
               RAISE EXCEPTION 'New catalogue product must remain unpublished with zero local stock';
             END IF;
 
+            PERFORM set_config('app.stock_sync_origin','bizsathi',true);
             UPDATE public.products SET is_published = true, stock = 7
              WHERE bizsathi_product_id = product_id;
             UPDATE public.product_variants SET stock = 5
