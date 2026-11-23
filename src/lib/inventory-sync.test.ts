@@ -50,9 +50,16 @@ describe('inventory sync endpoint', () => {
     expect(res.status).toBe(500);
     expect(await res.text()).toBe('Sync failed');
   });
+  it('accepts normal SKU values and requires a non-empty model number', () => {
+    const id = '11111111-1111-4111-8111-111111111111';
+    const base = { product_id: id, variant_id: id, name: 'Test Dress', category: 'Dress', variant_name: 'Standard', model_code: 'MODEL-001', sku: 'AL-TEST-001', selling_price: 1200 };
+    expect(syncRequest.safeParse({ action: 'catalogue_drafts', items: [base] }).success).toBe(true);
+    expect(syncRequest.safeParse({ action: 'catalogue_drafts', items: [{ ...base, sku: 'AL TEST 001' }] }).success).toBe(false);
+    expect(syncRequest.safeParse({ action: 'catalogue_drafts', items: [{ ...base, model_code: null }] }).success).toBe(false);
+  });
   it('rejects catalogue import attempts to set stock, publication, or unknown fields', () => {
     const id = '11111111-1111-4111-8111-111111111111';
-    const base = { product_id: id, variant_id: id, name: 'Test Dress', category: 'Dress', variant_name: 'Standard', model_code: null, sku: 'AL-TEST-001', selling_price: 1200 };
+    const base = { product_id: id, variant_id: id, name: 'Test Dress', category: 'Dress', variant_name: 'Standard', model_code: 'MODEL-TEST-001', sku: 'AL-TEST-001', selling_price: 1200 };
     expect(syncRequest.safeParse({ action: 'catalogue_drafts', items: [{ ...base, stock: 50 }] }).success).toBe(false);
     expect(syncRequest.safeParse({ action: 'catalogue_drafts', items: [{ ...base, is_published: true }] }).success).toBe(false);
     expect(syncRequest.safeParse({ action: 'catalogue_drafts', items: [{ ...base, images: ['https://example.com/image.jpg'] }] }).success).toBe(false);
