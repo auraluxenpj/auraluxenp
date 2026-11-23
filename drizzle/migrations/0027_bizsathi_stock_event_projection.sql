@@ -74,6 +74,7 @@ CREATE TABLE public.bizsathi_stock_events (
   sku text NOT NULL CHECK(length(btrim(sku)) BETWEEN 1 AND 80),
   sku_version bigint NOT NULL CHECK(sku_version>=1),
   delta integer NOT NULL CHECK(delta<>0),
+  occurred_at timestamptz NOT NULL,
   applied_at timestamptz NOT NULL DEFAULT now(),
   UNIQUE(source_table,source_id),
   UNIQUE(bizsathi_variant_id,sku_version)
@@ -160,7 +161,8 @@ CREATE OR REPLACE FUNCTION public.apply_bizsathi_stock_event(
   _auraluxe_variant_id uuid,
   _sku text,
   _sku_version bigint,
-  _delta integer
+  _delta integer,
+  _occurred_at timestamptz
 ) RETURNS jsonb
 LANGUAGE plpgsql SECURITY DEFINER SET search_path=public AS $$
 DECLARE baseline public.bizsathi_stock_baselines; prior public.bizsathi_stock_events;
@@ -173,7 +175,7 @@ BEGIN
   END IF;
   IF _event_id IS NULL OR _source_id IS NULL
      OR _source_table NOT IN ('stock_movements','commerce_stock_movements','website_inventory_movements','website_inventory_return_movements')
-     OR _sku_version IS NULL OR _sku_version<1 OR _delta IS NULL OR _delta=0
+     OR _sku_version IS NULL OR _sku_version<1 OR _delta IS NULL OR _delta=0 OR _occurred_at IS NULL
      OR coalesce(length(btrim(_sku)),0) NOT BETWEEN 1 AND 80 THEN
     RAISE EXCEPTION 'Invalid BizSathi stock event';
   END IF;
@@ -185,7 +187,7 @@ BEGIN
     IF prior.event_id=_event_id AND prior.source_table=_source_table AND prior.source_id=_source_id
        AND prior.bizsathi_product_id=_bizsathi_product_id AND prior.bizsathi_variant_id=_bizsathi_variant_id
        AND prior.auraluxe_product_id=_auraluxe_product_id AND prior.auraluxe_variant_id=_auraluxe_variant_id
-       AND prior.sku=lower(btrim(_sku)) AND prior.sku_version=_sku_version AND prior.delta=_delta THEN
+       AND prior.sku=lower(btrim(_sku)) AND prior.sku_version=_sku_version AND prior.delta=_delta AND prior.occurred_at=_occurred_at THEN
       RETURN jsonb_build_object('ok',true,'duplicate',true,'sku',prior.sku,'delta',prior.delta);
     END IF;
     RAISE EXCEPTION 'Stock event identifier was reused with different content';
@@ -215,16 +217,16 @@ BEGIN
   UPDATE public.product_variants SET stock=stock+_delta WHERE id=_auraluxe_variant_id;
   INSERT INTO public.bizsathi_stock_events(
     event_id,source_table,source_id,bizsathi_product_id,bizsathi_variant_id,
-    auraluxe_product_id,auraluxe_variant_id,sku,sku_version,delta
+    auraluxe_product_id,auraluxe_variant_id,sku,sku_version,delta,occurred_at
   ) VALUES (
     _event_id,_source_table,_source_id,_bizsathi_product_id,_bizsathi_variant_id,
-    _auraluxe_product_id,_auraluxe_variant_id,lower(btrim(_sku)),_sku_version,_delta
+    _auraluxe_product_id,_auraluxe_variant_id,lower(btrim(_sku)),_sku_version,_delta,_occurred_at
   );
   UPDATE public.bizsathi_stock_baselines SET last_version=_sku_version,updated_at=now()
    WHERE bizsathi_variant_id=_bizsathi_variant_id;
   RETURN jsonb_build_object('ok',true,'duplicate',false,'sku',lower(btrim(_sku)),'delta',_delta,'version',_sku_version);
 END $$;
-REVOKE ALL ON FUNCTION public.apply_bizsathi_stock_event(uuid,text,uuid,uuid,uuid,uuid,uuid,text,bigint,integer) FROM PUBLIC,anon,authenticated;
+REVOKE ALL ON FUNCTION public.apply_bizsathi_stock_event(uuid,text,uuid,uuid,uuid,uuid,uuid,text,bigint,integer,timestamptz) FROM PUBLIC,anon,authenticated;
 GRANT EXECUTE ON FUNCTION public.apply_bizsathi_stock_event(uuid,text,uuid,uuid,uuid,uuid,uuid,text,bigint,integer) TO service_role;
 
 -- Auraluxe checkout selects a size as a merchandising attribute, but BizSathi
