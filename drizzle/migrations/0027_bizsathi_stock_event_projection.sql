@@ -307,12 +307,6 @@ BEGIN
     '  v_updated_variants integer := 0;',
     E'  v_updated_variants integer := 0;\n  v_mappings jsonb := ''[]''::jsonb;');
   changed:=replace(changed,
-    E'      UPDATE public.products SET name=v_name,category_id=v_category_id,price=v_price,',
-    E'      IF EXISTS (SELECT 1 FROM public.products WHERE id=v_product_id AND bizsathi_product_id IS NOT NULL AND bizsathi_product_id<>v_remote_product_id) THEN RAISE EXCEPTION ''SKU is already linked to a different BizSathi product''; END IF;\n      UPDATE public.products SET name=v_name,category_id=v_category_id,price=v_price,');
-  changed:=replace(changed,
-    E'      UPDATE public.product_variants SET\n        bizsathi_variant_id=coalesce(v_remote_variant_id,bizsathi_variant_id),',
-    E'      IF EXISTS (SELECT 1 FROM public.product_variants WHERE id=v_variant_id AND bizsathi_variant_id IS NOT NULL AND bizsathi_variant_id<>v_remote_variant_id) THEN RAISE EXCEPTION ''SKU is already linked to a different BizSathi variant''; END IF;\n      UPDATE public.product_variants SET\n        bizsathi_variant_id=coalesce(v_remote_variant_id,bizsathi_variant_id),');
-  changed:=replace(changed,
     E'    END IF;\n  END LOOP;\n\n  RETURN jsonb_build_object(',
     E'    END IF;\n    v_mappings:=v_mappings||jsonb_build_array(jsonb_build_object(\n      ''sku'',v_sku,''auraluxe_product_id'',v_product_id,''auraluxe_variant_id'',v_variant_id,\n      ''bizsathi_product_id'',v_remote_product_id,''bizsathi_variant_id'',v_remote_variant_id));\n  END LOOP;\n\n  RETURN jsonb_build_object(');
   changed:=replace(changed,
