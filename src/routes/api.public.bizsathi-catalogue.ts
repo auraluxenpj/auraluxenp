@@ -9,7 +9,7 @@ const itemSchema = z.object({
   category: z.string().trim().max(100),
   variant_name: z.string().trim().min(1).max(100),
   model_code: z.string().trim().min(1).max(64),
-  sku: z.string().trim().min(1).max(80).regex(/^\\S+$/),
+  sku: z.string().trim().min(1).max(80).regex(/^\S+$/),
   selling_price: z.number().finite().min(0).max(100_000_000),
 }).strict();
 const requestSchema = z.object({ items: z.array(itemSchema).min(1).max(500) }).strict();
