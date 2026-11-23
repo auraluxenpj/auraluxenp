@@ -1,15 +1,16 @@
 const MAX_OUTPUT_BYTES = 512 * 1024;
 
-type Options = { maxSize?: number };
-
-/** Strict image pipeline: returns only WebP files at or below 512 KiB, or throws. */
-export async function compressToWebp(file: File, { maxSize = 2000 }: Options = {}): Promise<File> {
+/** Convert a still raster image to WebP, progressively reducing it until it is <=512 KiB. */
+export async function compressToWebp(file: File, { maxSize = 2000 }: { maxSize?: number } = {}): Promise<File> {
   if (!file.type.startsWith('image/') || file.type === 'image/gif' || file.type === 'image/svg+xml') {
     throw new Error('Only still raster images can be converted to WebP.');
   }
   let bitmap: ImageBitmap;
-  try { bitmap = await createImageBitmap(file, { imageOrientation: 'from-image' }); }
-  catch { throw new Error('This image format is not supported. Please choose a JPG or PNG.'); }
+  try {
+    bitmap = await createImageBitmap(file, { imageOrientation: 'from-image' });
+  } catch {
+    throw new Error('This image format is not supported. Please choose a JPG or PNG.');
+  }
   try {
     let edge = Math.min(maxSize, Math.max(bitmap.width, bitmap.height));
     while (edge >= 320) {
@@ -24,12 +25,15 @@ export async function compressToWebp(file: File, { maxSize = 2000 }: Options = {
         const blob = await new Promise<Blob | null>(resolve => canvas.toBlob(resolve, 'image/webp', quality));
         if (!blob || blob.type !== 'image/webp') throw new Error('WebP conversion is not supported by this browser.');
         if (blob.size <= MAX_OUTPUT_BYTES) {
-          const baseName = file.name.replace(/\\.[^.]+$/, '') || 'image';
+          const dot = file.name.lastIndexOf('.');
+          const baseName = (dot > 0 ? file.name.slice(0, dot) : file.name) || 'image';
           return new File([blob], baseName + '.webp', { type: 'image/webp', lastModified: Date.now() });
         }
       }
       edge = Math.floor(edge * 0.8);
     }
     throw new Error('This image cannot be reduced below 512 KB. Choose a smaller or simpler image.');
-  } finally { bitmap.close(); }
+  } finally {
+    bitmap.close();
+  }
 }
