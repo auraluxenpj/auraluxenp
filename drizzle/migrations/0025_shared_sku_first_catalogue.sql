@@ -17,6 +17,16 @@ DO $drop_model_code_uniqueness$
 DECLARE r record;
 BEGIN
   FOR r IN
+    SELECT c.conname
+      FROM pg_constraint c
+      JOIN pg_class t ON t.oid=c.conrelid
+      JOIN pg_namespace n ON n.oid=t.relnamespace
+     WHERE n.nspname='public' AND t.relname='products' AND c.contype='u'
+       AND pg_get_constraintdef(c.oid) ILIKE '%model_code%'
+  LOOP
+    EXECUTE format('ALTER TABLE public.products DROP CONSTRAINT %I',r.conname);
+  END LOOP;
+  FOR r IN
     SELECT i.indexrelid::regclass AS index_name
       FROM pg_index i
       JOIN pg_class t ON t.oid=i.indrelid
@@ -24,6 +34,7 @@ BEGIN
       JOIN pg_attribute a ON a.attrelid=t.oid AND a.attname='model_code'
      WHERE n.nspname='public' AND t.relname='products'
        AND i.indisunique AND a.attnum=ANY(i.indkey)
+       AND NOT EXISTS (SELECT 1 FROM pg_constraint c WHERE c.conindid=i.indexrelid)
   LOOP
     EXECUTE format('DROP INDEX IF EXISTS %s',r.index_name);
   END LOOP;
@@ -127,7 +138,7 @@ BEGIN
     IF v_product_id IS NULL THEN
       v_slug:=trim(both '-' from regexp_replace(lower(v_name),'[^a-z0-9]+','-','g'));
       IF v_slug='' THEN v_slug:='product'; END IF;
-      v_slug:=left(v_slug,150)||'-'||left(encode(extensions.digest(v_sku,'sha256'),'hex'),10);
+      v_slug:=left(v_slug,150)||'-'||left(md5(v_sku),10);
       INSERT INTO public.categories(name,slug)
       VALUES(v_category,coalesce(nullif(trim(both '-' from regexp_replace(lower(v_category),'[^a-z0-9]+','-','g')),''),'uncategorised'))
       ON CONFLICT(slug) DO UPDATE SET name=excluded.name
