@@ -298,7 +298,7 @@ BEGIN
   changed:=replace(changed,
     E'''website_enrichment_preserved'',true);',
     E'''website_enrichment_preserved'',true,''mappings'',v_mappings);');
-  IF changed=body OR position(''mappings'',v_mappings' in changed)=0 THEN
+  IF changed=body OR position('mappings' in changed)=0 THEN
     RAISE EXCEPTION 'Could not install catalogue mapping response';
   END IF;
   EXECUTE changed;
