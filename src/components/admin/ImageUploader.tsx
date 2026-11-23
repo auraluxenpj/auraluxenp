@@ -2,6 +2,7 @@ import { useCallback, useRef, useState } from "react";
 import Cropper, { type Area } from "react-easy-crop";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { compressToWebp } from "@/lib/image-compress";
 
 const FRAMES = [
   { label: "Product (4:5)", value: 4 / 5 },
@@ -62,9 +63,10 @@ export function ImageUploader({ onUploaded, defaultAspect = 4 / 5 }: { onUploade
     if (!current || !area) return;
     setBusy(true);
     try {
-      const blob = await cropToBlob(current, area);
-      const path = `products/${Date.now()}-${crypto.randomUUID().slice(0, 8)}.jpg`;
-      const { error } = await supabase.storage.from("product-images").upload(path, blob, { contentType: "image/jpeg" });
+      const cropped = await cropToBlob(current, area);
+      const webp = await compressToWebp(new File([cropped], "product-photo.jpg", { type: "image/jpeg" }));
+      const path = `products/${Date.now()}-${crypto.randomUUID().slice(0, 8)}.webp`;
+      const { error } = await supabase.storage.from("product-images").upload(path, webp, { contentType: "image/webp" });
       if (error) throw error;
       const { data, error: sErr } = await supabase.storage.from("product-images").createSignedUrl(path, 60 * 60 * 24 * 365 * 20);
       if (sErr || !data) throw sErr ?? new Error("Could not get link");
