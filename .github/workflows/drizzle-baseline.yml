@@ -310,6 +310,7 @@ jobs:
             SELECT p.id,pv.id INTO first_product,first_variant
               FROM public.products p JOIN public.product_variants pv ON pv.product_id=p.id
              WHERE pv.sku='SYNC-TEST-ONE';
+            PERFORM set_config('app.stock_sync_origin','bizsathi',true);
             UPDATE public.products SET description='Website copy retained',meta_title='Keep this title',stock=7 WHERE id=first_product;
             UPDATE public.product_variants SET stock=5 WHERE id=first_variant;
             payload := jsonb_build_array(jsonb_build_object(
@@ -320,10 +321,16 @@ jobs:
               'purchase_price',550,'mrp',1550,'selling_price',1050,'wholesale_price',825,
               'reorder_level',2,'published',false,'barcode','SYNC-TEST-BAR-1'
             ));
-            result := public.upsert_shared_catalogue_from_bizsathi(payload);
+            UPDATE public.products SET is_published=true
+             WHERE name='Shared Test Two';
+            result := public.reconcile_bizsathi_catalogue(payload);
             IF (result->>'updated_products')::integer <> 1
-               OR (result->>'updated_variants')::integer <> 1 THEN
-              RAISE EXCEPTION 'Repeat import did not update by SKU';
+               OR (result->>'updated_variants')::integer <> 1
+               OR (result->>'unpublished_products')::integer < 1 THEN
+              RAISE EXCEPTION 'Full BizSathi snapshot did not update matching SKU and unpublish absent products';
+            END IF;
+            IF EXISTS (SELECT 1 FROM public.products WHERE name='Shared Test Two' AND is_published) THEN
+              RAISE EXCEPTION 'Auraluxe product absent from BizSathi snapshot remained published';
             END IF;
             IF NOT EXISTS (SELECT 1 FROM public.products WHERE id=first_product AND stock=7
               AND description='Website copy retained' AND meta_title='Keep this title') THEN
@@ -336,6 +343,13 @@ jobs:
             IF (SELECT count(*) FROM public.products WHERE model_code='DUPLICATE-MODEL')<>2 THEN
               RAISE EXCEPTION 'Repeated Model Code values must remain valid';
             END IF;
+            PERFORM set_config('app.stock_sync_origin','',true);
+            BEGIN
+              UPDATE public.product_variants SET stock=stock+1 WHERE id=first_variant;
+              RAISE EXCEPTION 'Auraluxe-origin stock edits must be blocked';
+            EXCEPTION WHEN raise_exception THEN
+              IF SQLERRM NOT LIKE 'BizSathi is the sole stock authority%' THEN RAISE; END IF;
+            END;
             UPDATE public.bizsathi_sync_control SET catalogue_enabled=false WHERE id=1;
           END
           $test$;
