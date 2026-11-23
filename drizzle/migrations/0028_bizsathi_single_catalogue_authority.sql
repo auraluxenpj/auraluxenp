@@ -122,7 +122,7 @@ BEGIN
     END IF;
   END IF;
   RETURN NEW;
-END $;
+END $$;
 REVOKE ALL ON FUNCTION public.guard_bizsathi_catalogue_publication() FROM PUBLIC,anon,authenticated;
 DROP TRIGGER IF EXISTS bizsathi_catalogue_publication_guard ON public.products;
 CREATE TRIGGER bizsathi_catalogue_publication_guard
