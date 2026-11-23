@@ -3,8 +3,8 @@ import { z } from 'zod';
 
 const MAX_BODY_BYTES = 1_000_000;
 const itemSchema = z.object({
-  product_id: z.string().uuid().optional(),
-  variant_id: z.string().uuid().optional(),
+  product_id: z.string().uuid(),
+  variant_id: z.string().uuid(),
   name: z.string().trim().max(200).optional().nullable(),
   category: z.string().trim().max(100).optional().nullable(),
   variant_name: z.string().trim().max(100).optional().nullable(),
