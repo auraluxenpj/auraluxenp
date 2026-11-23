@@ -279,6 +279,7 @@ jobs:
             first_product uuid;
             first_variant uuid;
           BEGIN
+            UPDATE public.bizsathi_sync_control SET catalogue_enabled=true WHERE id=1;
             IF has_function_privilege('authenticated', 'public.upsert_shared_catalogue_from_bizsathi(jsonb)', 'EXECUTE') THEN
               RAISE EXCEPTION 'Browser users must not execute shared catalogue import';
             END IF;
@@ -335,6 +336,7 @@ jobs:
             IF (SELECT count(*) FROM public.products WHERE model_code='DUPLICATE-MODEL')<>2 THEN
               RAISE EXCEPTION 'Repeated Model Code values must remain valid';
             END IF;
+            UPDATE public.bizsathi_sync_control SET catalogue_enabled=false WHERE id=1;
           END
           $test$;
           SQL
