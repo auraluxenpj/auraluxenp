@@ -49,7 +49,7 @@ BEGIN
   IF auth.uid() IS NOT NULL THEN
     RAISE EXCEPTION 'Server integration authentication required';
   END IF;
-  IF jsonb_typeof(_items) <> 'array'
+  IF _items IS NULL OR jsonb_typeof(_items) <> 'array'
      OR jsonb_array_length(_items) < 1
      OR jsonb_array_length(_items) > 500 THEN
     RAISE EXCEPTION 'Expected 1 to 500 catalogue rows';
@@ -84,6 +84,7 @@ BEGIN
   END IF;
 
   FOR r IN SELECT value FROM jsonb_array_elements(_items) LOOP
+    v_existing_variant_id := NULL;
     v_product_id := (r->>'product_id')::uuid;
     v_variant_id := (r->>'variant_id')::uuid;
     v_name := nullif(btrim(r->>'name'), '');
