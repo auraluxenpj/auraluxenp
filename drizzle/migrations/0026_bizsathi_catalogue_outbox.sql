@@ -76,8 +76,14 @@ BEGIN
   RETURN QUERY
   WITH picked AS (
     SELECT id FROM public.bizsathi_catalogue_outbox
-    WHERE (status='pending' AND available_at<=now())
-       OR (status='processing' AND locked_until<now())
+    WHERE ((status='pending' AND available_at<=now())
+        OR (status='processing' AND locked_until<now()))
+      AND NOT EXISTS (
+        SELECT 1 FROM public.bizsathi_catalogue_outbox earlier
+         WHERE earlier.sku=public.bizsathi_catalogue_outbox.sku
+           AND earlier.id<public.bizsathi_catalogue_outbox.id
+           AND earlier.status<>'delivered'
+      )
     ORDER BY id FOR UPDATE SKIP LOCKED LIMIT _limit
   )
   UPDATE public.bizsathi_catalogue_outbox o
