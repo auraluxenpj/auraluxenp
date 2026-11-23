@@ -176,6 +176,13 @@
       "when": 1795437000000,
       "tag": "0027_bizsathi_stock_event_projection",
       "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1795438000000,
+      "tag": "0028_bizsathi_single_catalogue_authority",
+      "breakpoints": true
     }
   ]
 }
