@@ -62,3 +62,48 @@ BEGIN
 END $$;
 REVOKE ALL ON FUNCTION public.reconcile_bizsathi_catalogue(jsonb) FROM PUBLIC,anon,authenticated;
 GRANT EXECUTE ON FUNCTION public.reconcile_bizsathi_catalogue(jsonb) TO service_role;
+
+-- Once the integration is installed, Auraluxe may not originate stock edits.
+-- Only the approved baseline and BizSathi event receiver set this transaction-local marker.
+CREATE OR REPLACE FUNCTION public.guard_bizsathi_stock_authority()
+RETURNS trigger LANGUAGE plpgsql SET search_path=public AS $$
+BEGIN
+  IF current_setting('app.stock_sync_origin',true)='bizsathi' THEN RETURN NEW; END IF;
+  IF TG_OP='INSERT' AND coalesce(NEW.stock,0)=0 THEN RETURN NEW; END IF;
+  IF TG_OP='UPDATE' AND NEW.stock IS NOT DISTINCT FROM OLD.stock THEN RETURN NEW; END IF;
+  RAISE EXCEPTION 'BizSathi is the sole stock authority; Auraluxe stock edits are disabled';
+END $$;
+REVOKE ALL ON FUNCTION public.guard_bizsathi_stock_authority() FROM PUBLIC,anon,authenticated;
+DROP TRIGGER IF EXISTS bizsathi_stock_authority_products ON public.products;
+CREATE TRIGGER bizsathi_stock_authority_products
+  BEFORE INSERT OR UPDATE OF stock ON public.products
+  FOR EACH ROW EXECUTE FUNCTION public.guard_bizsathi_stock_authority();
+DROP TRIGGER IF EXISTS bizsathi_stock_authority_variants ON public.product_variants;
+CREATE TRIGGER bizsathi_stock_authority_variants
+  BEFORE INSERT OR UPDATE OF stock ON public.product_variants
+  FOR EACH ROW EXECUTE FUNCTION public.guard_bizsathi_stock_authority();
+
+-- Once BizSathi catalogue sync is approved, an Auraluxe-only product cannot be
+-- republished. The full-snapshot reconciliation unpublishes products absent from BizSathi.
+CREATE OR REPLACE FUNCTION public.guard_bizsathi_catalogue_publication()
+RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path=public AS $$
+BEGIN
+  IF coalesce((SELECT catalogue_enabled FROM public.bizsathi_sync_control WHERE id=1),false)
+     AND NEW.is_published THEN
+    IF NEW.bizsathi_product_id IS NULL OR EXISTS (
+      SELECT 1 FROM public.product_variants pv
+       WHERE pv.product_id=NEW.id AND pv.bizsathi_variant_id IS NULL
+    ) OR NOT EXISTS (
+      SELECT 1 FROM public.product_variants pv
+       WHERE pv.product_id=NEW.id AND pv.bizsathi_variant_id IS NOT NULL
+    ) THEN
+      RAISE EXCEPTION 'Only products fully mapped to BizSathi may be published';
+    END IF;
+  END IF;
+  RETURN NEW;
+END $$;
+REVOKE ALL ON FUNCTION public.guard_bizsathi_catalogue_publication() FROM PUBLIC,anon,authenticated;
+DROP TRIGGER IF EXISTS bizsathi_catalogue_publication_guard ON public.products;
+CREATE TRIGGER bizsathi_catalogue_publication_guard
+  BEFORE INSERT OR UPDATE OF is_published,bizsathi_product_id ON public.products
+  FOR EACH ROW EXECUTE FUNCTION public.guard_bizsathi_catalogue_publication();
