@@ -60,7 +60,7 @@ BEGIN
   RETURN NEW;
 END $$;
 CREATE TRIGGER bizsathi_catalogue_variant_outbox
-  AFTER INSERT OR UPDATE OF sku,name,barcode,unit,purchase_price,mrp,wholesale_price,reorder_level,notes,bizsathi_variant_name,bizsathi_model_code
+  AFTER INSERT OR UPDATE OF sku,barcode,unit,purchase_price,mrp,wholesale_price,reorder_level,notes,bizsathi_variant_name,bizsathi_model_code
   ON public.product_variants FOR EACH ROW EXECUTE FUNCTION public.enqueue_bizsathi_catalogue_from_variant();
 CREATE TRIGGER bizsathi_catalogue_product_outbox
   AFTER UPDATE OF name,category_id,price,sizes,model_code,is_published,notes
