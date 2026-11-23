@@ -6,11 +6,13 @@ on:
     paths:
       - "drizzle/migrations/**"
       - "drizzle.config.ts"
+      - "supabase/tests/**"
       - ".github/workflows/drizzle-baseline.yml"
   pull_request:
     paths:
       - "drizzle/migrations/**"
       - "drizzle.config.ts"
+      - "supabase/tests/**"
       - ".github/workflows/drizzle-baseline.yml"
   workflow_dispatch:
 
