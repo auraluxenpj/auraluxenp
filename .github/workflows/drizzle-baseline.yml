@@ -1,4 +1,5 @@
 name: Drizzle isolated baseline validation
+# The baseline suite applies every numbered migration, including the new SKU reconciliation migration.
 
 on:
   push:
