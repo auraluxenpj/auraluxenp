@@ -258,13 +258,20 @@ jobs:
                OR result->>'matching_authority' <> 'exact_sku' THEN
               RAISE EXCEPTION 'Repeat import must remain idempotent and use SKU matching';
             END IF;
+
             IF NOT EXISTS (
               SELECT 1 FROM public.products
                WHERE bizsathi_product_id = product_id
                  AND is_published = true AND stock = 7
             ) OR NOT EXISTS (
               SELECT 1 FROM public.product_variants
-                           -- Link an existing website variant by SKU even without source-ID mappings.
+               WHERE bizsathi_variant_id = variant_id
+                 AND stock = 5 AND bizsathi_model_code = 'MODEL-TEST-001'
+            ) THEN
+              RAISE EXCEPTION 'Repeat import must preserve publication state and local stock';
+            END IF;
+
+            -- Link an existing website variant by normalized SKU without source-ID mappings.
             INSERT INTO public.products (
               name, slug, price, stock, sizes, colors, images, is_published
             ) VALUES (
@@ -292,6 +299,7 @@ jobs:
                OR (result->>'created_variants')::integer <> 0 THEN
               RAISE EXCEPTION 'Existing Auraluxe product and variant must link by normalized SKU';
             END IF;
+
             IF NOT EXISTS (
               SELECT 1 FROM public.products
                WHERE id = website_product_id
@@ -308,10 +316,6 @@ jobs:
                  AND size = 'M' AND color = 'Blue' AND stock = 8
             ) THEN
               RAISE EXCEPTION 'SKU linking must preserve existing website content and stock';
-            END IF;
-WHERE bizsathi_variant_id = variant_id AND stock = 5 AND bizsathi_model_code = 'MODEL-TEST-001'
-            ) THEN
-              RAISE EXCEPTION 'Repeat import must preserve publication state and local stock';
             END IF;
           END
           $test$;
