@@ -546,7 +546,7 @@ jobs:
               'stock_movements','99999999-9999-4999-8999-999999999999',
               '66666666-6666-4666-8666-666666666666',
               '77777777-7777-4777-8777-777777777777',
-              product_id,variant_id,'AL-STOCK-EVENT-TEST',1,-2
+              product_id,variant_id,'AL-STOCK-EVENT-TEST',1,-2,'2026-11-23T09:00:00Z'::timestamptz
             );
             IF event_result->>'duplicate' <> 'false'
                OR (SELECT stock FROM public.products WHERE id=product_id) <> 8
@@ -559,7 +559,7 @@ jobs:
               'stock_movements','99999999-9999-4999-8999-999999999999',
               '66666666-6666-4666-8666-666666666666',
               '77777777-7777-4777-8777-777777777777',
-              product_id,variant_id,'AL-STOCK-EVENT-TEST',1,-2
+              product_id,variant_id,'AL-STOCK-EVENT-TEST',1,-2,'2026-11-23T09:00:00Z'::timestamptz
             );
             IF duplicate_result->>'duplicate' <> 'true'
                OR (SELECT stock FROM public.products WHERE id=product_id) <> 8 THEN
@@ -572,7 +572,7 @@ jobs:
                 'stock_movements','bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',
                 '66666666-6666-4666-8666-666666666666',
                 '77777777-7777-4777-8777-777777777777',
-                product_id,variant_id,'AL-STOCK-EVENT-TEST',3,-1
+                product_id,variant_id,'AL-STOCK-EVENT-TEST',3,-1,'2026-11-23T09:05:00Z'::timestamptz
               );
               RAISE EXCEPTION 'Out-of-order stock event must be rejected';
             EXCEPTION WHEN raise_exception THEN
