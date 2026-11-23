@@ -492,11 +492,11 @@ jobs:
 
             INSERT INTO public.bizsathi_stock_baselines(
               bizsathi_product_id,bizsathi_variant_id,auraluxe_product_id,auraluxe_variant_id,
-              sku,baseline_quantity,last_version,verification_reference,verified_by
+              sku,baseline_quantity,bizsathi_ledger_quantity,last_version,verification_reference,verified_by
             ) VALUES (
               '66666666-6666-4666-8666-666666666666',
               '77777777-7777-4777-8777-777777777777',
-              product_id,variant_id,'al-stock-event-test',10,0,'isolated physical count test',
+              product_id,variant_id,'al-stock-event-test',10,10,0,'isolated physical count test',
               '00000000-0000-0000-0000-000000000001'
             );
 
