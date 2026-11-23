@@ -107,6 +107,10 @@ function ImageSlot({
       toast.error("Please choose a PNG, JPG or WebP image");
       return;
     }
+    if (file.size > 15 * 1024 * 1024) {
+      toast.error("Please choose an image smaller than 15 MB");
+      return;
+    }
     setBusy(true);
     try {
       const webp = await compressToWebp(file);
