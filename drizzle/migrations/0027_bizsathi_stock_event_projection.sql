@@ -38,6 +38,13 @@ BEGIN
     FROM picked WHERE o.id=picked.id RETURNING o.*;
 END $$;
 
+CREATE OR REPLACE FUNCTION public.bizsathi_stock_event_sync_enabled()
+RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path=public AS $
+  SELECT coalesce((SELECT stock_enabled FROM public.bizsathi_sync_control WHERE id=1),false);
+$;
+REVOKE ALL ON FUNCTION public.bizsathi_stock_event_sync_enabled() FROM PUBLIC,anon,authenticated;
+GRANT EXECUTE ON FUNCTION public.bizsathi_stock_event_sync_enabled() TO service_role;
+
 CREATE TABLE public.bizsathi_stock_baselines (
   bizsathi_variant_id uuid PRIMARY KEY,
   bizsathi_product_id uuid NOT NULL,
