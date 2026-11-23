@@ -18,7 +18,7 @@ END $$;
 CREATE OR REPLACE FUNCTION public.reconcile_bizsathi_catalogue(_items jsonb)
 RETURNS jsonb
 LANGUAGE plpgsql SECURITY DEFINER SET search_path=public AS $$
-DECLARE result jsonb; deactivated integer:=0;
+DECLARE result jsonb; deactivated integer:=0; unpublished jsonb:='[]'::jsonb;
 BEGIN
   IF coalesce(auth.role(),'')<>'service_role' OR auth.uid() IS NOT NULL THEN
     RAISE EXCEPTION 'BizSathi service authentication required';
@@ -42,6 +42,26 @@ BEGIN
 
   result:=public.upsert_shared_catalogue_from_bizsathi(_items);
 
+  -- Return an auditable list of products that will be unpublished.
+  SELECT coalesce(jsonb_agg(jsonb_build_object(
+    'product_id',p.id,'name',p.name,
+    'skus',(SELECT coalesce(jsonb_agg(pv.sku ORDER BY pv.sku),'[]'::jsonb)
+              FROM public.product_variants pv WHERE pv.product_id=p.id)
+  ) ORDER BY p.id),'[]'::jsonb)
+    INTO unpublished
+    FROM public.products p
+   WHERE p.is_published=true
+     AND (
+       NOT EXISTS (SELECT 1 FROM public.product_variants pv WHERE pv.product_id=p.id)
+       OR EXISTS (
+         SELECT 1 FROM public.product_variants pv
+          WHERE pv.product_id=p.id
+            AND lower(btrim(pv.sku)) NOT IN (
+              SELECT lower(btrim(e.value->>'sku')) FROM jsonb_array_elements(_items) e
+            )
+       )
+     );
+
   -- Product remains listed only when every one of its variants is represented
   -- by the authoritative BizSathi snapshot. Never hard-delete or rewrite history.
   UPDATE public.products p
@@ -58,7 +78,7 @@ BEGIN
        )
      );
   GET DIAGNOSTICS deactivated=ROW_COUNT;
-  RETURN result || jsonb_build_object('unpublished_products',deactivated,'authority','bizsathi');
+  RETURN result || jsonb_build_object('unpublished_products',deactivated,'unpublished_items',unpublished,'authority','bizsathi');
 END $$;
 REVOKE ALL ON FUNCTION public.reconcile_bizsathi_catalogue(jsonb) FROM PUBLIC,anon,authenticated;
 GRANT EXECUTE ON FUNCTION public.reconcile_bizsathi_catalogue(jsonb) TO service_role;
