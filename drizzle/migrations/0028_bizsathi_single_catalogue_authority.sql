@@ -88,14 +88,21 @@ CREATE TRIGGER bizsathi_stock_authority_variants
 CREATE OR REPLACE FUNCTION public.guard_bizsathi_catalogue_publication()
 RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path=public AS $$
 BEGIN
+  IF current_setting('app.catalogue_sync_origin',true)='bizsathi' THEN RETURN NEW; END IF;
   IF coalesce((SELECT catalogue_enabled FROM public.bizsathi_sync_control WHERE id=1),false)
      AND NEW.is_published THEN
-    IF NEW.bizsathi_product_id IS NULL THEN
-      RAISE EXCEPTION 'Only products mapped to BizSathi may be published';
+    IF NEW.bizsathi_product_id IS NULL OR EXISTS (
+      SELECT 1 FROM public.product_variants pv
+       WHERE pv.product_id=NEW.id AND pv.bizsathi_variant_id IS NULL
+    ) OR NOT EXISTS (
+      SELECT 1 FROM public.product_variants pv
+       WHERE pv.product_id=NEW.id AND pv.bizsathi_variant_id IS NOT NULL
+    ) THEN
+      RAISE EXCEPTION 'Only products fully mapped to BizSathi may be published';
     END IF;
   END IF;
   RETURN NEW;
-END $$;
+END $;
 REVOKE ALL ON FUNCTION public.guard_bizsathi_catalogue_publication() FROM PUBLIC,anon,authenticated;
 DROP TRIGGER IF EXISTS bizsathi_catalogue_publication_guard ON public.products;
 CREATE TRIGGER bizsathi_catalogue_publication_guard
@@ -106,6 +113,7 @@ CREATE OR REPLACE FUNCTION public.guard_bizsathi_variant_mapping()
 RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path=public AS $$
 DECLARE mapped_product uuid; published boolean;
 BEGIN
+  IF current_setting('app.catalogue_sync_origin',true)='bizsathi' THEN RETURN NEW; END IF;
   IF NOT coalesce((SELECT catalogue_enabled FROM public.bizsathi_sync_control WHERE id=1),false) THEN
     RETURN NEW;
   END IF;
