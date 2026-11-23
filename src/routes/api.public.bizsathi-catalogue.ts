@@ -8,7 +8,7 @@ const itemSchema = z.object({
   name: z.string().trim().min(1).max(200),
   category: z.string().trim().max(100),
   variant_name: z.string().trim().min(1).max(100),
-  model_code: z.string().trim().max(64).nullable(),
+  model_code: z.string().trim().min(1).max(64),
   sku: z.string().trim().min(1).max(80).regex(/^\\S+$/),
   selling_price: z.number().finite().min(0).max(100_000_000),
 }).strict();
