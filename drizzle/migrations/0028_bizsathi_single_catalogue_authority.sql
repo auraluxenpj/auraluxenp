@@ -90,14 +90,8 @@ RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path=public AS $$
 BEGIN
   IF coalesce((SELECT catalogue_enabled FROM public.bizsathi_sync_control WHERE id=1),false)
      AND NEW.is_published THEN
-    IF NEW.bizsathi_product_id IS NULL OR EXISTS (
-      SELECT 1 FROM public.product_variants pv
-       WHERE pv.product_id=NEW.id AND pv.bizsathi_variant_id IS NULL
-    ) OR NOT EXISTS (
-      SELECT 1 FROM public.product_variants pv
-       WHERE pv.product_id=NEW.id AND pv.bizsathi_variant_id IS NOT NULL
-    ) THEN
-      RAISE EXCEPTION 'Only products fully mapped to BizSathi may be published';
+    IF NEW.bizsathi_product_id IS NULL THEN
+      RAISE EXCEPTION 'Only products mapped to BizSathi may be published';
     END IF;
   END IF;
   RETURN NEW;
@@ -107,3 +101,23 @@ DROP TRIGGER IF EXISTS bizsathi_catalogue_publication_guard ON public.products;
 CREATE TRIGGER bizsathi_catalogue_publication_guard
   BEFORE INSERT OR UPDATE OF is_published,bizsathi_product_id ON public.products
   FOR EACH ROW EXECUTE FUNCTION public.guard_bizsathi_catalogue_publication();
+
+CREATE OR REPLACE FUNCTION public.guard_bizsathi_variant_mapping()
+RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path=public AS $$
+DECLARE mapped_product uuid; published boolean;
+BEGIN
+  IF NOT coalesce((SELECT catalogue_enabled FROM public.bizsathi_sync_control WHERE id=1),false) THEN
+    RETURN NEW;
+  END IF;
+  SELECT bizsathi_product_id,is_published INTO mapped_product,published
+    FROM public.products WHERE id=NEW.product_id;
+  IF published AND mapped_product IS NOT NULL AND NEW.bizsathi_variant_id IS NULL THEN
+    RAISE EXCEPTION 'Every published product variant must be mapped to BizSathi';
+  END IF;
+  RETURN NEW;
+END $$;
+REVOKE ALL ON FUNCTION public.guard_bizsathi_variant_mapping() FROM PUBLIC,anon,authenticated;
+DROP TRIGGER IF EXISTS bizsathi_variant_mapping_guard ON public.product_variants;
+CREATE TRIGGER bizsathi_variant_mapping_guard
+  BEFORE INSERT OR UPDATE OF bizsathi_variant_id,product_id ON public.product_variants
+  FOR EACH ROW EXECUTE FUNCTION public.guard_bizsathi_variant_mapping();
