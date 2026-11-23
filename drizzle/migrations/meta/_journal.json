@@ -155,6 +155,13 @@
       "when": 1795430000000,
       "tag": "0024_model_code_catalogue_identity",
       "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1795435000000,
+      "tag": "0025_shared_sku_first_catalogue",
+      "breakpoints": true
     }
   ]
 }
