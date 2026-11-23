@@ -140,7 +140,7 @@ BEGIN
   RETURN jsonb_build_object('ok',true,'duplicate',false,'baselineQuantity',_quantity);
 END $$;
 REVOKE ALL ON FUNCTION public.register_bizsathi_stock_baseline(uuid,uuid,uuid,uuid,text,integer,integer,text) FROM PUBLIC,anon;
-GRANT EXECUTE ON FUNCTION public.register_bizsathi_stock_baseline(uuid,uuid,uuid,uuid,text,integer,text) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.register_bizsathi_stock_baseline(uuid,uuid,uuid,uuid,text,integer,integer,text) TO authenticated;
 
 CREATE OR REPLACE FUNCTION public.apply_bizsathi_stock_event(
   _event_id uuid,
