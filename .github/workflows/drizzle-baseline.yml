@@ -389,6 +389,7 @@ jobs:
              WHERE id = 'main';
             ALTER TABLE public.payment_settings ENABLE TRIGGER payment_settings_audit_trigger;
 
+            PERFORM set_config('app.stock_sync_origin','bizsathi',true);
             INSERT INTO public.products (
               name, slug, price, stock, sizes, colors, images, is_published, bizsathi_product_id
             ) VALUES (
