@@ -208,6 +208,10 @@ jobs:
             variant_id uuid := '22222222-2222-4222-8222-222222222222';
             payload jsonb;
             result jsonb;
+            website_product_id uuid;
+            website_variant_id uuid;
+            linked_product_id uuid := '33333333-3333-4333-8333-333333333333';
+            linked_variant_id uuid := '44444444-4444-4444-8444-444444444444';
           BEGIN
             IF has_function_privilege('authenticated', 'public.upsert_bizsathi_catalogue_drafts(jsonb)', 'EXECUTE') THEN
               RAISE EXCEPTION 'Authenticated browser users must not execute catalogue import';
@@ -260,7 +264,52 @@ jobs:
                  AND is_published = true AND stock = 7
             ) OR NOT EXISTS (
               SELECT 1 FROM public.product_variants
-               WHERE bizsathi_variant_id = variant_id AND stock = 5 AND bizsathi_model_code = 'MODEL-TEST-001'
+                           -- Link an existing website variant by SKU even without source-ID mappings.
+            INSERT INTO public.products (
+              name, slug, price, stock, sizes, colors, images, is_published
+            ) VALUES (
+              'Existing Website Dress', 'existing-website-dress-sku-test',
+              2450, 19, ARRAY['M'], ARRAY['Blue'], ARRAY['/images/keep-this.jpg'], true
+            ) RETURNING id INTO website_product_id;
+            INSERT INTO public.product_variants (product_id, size, color, sku, stock)
+            VALUES (website_product_id, 'M', 'Blue', 'AL-EXISTING-SKU-01', 8)
+            RETURNING id INTO website_variant_id;
+
+            payload := jsonb_build_array(jsonb_build_object(
+              'product_id', linked_product_id,
+              'variant_id', linked_variant_id,
+              'name', 'BizSathi Name Must Not Replace Website Name',
+              'category', 'Dress',
+              'variant_name', 'Standard',
+              'model_code', 'MODEL-LINK-001',
+              'sku', ' AL-EXISTING-SKU-01 ',
+              'selling_price', 999
+            ));
+            result := public.upsert_bizsathi_catalogue_drafts(payload);
+            IF (result->>'linked_products')::integer <> 1
+               OR (result->>'linked_variants')::integer <> 1
+               OR (result->>'created_products')::integer <> 0
+               OR (result->>'created_variants')::integer <> 0 THEN
+              RAISE EXCEPTION 'Existing Auraluxe product and variant must link by normalized SKU';
+            END IF;
+            IF NOT EXISTS (
+              SELECT 1 FROM public.products
+               WHERE id = website_product_id
+                 AND bizsathi_product_id = linked_product_id
+                 AND name = 'Existing Website Dress'
+                 AND price = 2450 AND stock = 19
+                 AND images = ARRAY['/images/keep-this.jpg']::text[]
+                 AND is_published = true
+            ) OR NOT EXISTS (
+              SELECT 1 FROM public.product_variants
+               WHERE id = website_variant_id
+                 AND bizsathi_variant_id = linked_variant_id
+                 AND sku = 'AL-EXISTING-SKU-01'
+                 AND size = 'M' AND color = 'Blue' AND stock = 8
+            ) THEN
+              RAISE EXCEPTION 'SKU linking must preserve existing website content and stock';
+            END IF;
+WHERE bizsathi_variant_id = variant_id AND stock = 5 AND bizsathi_model_code = 'MODEL-TEST-001'
             ) THEN
               RAISE EXCEPTION 'Repeat import must preserve publication state and local stock';
             END IF;
