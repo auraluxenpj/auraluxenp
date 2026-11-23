@@ -324,6 +324,7 @@ jobs:
             ));
             UPDATE public.products SET is_published=true
              WHERE name='Shared Test Two';
+            PERFORM set_config('request.jwt.claim.role','service_role',true);
             result := public.reconcile_bizsathi_catalogue(payload);
             IF (result->>'updated_products')::integer <> 1
                OR (result->>'updated_variants')::integer <> 1
