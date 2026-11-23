@@ -22,6 +22,7 @@ DECLARE
   v_id_variant_id uuid;
   v_id_variant_product_id uuid;
   v_match_products integer;
+  v_product_was_mapped boolean;
   v_sku_variant_count integer;
   v_created_products integer := 0;
   v_updated_products integer := 0;
@@ -129,10 +130,12 @@ BEGIN
       RAISE EXCEPTION 'SKUs for one BizSathi product resolve to different Auraluxe products; manual review required';
     END IF;
 
+    v_product_was_mapped := false;
     SELECT p.id INTO v_product_id
       FROM public.products p
      WHERE p.bizsathi_product_id = v_source_product_id
      FOR UPDATE;
+    v_product_was_mapped := v_product_id IS NOT NULL;
 
     IF v_product_id IS NOT NULL AND v_sku_product_id IS NOT NULL
        AND v_product_id <> v_sku_product_id THEN
@@ -188,12 +191,7 @@ BEGIN
     ELSE
       -- Preserve all existing website content when linking by SKU. Only a
       -- previously ID-mapped record retains the legacy catalogue field refresh.
-      IF EXISTS (
-        SELECT 1 FROM public.products
-         WHERE id = v_product_id
-           AND bizsathi_product_id = v_source_product_id
-           AND v_product_id <> v_sku_product_id
-      ) THEN
+      IF v_product_was_mapped THEN
         INSERT INTO public.categories(name, slug)
         VALUES (
           v_category,
