@@ -268,6 +268,77 @@ jobs:
           SQL
 
 
+      - name: Verify shared catalogue import is SKU-first and permits duplicate Model Codes
+        run: |
+          set -euo pipefail
+          psql "$DATABASE_URL" -v ON_ERROR_STOP=1 <<'SQL'
+          DO $test$
+          DECLARE
+            payload jsonb;
+            result jsonb;
+            first_product uuid;
+            first_variant uuid;
+          BEGIN
+            IF has_function_privilege('authenticated', 'public.upsert_shared_catalogue_from_bizsathi(jsonb)', 'EXECUTE') THEN
+              RAISE EXCEPTION 'Browser users must not execute shared catalogue import';
+            END IF;
+            IF NOT has_function_privilege('service_role', 'public.upsert_shared_catalogue_from_bizsathi(jsonb)', 'EXECUTE') THEN
+              RAISE EXCEPTION 'Service role must execute shared catalogue import';
+            END IF;
+
+            payload := jsonb_build_array(
+              jsonb_build_object('product_id','aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+                'variant_id','bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb','name','Shared Test One',
+                'category','Test Category','variant_name','Standard','model_code','DUPLICATE-MODEL',
+                'sku','SYNC-TEST-ONE','unit','pcs','sizes',jsonb_build_array('M','L'),
+                'purchase_price',500,'mrp',1500,'selling_price',1000,'wholesale_price',800,
+                'reorder_level',2,'published',false,'barcode','SYNC-TEST-BAR-1'),
+              jsonb_build_object('product_id','cccccccc-cccc-4ccc-8ccc-cccccccccccc',
+                'variant_id','dddddddd-dddd-4ddd-8ddd-dddddddddddd','name','Shared Test Two',
+                'category','Test Category','variant_name','Standard','model_code','DUPLICATE-MODEL',
+                'sku','SYNC-TEST-TWO','unit','pcs','sizes',jsonb_build_array('STANDARD'),
+                'purchase_price',600,'mrp',1600,'selling_price',1100,'wholesale_price',850,
+                'reorder_level',3,'published',false,'barcode','SYNC-TEST-BAR-2')
+            );
+            result := public.upsert_shared_catalogue_from_bizsathi(payload);
+            IF result->>'identity_key' <> 'sku' OR result->>'model_code_unique' <> 'false'
+               OR (result->>'created_products')::integer <> 2
+               OR (result->>'created_variants')::integer <> 2 THEN
+              RAISE EXCEPTION 'SKU-first import did not accept repeated Model Code values';
+            END IF;
+            SELECT p.id,pv.id INTO first_product,first_variant
+              FROM public.products p JOIN public.product_variants pv ON pv.product_id=p.id
+             WHERE pv.sku='SYNC-TEST-ONE';
+            UPDATE public.products SET description='Website copy retained',meta_title='Keep this title',stock=7 WHERE id=first_product;
+            UPDATE public.product_variants SET stock=5 WHERE id=first_variant;
+            payload := jsonb_build_array(jsonb_build_object(
+              'product_id','aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+              'variant_id','bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb','name','Updated Test One',
+              'category','Test Category','variant_name','Standard','model_code','DUPLICATE-MODEL',
+              'sku','SYNC-TEST-ONE','unit','pcs','sizes',jsonb_build_array('M','L'),
+              'purchase_price',550,'mrp',1550,'selling_price',1050,'wholesale_price',825,
+              'reorder_level',2,'published',false,'barcode','SYNC-TEST-BAR-1'
+            ));
+            result := public.upsert_shared_catalogue_from_bizsathi(payload);
+            IF (result->>'updated_products')::integer <> 1
+               OR (result->>'updated_variants')::integer <> 1 THEN
+              RAISE EXCEPTION 'Repeat import did not update by SKU';
+            END IF;
+            IF NOT EXISTS (SELECT 1 FROM public.products WHERE id=first_product AND stock=7
+              AND description='Website copy retained' AND meta_title='Keep this title') THEN
+              RAISE EXCEPTION 'Catalogue import overwrote stock or website enrichment';
+            END IF;
+            IF NOT EXISTS (SELECT 1 FROM public.product_variants WHERE id=first_variant AND stock=5
+              AND purchase_price=550 AND mrp=1550 AND wholesale_price=825) THEN
+              RAISE EXCEPTION 'Catalogue import did not update commercial fields or changed stock';
+            END IF;
+            IF (SELECT count(*) FROM public.products WHERE model_code='DUPLICATE-MODEL')<>2 THEN
+              RAISE EXCEPTION 'Repeated Model Code values must remain valid';
+            END IF;
+          END
+          $test$;
+          SQL
+
       - name: Verify checkout captures BizSathi identity and enqueues a PII-minimized idempotent event
         run: |
           set -euo pipefail
