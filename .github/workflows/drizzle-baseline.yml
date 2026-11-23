@@ -374,7 +374,7 @@ jobs:
             INSERT INTO public.products (
               name, slug, price, stock, sizes, colors, images, is_published, bizsathi_product_id
             ) VALUES (
-              'Mapped Checkout Test', 'mapped-checkout-test', 1200, 5, '{}', '{}', '{}', true,
+              'Mapped Checkout Test', 'mapped-checkout-test', 1200, 5, ARRAY['M','L'], '{}', '{}', true,
               '33333333-3333-4333-8333-333333333333'
             ) RETURNING id INTO product_id;
 
@@ -387,7 +387,7 @@ jobs:
 
             items := jsonb_build_array(jsonb_build_object(
               'product_id', product_id,
-              'size', null,
+              'size', 'M',
               'color', null,
               'quantity', 1
             ));
@@ -461,6 +461,91 @@ jobs:
               RAISE EXCEPTION 'Rejected ambiguous checkout must not leave an order';
             END IF;
             UPDATE public.bizsathi_checkout_reservation_config SET enabled = false WHERE id = 1;
+          END
+          $test$;
+          SQL
+
+      - name: Verify idempotent BizSathi stock events, baseline gating and SKU ordering
+        run: |
+          set -euo pipefail
+          psql "$DATABASE_URL" -v ON_ERROR_STOP=1 <<'SQL'
+          DO $test$
+          DECLARE
+            product_id uuid;
+            variant_id uuid;
+            baseline_result jsonb;
+            event_result jsonb;
+            duplicate_result jsonb;
+          BEGIN
+            INSERT INTO public.products (
+              name,slug,price,stock,sizes,colors,images,is_published,bizsathi_product_id
+            ) VALUES (
+              'Stock Event Test','stock-event-test',900,10,ARRAY['S','M'],'{}','{}',false,
+              '66666666-6666-4666-8666-666666666666'
+            ) RETURNING id INTO product_id;
+            INSERT INTO public.product_variants (
+              product_id,size,color,sku,stock,bizsathi_variant_id,bizsathi_variant_name
+            ) VALUES (
+              product_id,NULL,NULL,'AL-STOCK-EVENT-TEST',10,
+              '77777777-7777-4777-8777-777777777777','Standard'
+            ) RETURNING id INTO variant_id;
+
+            INSERT INTO public.bizsathi_stock_baselines(
+              bizsathi_product_id,bizsathi_variant_id,auraluxe_product_id,auraluxe_variant_id,
+              sku,baseline_quantity,last_version,verification_reference,verified_by
+            ) VALUES (
+              '66666666-6666-4666-8666-666666666666',
+              '77777777-7777-4777-8777-777777777777',
+              product_id,variant_id,'AL-STOCK-EVENT-TEST',10,0,'isolated physical count test',
+              '00000000-0000-0000-0000-000000000001'
+            );
+
+            UPDATE public.bizsathi_sync_control SET stock_enabled=true WHERE id=1;
+            UPDATE public.website_inventory_authority SET enabled=true WHERE id=1;
+            PERFORM set_config('request.jwt.claim.role','service_role',true);
+
+            event_result := public.apply_bizsathi_stock_event(
+              '88888888-8888-4888-8888-888888888888',
+              'stock_movements','99999999-9999-4999-8999-999999999999',
+              '66666666-6666-4666-8666-666666666666',
+              '77777777-7777-4777-8777-777777777777',
+              product_id,variant_id,'AL-STOCK-EVENT-TEST',1,-2
+            );
+            IF event_result->>'duplicate' <> 'false'
+               OR (SELECT stock FROM public.products WHERE id=product_id) <> 8
+               OR (SELECT stock FROM public.product_variants WHERE id=variant_id) <> 8 THEN
+              RAISE EXCEPTION 'First stock event must apply one delta to product and mapped variant';
+            END IF;
+
+            duplicate_result := public.apply_bizsathi_stock_event(
+              '88888888-8888-4888-8888-888888888888',
+              'stock_movements','99999999-9999-4999-8999-999999999999',
+              '66666666-6666-4666-8666-666666666666',
+              '77777777-7777-4777-8777-777777777777',
+              product_id,variant_id,'AL-STOCK-EVENT-TEST',1,-2
+            );
+            IF duplicate_result->>'duplicate' <> 'true'
+               OR (SELECT stock FROM public.products WHERE id=product_id) <> 8 THEN
+              RAISE EXCEPTION 'Duplicate stock event must not apply twice';
+            END IF;
+
+            BEGIN
+              PERFORM public.apply_bizsathi_stock_event(
+                'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+                'stock_movements','bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',
+                '66666666-6666-4666-8666-666666666666',
+                '77777777-7777-4777-8777-777777777777',
+                product_id,variant_id,'AL-STOCK-EVENT-TEST',3,-1
+              );
+              RAISE EXCEPTION 'Out-of-order stock event must be rejected';
+            EXCEPTION WHEN raise_exception THEN
+              IF SQLERRM NOT LIKE 'Out-of-order stock event%' THEN RAISE; END IF;
+            END;
+            IF (SELECT count(*) FROM public.bizsathi_stock_events WHERE bizsathi_variant_id='77777777-7777-4777-8777-777777777777') <> 1 THEN
+              RAISE EXCEPTION 'Only one immutable stock event should be recorded';
+            END IF;
+            UPDATE public.bizsathi_sync_control SET stock_enabled=false WHERE id=1;
+            UPDATE public.website_inventory_authority SET enabled=false WHERE id=1;
           END
           $test$;
           SQL
