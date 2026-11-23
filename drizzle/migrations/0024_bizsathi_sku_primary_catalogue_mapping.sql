@@ -18,6 +18,7 @@ DECLARE
   v_variant_id uuid;
   v_sku_product_id uuid;
   v_sku_variant_id uuid;
+  v_sku_variant_product_id uuid;
   v_id_variant_id uuid;
   v_id_variant_product_id uuid;
   v_match_products integer;
@@ -117,7 +118,7 @@ BEGIN
 
     -- All incoming SKUs for one BizSathi product must resolve to one
     -- Auraluxe product. No name or slug matching is attempted.
-    SELECT count(DISTINCT pv.product_id), min(pv.product_id)
+    SELECT count(DISTINCT pv.product_id), (array_agg(DISTINCT pv.product_id))[1]
       INTO v_match_products, v_sku_product_id
       FROM public.product_variants pv
       JOIN jsonb_array_elements(_items) AS e(value)
@@ -239,7 +240,7 @@ BEGIN
       END IF;
 
       SELECT pv.id, pv.product_id
-        INTO v_sku_variant_id, v_id_variant_product_id
+        INTO v_sku_variant_id, v_sku_variant_product_id
         FROM public.product_variants pv
        WHERE lower(btrim(pv.sku)) = lower(v_sku)
        FOR UPDATE;
@@ -259,7 +260,7 @@ BEGIN
       END IF;
 
       IF v_sku_variant_id IS NOT NULL THEN
-        IF v_id_variant_product_id IS NOT NULL AND v_id_variant_product_id <> v_product_id THEN
+        IF v_sku_variant_product_id IS NOT NULL AND v_sku_variant_product_id <> v_product_id THEN
           RAISE EXCEPTION 'SKU-matched variant belongs to a different Auraluxe product';
         END IF;
         IF EXISTS (
