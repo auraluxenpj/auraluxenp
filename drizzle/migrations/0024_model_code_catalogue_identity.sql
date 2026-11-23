@@ -7,7 +7,7 @@ CREATE OR REPLACE FUNCTION public.upsert_bizsathi_catalogue_drafts(_items jsonb)
 RETURNS jsonb
 LANGUAGE plpgsql
 SECURITY DEFINER
-SET search_path = public
+SET search_path = ''
 AS $$
 DECLARE
   r jsonb;
@@ -153,7 +153,7 @@ BEGIN
       IF v_slug = '' THEN v_slug := 'uncategorised'; END IF;
       INSERT INTO public.categories(name, slug)
       VALUES (v_category, v_slug)
-      ON CONFLICT (slug) DO UPDATE SET name = categories.name
+      ON CONFLICT (slug) DO UPDATE SET name = public.categories.name
       RETURNING id INTO v_category_id;
 
       v_slug := trim(both '-' from regexp_replace(lower(v_name), '[^a-z0-9]+', '-', 'g'));
