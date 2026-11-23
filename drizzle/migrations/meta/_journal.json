@@ -162,6 +162,13 @@
       "when": 1795435000000,
       "tag": "0025_shared_sku_first_catalogue",
       "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1795436000000,
+      "tag": "0026_bizsathi_catalogue_outbox",
+      "breakpoints": true
     }
   ]
 }
