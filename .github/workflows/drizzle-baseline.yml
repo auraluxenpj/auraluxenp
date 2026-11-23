@@ -96,13 +96,13 @@ jobs:
           GRANT SELECT, INSERT, UPDATE, DELETE ON storage.objects TO anon, authenticated, service_role;
           SQL
 
-      - name: Apply the 24 repository migrations to the temporary database
+      - name: Apply the 25 repository migrations to the temporary database
         run: |
           set -euo pipefail
           shopt -s nullglob
           migrations=(drizzle/migrations/[0-9][0-9][0-9][0-9]_*.sql)
           if [ "${#migrations[@]}" -ne 24 ]; then
-            echo "Expected exactly 24 numbered SQL migrations; found ${#migrations[@]}."
+            echo "Expected exactly 25 numbered SQL migrations; found ${#migrations[@]}."
             exit 1
           fi
           for migration in "${migrations[@]}"; do
@@ -208,6 +208,10 @@ jobs:
             variant_id uuid := '22222222-2222-4222-8222-222222222222';
             payload jsonb;
             result jsonb;
+            sku_product_id uuid;
+            sku_variant_id uuid;
+            sku_payload jsonb;
+            sku_result jsonb;
           BEGIN
             IF has_function_privilege('authenticated', 'public.upsert_bizsathi_catalogue_drafts(jsonb)', 'EXECUTE') THEN
               RAISE EXCEPTION 'Authenticated browser users must not execute catalogue import';
@@ -262,6 +266,61 @@ jobs:
                WHERE bizsathi_variant_id = variant_id AND stock = 5 AND bizsathi_model_code = 'MODEL-TEST-001'
             ) THEN
               RAISE EXCEPTION 'Repeat import must preserve publication state and local stock';
+            END IF;
+
+            -- An exact SKU must link a pre-existing website product/variant
+            -- even when no BizSathi source IDs have been attached yet.
+            INSERT INTO public.products (
+              name, slug, sku, description, category_id, price, stock, sizes, colors, images,
+              model_code, is_published
+            ) VALUES (
+              'Existing Website Product', 'existing-website-sku-match', null,
+              'Keep this website description', (SELECT id FROM public.categories WHERE slug = 'dresses'),
+              2400, 19, '{}', '{}', ARRAY['/images/keep-this.jpg'], 'WEB-MODEL', true
+            ) RETURNING id INTO sku_product_id;
+
+            INSERT INTO public.product_variants (
+              product_id, size, color, sku, stock
+            ) VALUES (
+              sku_product_id, 'M', 'Ivory', 'AL-EXISTING-SKU-001', 9
+            ) RETURNING id INTO sku_variant_id;
+
+            sku_payload := jsonb_build_array(jsonb_build_object(
+              'product_id', '66666666-6666-4666-8666-666666666666',
+              'variant_id', '77777777-7777-4777-8777-777777777777',
+              'name', 'BizSathi Product Name',
+              'category', 'Dress',
+              'variant_name', 'M / Ivory',
+              'model_code', 'BIZ-MODEL',
+              'sku', 'AL-EXISTING-SKU-001',
+              'selling_price', 1800
+            ));
+
+            sku_result := public.upsert_bizsathi_catalogue_drafts(sku_payload);
+            IF (sku_result->>'created_products')::integer <> 0
+               OR (sku_result->>'updated_products')::integer <> 1
+               OR (sku_result->>'created_variants')::integer <> 0
+               OR (sku_result->>'updated_variants')::integer <> 1
+               OR sku_result->>'matching_authority' <> 'exact_sku' THEN
+              RAISE EXCEPTION 'Existing SKU must be linked in place rather than duplicated';
+            END IF;
+
+            IF NOT EXISTS (
+              SELECT 1 FROM public.products
+               WHERE id = sku_product_id
+                 AND bizsathi_product_id = '66666666-6666-4666-8666-666666666666'
+                 AND name = 'Existing Website Product'
+                 AND description = 'Keep this website description'
+                 AND price = 2400 AND stock = 19 AND is_published = true
+                 AND images = ARRAY['/images/keep-this.jpg']
+            ) OR NOT EXISTS (
+              SELECT 1 FROM public.product_variants
+               WHERE id = sku_variant_id
+                 AND bizsathi_variant_id = '77777777-7777-4777-8777-777777777777'
+                 AND sku = 'AL-EXISTING-SKU-001'
+                 AND size = 'M' AND color = 'Ivory' AND stock = 9
+            ) THEN
+              RAISE EXCEPTION 'SKU linking must preserve existing website content and stock';
             END IF;
           END
           $test$;
