@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { Copy, GripVertical, Pencil, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { bannerIsLive, fetchBanners, type Banner } from "@/lib/data";
+import { compressToWebp } from "@/lib/image-compress";
 
 export const Route = createFileRoute("/_authenticated/admin/banners")({
   head: () => ({
@@ -17,7 +18,6 @@ export const Route = createFileRoute("/_authenticated/admin/banners")({
 });
 
 const BUCKET = "product-images";
-const MAX_BYTES = 8 * 1024 * 1024;
 const ACCEPTED = ["image/png", "image/jpeg", "image/webp"];
 const SIGNED_URL_SECONDS = 60 * 60 * 24 * 365 * 20;
 
@@ -107,15 +107,15 @@ function ImageSlot({
       toast.error("Please choose a PNG, JPG or WebP image");
       return;
     }
-    if (file.size > MAX_BYTES) {
-      toast.error("The image is larger than 8MB");
+    if (file.size > 15 * 1024 * 1024) {
+      toast.error("Please choose an image smaller than 15 MB");
       return;
     }
     setBusy(true);
     try {
-      const ext = file.type === "image/png" ? "png" : file.type === "image/webp" ? "webp" : "jpg";
-      const path = `banners/${crypto.randomUUID()}.${ext}`;
-      const { error } = await supabase.storage.from(BUCKET).upload(path, file, { contentType: file.type });
+      const webp = await compressToWebp(file);
+      const path = `banners/${crypto.randomUUID()}.webp`;
+      const { error } = await supabase.storage.from(BUCKET).upload(path, webp, { contentType: "image/webp" });
       if (error) throw error;
       const { data, error: signErr } = await supabase.storage
         .from(BUCKET)
@@ -125,10 +125,10 @@ function ImageSlot({
         const img = new Image();
         img.onload = () => resolve(`${img.naturalWidth}×${img.naturalHeight}px`);
         img.onerror = () => resolve("");
-        img.src = URL.createObjectURL(file);
+        img.src = URL.createObjectURL(webp);
       });
-      const kb = Math.round(file.size / 1024);
-      const info = `${dims ? `${dims} · ` : ""}${file.type.split("/")[1]?.toUpperCase() ?? "IMG"} · ${kb} KB`;
+      const kb = Math.round(webp.size / 1024);
+      const info = `${dims ? `${dims} · ` : ""}WEBP · ${kb} KB`;
       setMeta(info);
       onChange(data.signedUrl, info);
       toast.success(`${label} uploaded`);

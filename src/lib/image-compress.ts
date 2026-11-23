@@ -1,46 +1,39 @@
-// Resizes an image in the browser and converts it to WebP before upload.
+const MAX_OUTPUT_BYTES = 512 * 1024;
 
-type Options = {
-  maxSize?: number; // longest side in pixels
-  quality?: number; // 0..1
-};
-
-export async function compressToWebp(
-  file: File,
-  { maxSize = 1600, quality = 0.82 }: Options = {},
-): Promise<File> {
-  // Leave non-images, GIFs and SVGs untouched
-  if (!file.type.startsWith("image/") || file.type === "image/gif" || file.type === "image/svg+xml") {
-    return file;
+/** Convert a still raster image to WebP, progressively reducing it until it is <=512 KiB. */
+export async function compressToWebp(file: File, { maxSize = 2000 }: { maxSize?: number } = {}): Promise<File> {
+  if (!file.type.startsWith('image/') || file.type === 'image/gif' || file.type === 'image/svg+xml') {
+    throw new Error('Only still raster images can be converted to WebP.');
   }
-
+  let bitmap: ImageBitmap;
   try {
-    const bitmap = await createImageBitmap(file, { imageOrientation: "from-image" });
-    const scale = Math.min(1, maxSize / Math.max(bitmap.width, bitmap.height));
-    const width = Math.round(bitmap.width * scale);
-    const height = Math.round(bitmap.height * scale);
-
-    const canvas = document.createElement("canvas");
-    canvas.width = width;
-    canvas.height = height;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return file;
-    ctx.drawImage(bitmap, 0, 0, width, height);
-    bitmap.close?.();
-
-    const blob = await new Promise<Blob | null>((resolve) =>
-      canvas.toBlob(resolve, "image/webp", quality),
-    );
-
-    // Browser couldn't make WebP, or the result isn't smaller: keep the original
-    if (!blob || blob.type !== "image/webp" || (scale === 1 && blob.size >= file.size)) {
-      return file;
-    }
-
-    const baseName = file.name.replace(/\.[^.]+$/, "");
-    return new File([blob], `${baseName}.webp`, { type: "image/webp", lastModified: Date.now() });
+    bitmap = await createImageBitmap(file, { imageOrientation: 'from-image' });
   } catch {
-    // If anything fails, upload the original instead of blocking the admin
-    return file;
+    throw new Error('This image format is not supported. Please choose a JPG or PNG.');
+  }
+  try {
+    let edge = Math.min(maxSize, Math.max(bitmap.width, bitmap.height));
+    while (edge >= 320) {
+      const scale = Math.min(1, edge / Math.max(bitmap.width, bitmap.height));
+      const canvas = document.createElement('canvas');
+      canvas.width = Math.max(1, Math.round(bitmap.width * scale));
+      canvas.height = Math.max(1, Math.round(bitmap.height * scale));
+      const ctx = canvas.getContext('2d');
+      if (!ctx) throw new Error('Your browser could not process this image.');
+      ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+      for (const quality of [0.84, 0.78, 0.72, 0.66, 0.60, 0.54, 0.48, 0.42]) {
+        const blob = await new Promise<Blob | null>(resolve => canvas.toBlob(resolve, 'image/webp', quality));
+        if (!blob || blob.type !== 'image/webp') throw new Error('WebP conversion is not supported by this browser.');
+        if (blob.size <= MAX_OUTPUT_BYTES) {
+          const dot = file.name.lastIndexOf('.');
+          const baseName = (dot > 0 ? file.name.slice(0, dot) : file.name) || 'image';
+          return new File([blob], baseName + '.webp', { type: 'image/webp', lastModified: Date.now() });
+        }
+      }
+      edge = Math.floor(edge * 0.8);
+    }
+    throw new Error('This image cannot be reduced below 512 KB. Choose a smaller or simpler image.');
+  } finally {
+    bitmap.close();
   }
 }
