@@ -205,15 +205,6 @@ BEGIN
       v_updated_products := v_updated_products + 1;
     END IF;
 
-    IF EXISTS (
-      SELECT 1 FROM public.product_variants pv
-       WHERE lower(btrim(pv.sku)) = lower(v_sku)
-         AND pv.bizsathi_variant_id IS DISTINCT FROM v_variant_id
-         AND pv.product_id <> v_existing_product_id
-    ) THEN
-      RAISE EXCEPTION 'SKU already exists on another Auraluxe product; manual identity review required';
-    END IF;
-
     SELECT id INTO v_model_variant_id
       FROM public.product_variants
      WHERE product_id = v_existing_product_id
@@ -232,6 +223,20 @@ BEGIN
     END IF;
 
     v_existing_variant_id := coalesce(v_model_variant_id, v_id_variant_id);
+
+    IF EXISTS (
+      SELECT 1 FROM public.product_variants pv
+       WHERE lower(btrim(pv.sku)) = lower(v_sku)
+         AND (v_existing_variant_id IS NULL OR pv.id <> v_existing_variant_id)
+    ) OR EXISTS (
+      SELECT 1 FROM public.products p
+       WHERE p.sku IS NOT NULL
+         AND lower(btrim(p.sku)) = lower(v_sku)
+         AND p.id <> v_existing_product_id
+    ) THEN
+      RAISE EXCEPTION 'SKU already exists on another website record; manual identity review required';
+    END IF;
+
     IF v_existing_variant_id IS NULL THEN
       INSERT INTO public.product_variants (
         product_id, size, color, sku, stock, bizsathi_variant_id, bizsathi_variant_name, bizsathi_model_code
