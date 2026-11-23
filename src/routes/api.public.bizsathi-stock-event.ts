@@ -68,6 +68,7 @@ export const Route = createFileRoute('/api/public/bizsathi-stock-event')({
         _sku: parsed.sku,
         _sku_version: parsed.skuVersion,
         _delta: parsed.delta,
+        _occurred_at: parsed.occurredAt,
       });
       if (result.error || !result.data || typeof result.data !== 'object') {
         const detail = result.error?.message ?? '';
