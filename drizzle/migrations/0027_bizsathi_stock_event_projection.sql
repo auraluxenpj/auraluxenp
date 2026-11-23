@@ -299,6 +299,9 @@ DECLARE body text; changed text;
 BEGIN
   SELECT pg_get_functiondef('public.upsert_shared_catalogue_from_bizsathi(jsonb)'::regprocedure) INTO body;
   changed:=replace(body,
+    E'BEGIN\n  IF auth.uid() IS NOT NULL THEN',
+    E'BEGIN\n  IF NOT coalesce((SELECT catalogue_enabled FROM public.bizsathi_sync_control WHERE id=1),false) THEN RAISE EXCEPTION ''Catalogue sync is disabled''; END IF;\n  IF auth.uid() IS NOT NULL THEN');
+  changed:=replace(changed,
     '  v_updated_variants integer := 0;',
     E'  v_updated_variants integer := 0;\n  v_mappings jsonb := ''[]''::jsonb;');
   changed:=replace(changed,
