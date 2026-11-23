@@ -96,13 +96,13 @@ jobs:
           GRANT SELECT, INSERT, UPDATE, DELETE ON storage.objects TO anon, authenticated, service_role;
           SQL
 
-      - name: Apply the 25 repository migrations to the temporary database
+      - name: Apply the 29 repository migrations to the temporary database
         run: |
           set -euo pipefail
           shopt -s nullglob
           migrations=(drizzle/migrations/[0-9][0-9][0-9][0-9]_*.sql)
-          if [ "${#migrations[@]}" -ne 25 ]; then
-            echo "Expected exactly 24 numbered SQL migrations; found ${#migrations[@]}."
+          if [ "${#migrations[@]}" -ne 29 ]; then
+            echo "Expected exactly 29 numbered SQL migrations; found ${#migrations[@]}."
             exit 1
           fi
           for migration in "${migrations[@]}"; do
@@ -243,6 +243,7 @@ jobs:
               RAISE EXCEPTION 'New catalogue product must remain unpublished with zero local stock';
             END IF;
 
+            PERFORM set_config('app.stock_sync_origin','bizsathi',true);
             UPDATE public.products SET is_published = true, stock = 7
              WHERE bizsathi_product_id = product_id;
             UPDATE public.product_variants SET stock = 5
@@ -267,6 +268,94 @@ jobs:
           $test$;
           SQL
 
+
+      - name: Verify shared catalogue import is SKU-first and permits duplicate Model Codes
+        run: |
+          set -euo pipefail
+          psql "$DATABASE_URL" -v ON_ERROR_STOP=1 <<'SQL'
+          DO $test$
+          DECLARE
+            payload jsonb;
+            result jsonb;
+            first_product uuid;
+            first_variant uuid;
+          BEGIN
+            UPDATE public.bizsathi_sync_control SET catalogue_enabled=true WHERE id=1;
+            IF has_function_privilege('authenticated', 'public.upsert_shared_catalogue_from_bizsathi(jsonb)', 'EXECUTE') THEN
+              RAISE EXCEPTION 'Browser users must not execute shared catalogue import';
+            END IF;
+            IF NOT has_function_privilege('service_role', 'public.upsert_shared_catalogue_from_bizsathi(jsonb)', 'EXECUTE') THEN
+              RAISE EXCEPTION 'Service role must execute shared catalogue import';
+            END IF;
+
+            payload := jsonb_build_array(
+              jsonb_build_object('product_id','aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+                'variant_id','bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb','name','Shared Test One',
+                'category','Test Category','variant_name','Standard','model_code','DUPLICATE-MODEL',
+                'sku','SYNC-TEST-ONE','unit','pcs','sizes',jsonb_build_array('M','L'),
+                'purchase_price',500,'mrp',1500,'selling_price',1000,'wholesale_price',800,
+                'reorder_level',2,'published',false,'barcode','SYNC-TEST-BAR-1'),
+              jsonb_build_object('product_id','cccccccc-cccc-4ccc-8ccc-cccccccccccc',
+                'variant_id','dddddddd-dddd-4ddd-8ddd-dddddddddddd','name','Shared Test Two',
+                'category','Test Category','variant_name','Standard','model_code','DUPLICATE-MODEL',
+                'sku','SYNC-TEST-TWO','unit','pcs','sizes',jsonb_build_array('STANDARD'),
+                'purchase_price',600,'mrp',1600,'selling_price',1100,'wholesale_price',850,
+                'reorder_level',3,'published',false,'barcode','SYNC-TEST-BAR-2')
+            );
+            result := public.upsert_shared_catalogue_from_bizsathi(payload);
+            IF result->>'identity_key' <> 'sku' OR result->>'model_code_unique' <> 'false'
+               OR (result->>'created_products')::integer <> 2
+               OR (result->>'created_variants')::integer <> 2 THEN
+              RAISE EXCEPTION 'SKU-first import did not accept repeated Model Code values';
+            END IF;
+            SELECT p.id,pv.id INTO first_product,first_variant
+              FROM public.products p JOIN public.product_variants pv ON pv.product_id=p.id
+             WHERE pv.sku='SYNC-TEST-ONE';
+            PERFORM set_config('app.stock_sync_origin','bizsathi',true);
+            UPDATE public.products SET description='Website copy retained',meta_title='Keep this title',stock=7 WHERE id=first_product;
+            UPDATE public.product_variants SET stock=5 WHERE id=first_variant;
+            payload := jsonb_build_array(jsonb_build_object(
+              'product_id','aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+              'variant_id','bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb','name','Updated Test One',
+              'category','Test Category','variant_name','Standard','model_code','DUPLICATE-MODEL',
+              'sku','SYNC-TEST-ONE','unit','pcs','sizes',jsonb_build_array('M','L'),
+              'purchase_price',550,'mrp',1550,'selling_price',1050,'wholesale_price',825,
+              'reorder_level',2,'published',false,'barcode','SYNC-TEST-BAR-1'
+            ));
+            UPDATE public.products SET is_published=true
+             WHERE name='Shared Test Two';
+            PERFORM set_config('request.jwt.claim.role','service_role',true);
+            result := public.reconcile_bizsathi_catalogue(payload);
+            IF (result->>'updated_products')::integer <> 1
+               OR (result->>'updated_variants')::integer <> 1
+               OR (result->>'unpublished_products')::integer < 1 THEN
+              RAISE EXCEPTION 'Full BizSathi snapshot did not update matching SKU and unpublish absent products';
+            END IF;
+            IF EXISTS (SELECT 1 FROM public.products WHERE name='Shared Test Two' AND is_published) THEN
+              RAISE EXCEPTION 'Auraluxe product absent from BizSathi snapshot remained published';
+            END IF;
+            IF NOT EXISTS (SELECT 1 FROM public.products WHERE id=first_product AND stock=7
+              AND description='Website copy retained' AND meta_title='Keep this title') THEN
+              RAISE EXCEPTION 'Catalogue import overwrote stock or website enrichment';
+            END IF;
+            IF NOT EXISTS (SELECT 1 FROM public.product_variants WHERE id=first_variant AND stock=5
+              AND purchase_price=550 AND mrp=1550 AND wholesale_price=825) THEN
+              RAISE EXCEPTION 'Catalogue import did not update commercial fields or changed stock';
+            END IF;
+            IF (SELECT count(*) FROM public.products WHERE model_code='DUPLICATE-MODEL')<>2 THEN
+              RAISE EXCEPTION 'Repeated Model Code values must remain valid';
+            END IF;
+            PERFORM set_config('app.stock_sync_origin','',true);
+            BEGIN
+              UPDATE public.product_variants SET stock=stock+1 WHERE id=first_variant;
+              RAISE EXCEPTION 'Auraluxe-origin stock edits must be blocked';
+            EXCEPTION WHEN raise_exception THEN
+              IF SQLERRM NOT LIKE 'BizSathi is the sole stock authority%' THEN RAISE; END IF;
+            END;
+            UPDATE public.bizsathi_sync_control SET catalogue_enabled=false WHERE id=1;
+          END
+          $test$;
+          SQL
 
       - name: Verify checkout captures BizSathi identity and enqueues a PII-minimized idempotent event
         run: |
@@ -300,10 +389,11 @@ jobs:
              WHERE id = 'main';
             ALTER TABLE public.payment_settings ENABLE TRIGGER payment_settings_audit_trigger;
 
+            PERFORM set_config('app.stock_sync_origin','bizsathi',true);
             INSERT INTO public.products (
               name, slug, price, stock, sizes, colors, images, is_published, bizsathi_product_id
             ) VALUES (
-              'Mapped Checkout Test', 'mapped-checkout-test', 1200, 5, '{}', '{}', '{}', true,
+              'Mapped Checkout Test', 'mapped-checkout-test', 1200, 5, ARRAY['M','L'], '{}', '{}', true,
               '33333333-3333-4333-8333-333333333333'
             ) RETURNING id INTO product_id;
 
@@ -316,7 +406,7 @@ jobs:
 
             items := jsonb_build_array(jsonb_build_object(
               'product_id', product_id,
-              'size', null,
+              'size', 'M',
               'color', null,
               'quantity', 1
             ));
@@ -390,6 +480,109 @@ jobs:
               RAISE EXCEPTION 'Rejected ambiguous checkout must not leave an order';
             END IF;
             UPDATE public.bizsathi_checkout_reservation_config SET enabled = false WHERE id = 1;
+          END
+          $test$;
+          SQL
+
+      - name: Verify idempotent BizSathi stock events, baseline gating and SKU ordering
+        run: |
+          set -euo pipefail
+          psql "$DATABASE_URL" -v ON_ERROR_STOP=1 <<'SQL'
+          DO $test$
+          DECLARE
+            product_id uuid;
+            variant_id uuid;
+            baseline_result jsonb;
+            event_result jsonb;
+            duplicate_result jsonb;
+          BEGIN
+            PERFORM set_config('app.stock_sync_origin','bizsathi',true);
+            INSERT INTO public.products (
+              name,slug,price,stock,sizes,colors,images,is_published,bizsathi_product_id
+            ) VALUES (
+              'Stock Event Test','stock-event-test',900,10,ARRAY['S','M'],'{}','{}',false,
+              '66666666-6666-4666-8666-666666666666'
+            ) RETURNING id INTO product_id;
+            INSERT INTO public.product_variants (
+              product_id,size,color,sku,stock,bizsathi_variant_id,bizsathi_variant_name
+            ) VALUES (
+              product_id,NULL,NULL,'AL-STOCK-EVENT-TEST',10,
+              '77777777-7777-4777-8777-777777777777','Standard'
+            ) RETURNING id INTO variant_id;
+
+            INSERT INTO public.bizsathi_stock_baselines(
+              bizsathi_product_id,bizsathi_variant_id,auraluxe_product_id,auraluxe_variant_id,
+              sku,baseline_quantity,bizsathi_ledger_quantity,last_version,verification_reference,verified_by
+            ) VALUES (
+              '66666666-6666-4666-8666-666666666666',
+              '77777777-7777-4777-8777-777777777777',
+              product_id,variant_id,'al-stock-event-test',10,10,0,'isolated physical count test',
+              '00000000-0000-0000-0000-000000000001'
+            );
+
+            BEGIN
+              INSERT INTO public.bizsathi_stock_baselines(
+                bizsathi_product_id,bizsathi_variant_id,auraluxe_product_id,auraluxe_variant_id,
+                sku,baseline_quantity,bizsathi_ledger_quantity,last_version,verification_reference,verified_by
+              ) VALUES (
+                'aaaaaaaa-0000-4000-8000-000000000001',
+                'aaaaaaaa-0000-4000-8000-000000000002',
+                'aaaaaaaa-0000-4000-8000-000000000003',
+                'aaaaaaaa-0000-4000-8000-000000000004',
+                'baseline-mismatch-test',2,3,0,'mismatch must fail',
+                '00000000-0000-0000-0000-000000000001'
+              );
+              RAISE EXCEPTION 'Mismatched physical and ledger baseline must be rejected';
+            EXCEPTION WHEN check_violation THEN
+              NULL;
+            END;
+
+            UPDATE public.bizsathi_sync_control SET stock_enabled=true WHERE id=1;
+            UPDATE public.website_inventory_authority SET enabled=true WHERE id=1;
+            PERFORM set_config('request.jwt.claim.role','service_role',true);
+
+            event_result := public.apply_bizsathi_stock_event(
+              '88888888-8888-4888-8888-888888888888',
+              'stock_movements','99999999-9999-4999-8999-999999999999',
+              '66666666-6666-4666-8666-666666666666',
+              '77777777-7777-4777-8777-777777777777',
+              product_id,variant_id,'AL-STOCK-EVENT-TEST',1,-2,'2026-11-23T09:00:00Z'::timestamptz
+            );
+            IF event_result->>'duplicate' <> 'false'
+               OR (SELECT stock FROM public.products WHERE id=product_id) <> 8
+               OR (SELECT stock FROM public.product_variants WHERE id=variant_id) <> 8 THEN
+              RAISE EXCEPTION 'First stock event must apply one delta to product and mapped variant';
+            END IF;
+
+            duplicate_result := public.apply_bizsathi_stock_event(
+              '88888888-8888-4888-8888-888888888888',
+              'stock_movements','99999999-9999-4999-8999-999999999999',
+              '66666666-6666-4666-8666-666666666666',
+              '77777777-7777-4777-8777-777777777777',
+              product_id,variant_id,'AL-STOCK-EVENT-TEST',1,-2,'2026-11-23T09:00:00Z'::timestamptz
+            );
+            IF duplicate_result->>'duplicate' <> 'true'
+               OR (SELECT stock FROM public.products WHERE id=product_id) <> 8 THEN
+              RAISE EXCEPTION 'Duplicate stock event must not apply twice';
+            END IF;
+
+            BEGIN
+              PERFORM public.apply_bizsathi_stock_event(
+                'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+                'stock_movements','bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',
+                '66666666-6666-4666-8666-666666666666',
+                '77777777-7777-4777-8777-777777777777',
+                product_id,variant_id,'AL-STOCK-EVENT-TEST',3,-1,'2026-11-23T09:05:00Z'::timestamptz
+              );
+              RAISE EXCEPTION 'Out-of-order stock event must be rejected';
+            EXCEPTION WHEN raise_exception THEN
+              IF SQLERRM NOT LIKE 'Out-of-order stock event%' THEN RAISE; END IF;
+            END;
+            IF (SELECT count(*) FROM public.bizsathi_stock_events WHERE bizsathi_variant_id='77777777-7777-4777-8777-777777777777' AND occurred_at='2026-11-23T09:00:00Z'::timestamptz) <> 1 THEN
+              RAISE EXCEPTION 'Only one immutable stock event should be recorded';
+            END IF;
+            UPDATE public.bizsathi_sync_control SET stock_enabled=false WHERE id=1;
+            UPDATE public.website_inventory_authority SET enabled=false WHERE id=1;
           END
           $test$;
           SQL

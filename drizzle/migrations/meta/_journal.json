@@ -155,6 +155,34 @@
       "when": 1795430000000,
       "tag": "0024_model_code_catalogue_identity",
       "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1795435000000,
+      "tag": "0025_shared_sku_first_catalogue",
+      "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1795436000000,
+      "tag": "0026_bizsathi_catalogue_outbox",
+      "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1795437000000,
+      "tag": "0027_bizsathi_stock_event_projection",
+      "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1795438000000,
+      "tag": "0028_bizsathi_single_catalogue_authority",
+      "breakpoints": true
     }
   ]
 }
