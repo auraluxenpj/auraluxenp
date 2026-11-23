@@ -75,8 +75,15 @@ function ProductDetail() {
     const sizeStocksList = sizeStocks(product, variants);
     const effectiveSize = size ?? (product.sizes?.length === 1 ? product.sizes[0] ?? null : null);
     const effectiveColor = color ?? (product.colors?.length === 1 ? product.colors[0] ?? null : null);
-    const comboStock = effectiveSize ? stockForSize(variants, effectiveSize, effectiveColor) : null;
-    const sizeTotalStock = effectiveSize ? stockForSize(variants, effectiveSize) : null;
+    // A single generic BizSathi-mapped variant represents pooled SKU stock.
+    // Do not interpret its lack of a size label as zero stock for every size.
+    const hasSizeTrackedVariants = variants.some((variant) => Boolean(variant.size?.trim()));
+    const comboStock = effectiveSize && hasSizeTrackedVariants
+      ? stockForSize(variants, effectiveSize, effectiveColor)
+      : null;
+    const sizeTotalStock = effectiveSize && hasSizeTrackedVariants
+      ? stockForSize(variants, effectiveSize)
+      : null;
     const maxQty = comboStock ?? sizeTotalStock;
     const qty = Math.max(1, Math.min(quantity, maxQty ?? quantity));
     const allSizesSoldOut =
