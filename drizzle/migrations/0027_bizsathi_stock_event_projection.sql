@@ -227,7 +227,7 @@ BEGIN
   RETURN jsonb_build_object('ok',true,'duplicate',false,'sku',lower(btrim(_sku)),'delta',_delta,'version',_sku_version);
 END $$;
 REVOKE ALL ON FUNCTION public.apply_bizsathi_stock_event(uuid,text,uuid,uuid,uuid,uuid,uuid,text,bigint,integer,timestamptz) FROM PUBLIC,anon,authenticated;
-GRANT EXECUTE ON FUNCTION public.apply_bizsathi_stock_event(uuid,text,uuid,uuid,uuid,uuid,uuid,text,bigint,integer) TO service_role;
+GRANT EXECUTE ON FUNCTION public.apply_bizsathi_stock_event(uuid,text,uuid,uuid,uuid,uuid,uuid,text,bigint,integer,timestamptz) TO service_role;
 
 -- Auraluxe checkout selects a size as a merchandising attribute, but BizSathi
 -- holds pooled SKU quantity. If there is no size/colour-specific mapping, use
