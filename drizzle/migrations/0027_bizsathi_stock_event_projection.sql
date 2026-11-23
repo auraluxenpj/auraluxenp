@@ -135,6 +135,7 @@ BEGIN
     END IF;
     RAISE EXCEPTION 'A baseline already exists; a reviewed recount workflow is required';
   END IF;
+  PERFORM set_config('app.stock_sync_origin','bizsathi',true);
   UPDATE public.products SET stock=_quantity,updated_at=now() WHERE id=_auraluxe_product_id;
   UPDATE public.product_variants SET stock=_quantity WHERE id=_auraluxe_variant_id;
   INSERT INTO public.bizsathi_stock_baselines(
@@ -209,6 +210,7 @@ BEGIN
   IF NOT FOUND THEN RAISE EXCEPTION 'Mapped Auraluxe product no longer exists'; END IF;
   IF p.stock+_delta<0 OR v.stock+_delta<0 THEN RAISE EXCEPTION 'Stock event would make Auraluxe stock negative'; END IF;
 
+  PERFORM set_config('app.stock_sync_origin','bizsathi',true);
   UPDATE public.products SET stock=stock+_delta,updated_at=now() WHERE id=_auraluxe_product_id;
   UPDATE public.product_variants SET stock=stock+_delta WHERE id=_auraluxe_variant_id;
   INSERT INTO public.bizsathi_stock_events(
