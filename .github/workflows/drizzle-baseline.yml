@@ -96,13 +96,13 @@ jobs:
           GRANT SELECT, INSERT, UPDATE, DELETE ON storage.objects TO anon, authenticated, service_role;
           SQL
 
-      - name: Apply the 29 repository migrations to the temporary database
+      - name: Apply the 30 repository migrations to the temporary database
         run: |
           set -euo pipefail
           shopt -s nullglob
           migrations=(drizzle/migrations/[0-9][0-9][0-9][0-9]_*.sql)
-          if [ "${#migrations[@]}" -ne 29 ]; then
-            echo "Expected exactly 29 numbered SQL migrations; found ${#migrations[@]}."
+          if [ "${#migrations[@]}" -ne 30 ]; then
+            echo "Expected exactly 30 numbered SQL migrations; found ${#migrations[@]}."
             exit 1
           fi
           for migration in "${migrations[@]}"; do
@@ -586,6 +586,9 @@ jobs:
           END
           $test$;
           SQL
+
+      - name: Verify BizSathi catalogue receiver gate in the temporary database
+        run: psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f supabase/tests/bizsathi_catalogue_receiver_gate.sql
 
       - name: Generate Drizzle schema and snapshot in a temporary output directory
         run: |
