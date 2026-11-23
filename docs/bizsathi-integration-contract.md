@@ -11,13 +11,16 @@
 
 ## Catalogue identity
 
-Use immutable source IDs, not generated slugs or SKU fragments:
+Use the normalized full SKU as the primary matching key for catalogue reconciliation (trimmed and case-insensitive; never match by name, slug, SKU suffix, or size/colour parsing):
 
-- products.bizsathi_product_id identifies the BizSathi product.
-- product_variants.bizsathi_variant_id identifies the BizSathi variant/SKU.
+- Each incoming BizSathi variant SKU must match at most one Auraluxe product variant.
+- All SKUs belonging to one BizSathi product must resolve to the same Auraluxe product; otherwise stop for manual review.
+- A matching Auraluxe product/variant without BizSathi IDs is linked in place. Existing website name, description, images, price, publication state, size, colour and stock are preserved during this SKU-only link.
+- Duplicate website SKUs, product-level SKU collisions, or conflicts between an existing source-ID mapping and the SKU match are rejected for manual review. No automatic name-based fallback is allowed.
+- After a safe SKU match, products.bizsathi_product_id and product_variants.bizsathi_variant_id are attached as immutable secondary identities. They remain the stable identifiers for order and checkout records.
 - order_items.bizsathi_product_id, order_items.bizsathi_variant_id and order_items.source_sku preserve the identity captured at checkout.
 
-A product may have multiple size/colour variants. Auraluxe product-level stock is an aggregate display value; each website variant maps to exactly one BizSathi variant. SKU uniqueness is enforced by partial unique indexes on the source IDs. Existing website products without verified source IDs remain untouched.
+A product may have multiple variants. Auraluxe product-level stock is an aggregate display value; each website variant maps to exactly one BizSathi variant. Existing website products with no unique SKU match remain untouched and are not auto-linked.
 
 ## Order lifecycle and durable delivery
 
@@ -37,9 +40,9 @@ This outbox is a foundation, not an activated stock writer. It must not be conne
 ## Rollout gates
 
 1. Review and merge the BizSathi workspace-ID correction after CI.
-2. Apply this additive website schema migration only after review; it does not import catalogue rows or alter stock.
+2. Apply the additive website schema migrations only after review; migration 0024 changes catalogue identity resolution but does not import catalogue rows, alter stock, publish products, or enable checkout.
 3. Review the draft-only catalogue export/upsert implementation in BizSathi PR #178 and website PR #26; its current supported fields are product name, category, variant label, model code, SKU and selling price. Only one of 407 active BizSathi products has an image path, and all 407 active variant labels are Standard/STANDARD. Description, actual size and colour values are not present in the current source schema.
-4. Reconcile the existing 13 website products against BizSathi's active catalogue; manually resolve ambiguous matches. Exact SKU intersection was zero in the initial audit, so existing products are not auto-linked by suffix or approximate name.
+4. Reconcile existing website products against BizSathi's active catalogue using exact normalized SKU only. Manually resolve duplicate, product-level, cross-product, or source-ID conflicts; do not fall back to names or SKU fragments.
 5. Implement BizSathi reservation/commit/cancel/return RPCs and the website server-side checkout saga; only then enable the database checkout-reservation switch.
 6. Implement the outbox worker, retry/dead-letter visibility, and reconciliation reports.
 7. Test in isolated/staging databases, including duplicate requests, concurrent checkout, payment failure, cancellation, partial return, timeout after remote commit, and replay.
