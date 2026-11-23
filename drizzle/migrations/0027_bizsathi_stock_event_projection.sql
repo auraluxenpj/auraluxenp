@@ -74,6 +74,16 @@ ALTER TABLE public.bizsathi_stock_events ENABLE ROW LEVEL SECURITY;
 REVOKE ALL ON public.bizsathi_stock_events FROM PUBLIC,anon,authenticated;
 GRANT ALL ON public.bizsathi_stock_events TO service_role;
 
+CREATE OR REPLACE FUNCTION public.block_bizsathi_stock_event_mutation()
+RETURNS trigger LANGUAGE plpgsql AS $$
+BEGIN
+  RAISE EXCEPTION 'BizSathi stock events are immutable';
+END $$;
+REVOKE ALL ON FUNCTION public.block_bizsathi_stock_event_mutation() FROM PUBLIC,anon,authenticated;
+CREATE TRIGGER bizsathi_stock_events_immutable
+  BEFORE UPDATE OR DELETE ON public.bizsathi_stock_events
+  FOR EACH ROW EXECUTE FUNCTION public.block_bizsathi_stock_event_mutation();
+
 CREATE OR REPLACE FUNCTION public.register_bizsathi_stock_baseline(
   _bizsathi_product_id uuid,
   _bizsathi_variant_id uuid,
@@ -94,6 +104,9 @@ BEGIN
   END IF;
   IF coalesce((SELECT stock_enabled FROM public.bizsathi_sync_control WHERE id=1),false) THEN
     RAISE EXCEPTION 'Disable stock event delivery before registering or correcting a baseline';
+  END IF;
+  IF public.website_inventory_authority_enabled() THEN
+    RAISE EXCEPTION 'Register physical baselines before enabling BizSathi inventory authority';
   END IF;
   SELECT * INTO v FROM public.product_variants
    WHERE id=_auraluxe_variant_id AND bizsathi_variant_id=_bizsathi_variant_id
