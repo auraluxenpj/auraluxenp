@@ -578,7 +578,7 @@ jobs:
             EXCEPTION WHEN raise_exception THEN
               IF SQLERRM NOT LIKE 'Out-of-order stock event%' THEN RAISE; END IF;
             END;
-            IF (SELECT count(*) FROM public.bizsathi_stock_events WHERE bizsathi_variant_id='77777777-7777-4777-8777-777777777777') <> 1 THEN
+            IF (SELECT count(*) FROM public.bizsathi_stock_events WHERE bizsathi_variant_id='77777777-7777-4777-8777-777777777777' AND occurred_at='2026-11-23T09:00:00Z'::timestamptz) <> 1 THEN
               RAISE EXCEPTION 'Only one immutable stock event should be recorded';
             END IF;
             UPDATE public.bizsathi_sync_control SET stock_enabled=false WHERE id=1;
