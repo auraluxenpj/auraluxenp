@@ -50,13 +50,23 @@ function ProductDetail() {
   const settings = useSettings();
   const { add } = useCart();
 
-  const { data: product, isLoading } = useQuery({
+  const {
+    data: product,
+    isLoading,
+    isError: productError,
+    refetch: retryProduct,
+  } = useQuery({
     queryKey: ["product", slug],
     queryFn: () => fetchProductBySlug(slug),
   });
   const { data: all = [] } = useQuery({ queryKey: ["products"], queryFn: fetchProducts });
   const productId = product?.id ?? null;
-  const { data: variants = [] } = useQuery({
+  const {
+    data: variants = [],
+    isLoading: variantsLoading,
+    isError: variantsError,
+    refetch: retryVariants,
+  } = useQuery({
     queryKey: ["product-variants", productId],
     queryFn: () => fetchVariantsForProduct(productId as string),
     enabled: productId != null,
@@ -115,6 +125,29 @@ function ProductDetail() {
     return (
       <SiteLayout>
         <p className="glass mt-10 rounded-3xl p-8 text-sm text-muted-foreground">{t("loadingCollection")}</p>
+      </SiteLayout>
+    );
+  }
+
+  if (productError) {
+    return (
+      <SiteLayout>
+        <div role="alert" className="glass mt-10 rounded-3xl p-8">
+          <h1 className="font-display text-3xl">This product could not be loaded</h1>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Please check your connection and try again.
+          </p>
+          <button
+            type="button"
+            onClick={() => void retryProduct()}
+            className="mt-5 rounded-full bg-primary px-6 py-3 text-xs uppercase tracking-[0.16em] text-primary-foreground"
+          >
+            Try again
+          </button>
+          <Link to="/shop" className="ml-4 inline-block text-sm text-brand underline">
+            {t("backToShop")}
+          </Link>
+        </div>
       </SiteLayout>
     );
   }
@@ -258,6 +291,25 @@ function ProductDetail() {
             ) : null}
           </div>
 
+          {variantsError ? (
+            <div role="alert" className="mt-4 rounded-2xl border border-destructive/30 bg-destructive/5 p-4">
+              <p className="text-sm text-destructive">
+                Stock options could not be checked. Please retry before adding this item to your bag.
+              </p>
+              <button
+                type="button"
+                onClick={() => void retryVariants()}
+                className="mt-2 text-xs font-semibold uppercase tracking-[0.14em] text-brand underline"
+              >
+                Retry stock check
+              </button>
+            </div>
+          ) : variantsLoading ? (
+            <p role="status" className="mt-3 text-xs text-muted-foreground">
+              Checking size and colour availability…
+            </p>
+          ) : null}
+
           <p className="mt-2 text-[12px] uppercase tracking-[0.18em] text-muted-foreground">
             {outOfStock
               ? t("outOfStockDetail")
@@ -278,7 +330,7 @@ function ProductDetail() {
                     <button
                       key={s}
                       type="button"
-                      disabled={soldOut}
+                      disabled={variantsLoading || variantsError || soldOut}
                       aria-pressed={d.effectiveSize === s}
                       onClick={() => setSize(s)}
                       className={`flex min-w-[4.5rem] flex-col items-center rounded-full px-5 py-2 text-[12px] uppercase tracking-[0.15em] ${
@@ -368,7 +420,7 @@ function ProductDetail() {
           <div className="mt-7 flex flex-col gap-3 sm:flex-row">
             <button
               type="button"
-              disabled={outOfStock || comboEmpty || missingOptions.length > 0}
+              disabled={outOfStock || comboEmpty || missingOptions.length > 0 || variantsLoading || variantsError}
               onClick={() => {
                 add(chosen);
                 toast.success(t("addedBagToast"));
@@ -381,6 +433,11 @@ function ProductDetail() {
               to="/checkout"
               disabled={outOfStock}
               onClick={(e) => {
+                if (variantsLoading || variantsError) {
+                  e.preventDefault();
+                  toast.error("Please wait until stock availability has been confirmed.");
+                  return;
+                }
                 if (missingOptions.length) {
                   e.preventDefault();
                   toast.error(`${t("pleaseSelect")} ${missingOptions.join(` ${t("and")} `)}`);
