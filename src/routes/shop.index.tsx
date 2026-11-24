@@ -74,7 +74,12 @@ function Shop() {
     setQuery(search.q ?? "");
   }, [search.q]);
 
-  const { data: products = [], isLoading } = useQuery({
+  const {
+    data: products = [],
+    isLoading,
+    isError: productsError,
+    refetch: retryProducts,
+  } = useQuery({
     queryKey: ["products"],
     queryFn: fetchProducts,
   });
@@ -412,7 +417,11 @@ function Shop() {
           <h2 className="mt-2 font-display text-2xl text-[#422d2a] sm:text-3xl">{t("collection")}</h2>
         </div>
         <p className="text-[11px] uppercase tracking-[.15em] text-stone-500" aria-live="polite">
-          {isLoading ? t("loadingCollection") : String(filtered.length) + " " + t("pieces")}
+          {isLoading
+            ? t("loadingCollection")
+            : productsError
+              ? language === "ne" ? "सङ्ग्रह लोड हुन सकेन" : "Collection unavailable"
+              : String(filtered.length) + " " + t("pieces")}
         </p>
       </div>
 
@@ -422,7 +431,27 @@ function Shop() {
         ))}
       </section>
 
-      {!isLoading && filtered.length === 0 ? (
+      {productsError ? (
+        <div
+          role="alert"
+          className="glass mt-6 flex flex-col items-start gap-3 rounded-3xl border border-[#e5c9c3] p-6 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between"
+        >
+          <p>
+            {language === "ne"
+              ? "अहिले उत्पादनहरू लोड गर्न सकिएन। कृपया फेरि प्रयास गर्नुहोस्।"
+              : "We couldn’t load the collection right now. Please check your connection and try again."}
+          </p>
+          <button
+            type="button"
+            onClick={() => void retryProducts()}
+            className="shrink-0 rounded-full bg-primary px-5 py-2.5 text-[11px] uppercase tracking-[0.15em] text-primary-foreground transition hover:opacity-90"
+          >
+            {language === "ne" ? "फेरि प्रयास गर्नुहोस्" : "Try again"}
+          </button>
+        </div>
+      ) : null}
+
+      {!isLoading && !productsError && filtered.length === 0 ? (
         <p className="glass mt-6 rounded-3xl p-8 text-sm text-muted-foreground">
           {t("noPieces")}
         </p>
