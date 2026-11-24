@@ -40,7 +40,10 @@ function ProductsList() {
 
   const remove = useMutation({
     mutationFn: async (p: Product) => {
-      await supabase.from("product_variants").delete().eq("product_id", p.id);
+      // Delete the parent first. product_variants.product_id has ON DELETE CASCADE,
+      // so variants are removed only if the product deletion succeeds. If another
+      // relation (for example a coupon) blocks deletion, the product and variants
+      // remain intact.
       const { error } = await supabase.from("products").delete().eq("id", p.id);
       if (error) throw error;
     },
@@ -84,7 +87,7 @@ function ProductsList() {
     let deleted = 0;
     const failed: string[] = [];
     for (const p of targets) {
-      await supabase.from("product_variants").delete().eq("product_id", p.id);
+      // Rely on the database FK cascade only after the parent delete succeeds.
       const { error } = await supabase.from("products").delete().eq("id", p.id);
       if (error) failed.push(p.name); else deleted++;
     }
