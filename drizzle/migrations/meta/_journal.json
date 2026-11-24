@@ -190,6 +190,13 @@
       "when": 1795439000000,
       "tag": "0029_bizsathi_catalogue_receiver_gate",
       "breakpoints": true
+    },
+    {
+      "idx": 27,
+      "version": "7",
+      "when": 1795545405799,
+      "tag": "0030_bizsathi_catalogue_mapping_response",
+      "breakpoints": true
     }
   ]
 }
