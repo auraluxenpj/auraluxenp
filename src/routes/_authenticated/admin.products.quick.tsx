@@ -58,7 +58,10 @@ function QuickAdd() {
   const [isNew, setIsNew] = useState(true);
   const [saving, setSaving] = useState(false);
 
-  const selectedCategoryName = categories.find((c) => c.id === categoryId)?.name ?? "";\n  const skuPrefix = categorySkuPrefix(selectedCategoryName);\n\n  async function generate() {
+  const selectedCategoryName = categories.find((c) => c.id === categoryId)?.name ?? "";
+  const skuPrefix = categorySkuPrefix(selectedCategoryName);
+
+  async function generate() {
     if (name.trim().length < 2) { toast.error("Enter the product name first"); return; }
     setGenerating(true);
     try {
