@@ -186,7 +186,7 @@ function Shop() {
     if (visible.length < 16) return [];
     const anchor = visible[11];
     if (!anchor) return [];
-    const candidates = filtered.slice(12).filter((product) => product.id !== anchor.id);
+    const candidates = filtered.slice(12).filter((product) => product.id !== anchor.id && product.stock > 0);
     return [...candidates]
       .sort((a, b) => {
         const score = (product: typeof a) =>
