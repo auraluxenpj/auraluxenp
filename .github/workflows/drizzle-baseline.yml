@@ -375,6 +375,9 @@ jobs:
             IF NOT EXISTS (SELECT 1 FROM public.products WHERE id=first_product AND is_published=true) THEN
               RAISE EXCEPTION 'A published BizSathi SKU must be published in Auraluxe';
             END IF;
+            IF NOT EXISTS (SELECT 1 FROM public.products WHERE id=first_product AND name='Updated Test One') THEN
+              RAISE EXCEPTION 'BizSathi product name must overwrite the mapped Auraluxe product name';
+            END IF;
             payload := jsonb_set(payload, '{0,published}', 'false'::jsonb);
             PERFORM public.upsert_shared_catalogue_from_bizsathi(payload);
             IF NOT EXISTS (SELECT 1 FROM public.products WHERE id=first_product AND is_published=false) THEN
