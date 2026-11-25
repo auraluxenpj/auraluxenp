@@ -8,7 +8,7 @@ import { fetchCategories, slugify } from "@/lib/data";
 import { ImageUploader } from "@/components/admin/ImageUploader";
 import { Button } from "@/components/ui/button";
 import { generateProductDraft } from "@/lib/smart-upload.functions";
-import { buildProductSku, GARMENT_LABELS, GARMENT_TYPES, PHOTO_DISCLAIMER } from "@/lib/product-information";
+import { buildCategoryProductSku, categorySkuPrefix, PHOTO_DISCLAIMER } from "@/lib/product-information";
 
 export const Route = createFileRoute("/_authenticated/admin/products/quick")({
   head: () => ({ meta: [
@@ -59,7 +59,7 @@ function QuickAdd() {
   const [isNew, setIsNew] = useState(true);
   const [saving, setSaving] = useState(false);
 
-  async function generate() {
+  const selectedCategoryName = categories.find((c) => c.id === categoryId)?.name ?? "";\n  const skuPrefix = categorySkuPrefix(selectedCategoryName);\n\n  async function generate() {
     if (name.trim().length < 2) { toast.error("Enter the product name first"); return; }
     setGenerating(true);
     try {
@@ -84,7 +84,7 @@ function QuickAdd() {
   async function save(e: React.FormEvent) {
     e.preventDefault();
     let sku: string;
-    try { sku = buildProductSku(skuKind, skuSuffix); }
+    try { sku = buildCategoryProductSku(selectedCategoryName, skuSuffix); }
     catch (error) { toast.error(error instanceof Error ? error.message : "Check the SKU"); return; }
     const parsed = schema.safeParse({
       name, slug: slugify(name), price: Number(price),
@@ -190,7 +190,7 @@ function QuickAdd() {
             <input required pattern="[A-Za-z0-9]+(-[A-Za-z0-9]+)*" className={input} value={skuSuffix} onChange={(e) => setSkuSuffix(e.target.value)} placeholder="e.g. 001" />
           </label>
         </fieldset>
-        <p className="break-words text-sm font-medium">AL-{skuKind}-{skuSuffix.trim().toUpperCase() || "…"}</p>
+        <p className="break-words text-sm font-medium">AL-{skuPrefix || "CAT"}-{skuSuffix.trim().toUpperCase() || "…"}</p>
         <div className="flex flex-wrap gap-6 text-sm">
           <label className="flex items-center gap-3"><input type="checkbox" checked={isPublished} onChange={(e) => setIsPublished(e.target.checked)} className="size-4 accent-primary" />Visible on shop</label>
           <label className="flex items-center gap-3"><input type="checkbox" checked={isNew} onChange={(e) => setIsNew(e.target.checked)} className="size-4 accent-primary" />New arrival</label>
