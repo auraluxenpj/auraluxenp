@@ -97,8 +97,6 @@ function Shop() {
 
   const activeCategories = categories.filter((c) => c.is_active);
   const categoryId = categories.find((c) => c.slug === search.category)?.id;
-  const categoryFallbackImage = undefined;
-
   const filtered = useMemo(() => {
     // Never expose admin drafts or unpublished catalogue records on the public storefront.
     let list = [...publishedProducts];
@@ -486,7 +484,7 @@ function Shop() {
       {catalogueVisible.length > 12 ? (
         <section className="auraluxe-product-grid mt-5 grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-4 2xl:grid-cols-4">
           {catalogueVisible.slice(12).map((p) => (
-            <ProductCard key={p.id} product={p} {...(categoryFallbackImage ? { fallbackImage: categoryFallbackImage } : {})} />
+            <ProductCard key={p.id} product={p} />
           ))}
         </section>
       ) : null}
