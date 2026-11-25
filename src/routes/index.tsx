@@ -9,6 +9,7 @@ import {
   fetchTestimonials,
   hasDiscount,
   productImage,
+  productImages,
   type Banner,
   type StorefrontProduct,
 } from "@/lib/data";
@@ -121,18 +122,6 @@ function Rail({ products }: { products: StorefrontProduct[] }) {
 
 // Category tile whose picture comes from the in-stock products of that category
 // and gently cycles through them (only while the tile is on screen).
-const DUMMY_CATEGORY_IMAGES = [
-"https://images.unsplash.com/photo-1617627143750-d86bc21e42bb?auto=format&fit=crop&w=900&q=82",
-"https://images.unsplash.com/photo-1583391733956-6c78276477e3?auto=format&fit=crop&w=900&q=82",
-"https://images.unsplash.com/photo-1594633312681-425c7b97ccd1?auto=format&fit=crop&w=900&q=82",
-"https://images.unsplash.com/photo-1585487000160-6ebcfceb0d03?auto=format&fit=crop&w=900&q=82",
-"https://images.unsplash.com/photo-1595777457583-95e059d581b8?auto=format&fit=crop&w=900&q=82",
-"https://images.unsplash.com/photo-1609357605129-26f69add5d6e?auto=format&fit=crop&w=900&q=82",
-"https://images.unsplash.com/photo-1612336307429-8a898d10e223?auto=format&fit=crop&w=900&q=82",
-"https://images.unsplash.com/photo-1617019114583-affb34d1b3cd?auto=format&fit=crop&w=900&q=82",
-];
-
-
 function CategoryTile({
   name,
   slug,
@@ -262,9 +251,12 @@ function Home() {
 
   // Only products that are published AND actually in stock
   const inStock = products.filter((p) => p.is_published && Number(p.stock) > 0);
-  const newestFirst = [...inStock].sort((a, b) =>
-    String(b.created_at ?? "").localeCompare(String(a.created_at ?? "")),
-  );
+  // Prioritise genuine uploaded product photos, then keep newest-first order
+  // within each group. Products without photos remain in the catalogue below.
+  const newestFirst = [...inStock].sort((a, b) => {
+    const photoPriority = Number(productImages(b).length > 0) - Number(productImages(a).length > 0);
+    return photoPriority || String(b.created_at ?? "").localeCompare(String(a.created_at ?? ""));
+  });
 
   // Each product appears in only ONE section (in page order), so nothing repeats
   const used = new Set<string>();
@@ -301,17 +293,14 @@ function Home() {
     heroSlides.length > 0 ? heroSlides : productSlides.length > 0 ? productSlides : [defaultHero];
 
   const activeCategories = categories.filter((c) => c.is_active).slice(0, 8);
-  // Category pictures: newest in-stock products of that category (up to 3),
-  // falling back to the image set in admin, then to a plain coloured tile.
-  const categoryImages = (categoryId: string, fallback: string | null | undefined, offset: number): string[] => {
+  // The category's uploaded image is authoritative. If absent, use genuine
+  // uploaded photos from products in that category, never a shared dummy photo.
+  const categoryImages = (categoryId: string, uploadedImage: string | null | undefined): string[] => {
     const own = newestFirst
       .filter((p) => p.category_id === categoryId)
-      .map((p) => productImage(p))
-      .filter(Boolean);
+      .flatMap((p) => productImages(p));
     const unique = Array.from(new Set(own)).slice(0, 3);
-    if (unique.length > 0) return unique;
-    const placeholder = DUMMY_CATEGORY_IMAGES[offset % DUMMY_CATEGORY_IMAGES.length];
-    return fallback ? [fallback] : placeholder ? [placeholder] : [];
+    return uploadedImage ? [uploadedImage, ...unique.filter((image) => image !== uploadedImage)].slice(0, 3) : unique;
   };
 
   return (
@@ -347,7 +336,7 @@ function Home() {
                 key={c.id}
                 name={categoryLabel(c.slug, c.name, language, c.name_ne)}
                 slug={c.slug}
-                images={categoryImages(c.id, c.image_url, i)}
+                images={categoryImages(c.id, c.image_url)}
                 offset={i}
               />
             ))}
