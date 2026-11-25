@@ -68,7 +68,7 @@ function ProductsList() {
     onError: (e) => toast.error((e as Error).message),
   });
 
-  const list = products.filter((p) => `${p.name} ${p.sku ?? ""}`.toLowerCase().includes(q.toLowerCase()));
+  const list = products.filter((p) => `${p.model_code ?? ""} ${p.sku ?? ""}`.toLowerCase().includes(q.trim().toLowerCase()));
 
   // ---------- Bulk selection ----------
   const [selected, setSelected] = useState<string[]>([]);
@@ -216,7 +216,7 @@ function ProductsList() {
           {report.errors.length ? <ul className="mt-2 list-disc pl-5 text-xs text-destructive">{report.errors.map((e) => <li key={e}>{e}</li>)}</ul> : null}
         </div>
       ) : null}
-      <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search by name or SKU" className="w-full rounded-xl border border-border bg-card px-4 py-3 text-sm" />
+      <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search by model name or SKU" className="w-full rounded-xl border border-border bg-card px-4 py-3 text-sm" />
       {isLoading ? <p className="text-sm text-muted-foreground">Loading…</p> : null}
 
       {list.length > 0 ? (
