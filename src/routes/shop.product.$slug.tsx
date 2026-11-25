@@ -180,7 +180,11 @@ function ProductDetail() {
   const sizeVariantImage = variants.find((variant) =>
     variant.image_url && d.effectiveSize && variant.size === d.effectiveSize
   )?.image_url;
-  const selectedVariantImage = exactVariantImage ?? sizeVariantImage;
+  // BizSathi's SKU can represent pooled stock across several website size options.
+  const genericSkuImage = variants.find((variant) =>
+    variant.image_url && !variant.size && !variant.color
+  )?.image_url;
+  const selectedVariantImage = exactVariantImage ?? sizeVariantImage ?? genericSkuImage;
   const images = selectedVariantImage
     ? [selectedVariantImage, ...baseImages.filter((image) => image !== selectedVariantImage)]
     : baseImages;
