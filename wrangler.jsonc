@@ -10,7 +10,8 @@
   // TanStack Start server functions. Never put service-role keys here.
   "vars": {
     "SUPABASE_URL": "https://jsshaoucrjorbyuzagdr.supabase.co",
-    "SUPABASE_PUBLISHABLE_KEY": "sb_publishable_ti84mMAfbpf5l2a6n-czjw_8OLu-OJA"
+    "SUPABASE_PUBLISHABLE_KEY": "sb_publishable_ti84mMAfbpf5l2a6n-czjw_8OLu-OJA",
+    "BIZSATHI_INVENTORY_API_URL": "https://bizsathi-migration.auraluxe26.workers.dev/api/public/website-inventory"
   },
   "previews": {}
 }
