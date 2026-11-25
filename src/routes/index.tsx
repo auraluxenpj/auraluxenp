@@ -17,6 +17,7 @@ import { ProductCard } from "@/components/site/ProductCard";
 import { HeroCarousel } from "@/components/site/HeroCarousel";
 import { useSettings, whatsappLink } from "@/lib/store";
 import { categoryLabel, localizedContent, useLanguage } from "@/lib/i18n";
+import { GoogleReviews } from "@/components/site/GoogleReviews";
 
 export const Route = createFileRoute("/")({
   // Fetch the data the hero needs BEFORE the page renders (on the server), so the
@@ -484,6 +485,8 @@ function Home() {
           </section>
         </>
       ) : null}
+
+      <GoogleReviews />
 
       {/* Social + contact CTA */}
       <section className="glass-strong mt-16 grid gap-8 rounded-3xl p-8 sm:p-12 md:grid-cols-2">
