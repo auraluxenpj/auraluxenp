@@ -98,13 +98,13 @@ jobs:
           GRANT SELECT, INSERT, UPDATE, DELETE ON storage.objects TO anon, authenticated, service_role;
           SQL
 
-      - name: Apply the 32 repository migrations to the temporary database
+      - name: Apply the 34 repository migrations to the temporary database
         run: |
           set -euo pipefail
           shopt -s nullglob
           migrations=(drizzle/migrations/[0-9][0-9][0-9][0-9]_*.sql)
-          if [ "${#migrations[@]}" -ne 32 ]; then
-            echo "Expected exactly 32 numbered SQL migrations; found ${#migrations[@]}."
+          if [ "${#migrations[@]}" -ne 34 ]; then
+            echo "Expected exactly 34 numbered SQL migrations; found ${#migrations[@]}."
             exit 1
           fi
           for migration in "${migrations[@]}"; do
@@ -347,8 +347,8 @@ jobs:
             IF EXISTS (SELECT 1 FROM public.products WHERE name='Shared Test Two' AND is_published) THEN
               RAISE EXCEPTION 'Auraluxe product absent from BizSathi snapshot remained published';
             END IF;
-            IF NOT EXISTS (SELECT 1 FROM public.products WHERE id=first_product AND name='Shared Test One') THEN
-              RAISE EXCEPTION 'BizSathi catalogue import must preserve the Auraluxe-owned product name';
+            IF NOT EXISTS (SELECT 1 FROM public.products WHERE id=first_product AND name='Updated Test One') THEN
+              RAISE EXCEPTION 'BizSathi catalogue import must mirror the source product name';
             END IF;
             IF NOT EXISTS (SELECT 1 FROM public.products WHERE id=first_product AND stock=7
               AND description='Website copy retained' AND meta_title='Keep this title') THEN
@@ -360,6 +360,28 @@ jobs:
             END IF;
             IF (SELECT count(*) FROM public.products WHERE model_code='DUPLICATE-MODEL')<>2 THEN
               RAISE EXCEPTION 'Repeated Model Code values must remain valid';
+            END IF;
+
+            -- BizSathi's explicit publication flag must be mirrored for an existing SKU.
+            payload := jsonb_build_array(jsonb_build_object(
+              'product_id','aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+              'variant_id','bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb','name','Updated Test One',
+              'category','Test Category','variant_name','Standard','model_code','DUPLICATE-MODEL',
+              'sku','SYNC-TEST-ONE','unit','pcs','sizes',jsonb_build_array('M','L'),
+              'purchase_price',550,'mrp',1550,'selling_price',1050,'wholesale_price',825,
+              'reorder_level',2,'published',true,'barcode','SYNC-TEST-BAR-1'
+            ));
+            PERFORM public.upsert_shared_catalogue_from_bizsathi(payload);
+            IF NOT EXISTS (SELECT 1 FROM public.products WHERE id=first_product AND is_published=true) THEN
+              RAISE EXCEPTION 'A published BizSathi SKU must be published in Auraluxe';
+            END IF;
+            IF NOT EXISTS (SELECT 1 FROM public.products WHERE id=first_product AND name='Updated Test One') THEN
+              RAISE EXCEPTION 'BizSathi product name must overwrite the mapped Auraluxe product name';
+            END IF;
+            payload := jsonb_set(payload, '{0,published}', 'false'::jsonb);
+            PERFORM public.upsert_shared_catalogue_from_bizsathi(payload);
+            IF NOT EXISTS (SELECT 1 FROM public.products WHERE id=first_product AND is_published=false) THEN
+              RAISE EXCEPTION 'An unpublished BizSathi SKU must be unpublished in Auraluxe';
             END IF;
             PERFORM set_config('app.stock_sync_origin','',true);
             BEGIN
