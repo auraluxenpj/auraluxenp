@@ -6,10 +6,15 @@ const rowsSchema = z.object({
   rows: z.array(z.object({
     sku: z.string().trim().min(1).max(80),
     quantity: z.number().int().min(0).max(1000000),
-  })).min(1).max(25),
+  })).length(395),
 });
 
 const COUNT_REFERENCE = "Aura Final Google Sheet – 25 November 2026";
+const chunks = <T,>(items: T[], size: number): T[][] => {
+  const result: T[][] = [];
+  for (let i = 0; i < items.length; i += size) result.push(items.slice(i, i + size));
+  return result;
+};
 
 export const registerAuraluxeStockBaselines = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -23,21 +28,28 @@ export const registerAuraluxeStockBaselines = createServerFn({ method: "POST" })
     if (roleError || !isAdmin) throw new Error("Auraluxe administrator access required");
 
     const seen = new Set<string>();
+    let quantityTotal = 0;
     for (const row of data.rows) {
       const normalized = row.sku.trim().toLowerCase();
-      if (seen.has(normalized)) throw new Error(`Duplicate SKU in batch: ${row.sku}`);
+      if (seen.has(normalized)) throw new Error(`Duplicate SKU in count sheet: ${row.sku}`);
       seen.add(normalized);
+      quantityTotal += row.quantity;
+    }
+    if (seen.size !== 395 || quantityTotal !== 1705) {
+      throw new Error("Count sheet must contain exactly 395 unique SKUs and 1,705 whole units");
     }
 
     const skuList = data.rows.map((row) => row.sku.trim());
-    const { data: variants, error: variantError } = await db
-      .from("product_variants")
-      .select("id, sku, bizsathi_variant_id, product_id")
-      .in("sku", skuList);
-    if (variantError) throw new Error(variantError.message);
-    if (!variants || variants.length !== data.rows.length) {
-      throw new Error("One or more SKUs are missing or ambiguous in Auraluxe");
+    const variants: any[] = [];
+    for (const batch of chunks(skuList, 100)) {
+      const { data: found, error } = await db
+        .from("product_variants")
+        .select("id, sku, bizsathi_variant_id, product_id")
+        .in("sku", batch);
+      if (error) throw new Error(error.message);
+      variants.push(...(found ?? []));
     }
+    if (variants.length !== 395) throw new Error("One or more SKUs are missing or ambiguous in Auraluxe");
     const variantBySku = new Map<string, any>();
     for (const variant of variants) {
       const key = String(variant.sku).trim().toLowerCase();
@@ -47,13 +59,17 @@ export const registerAuraluxeStockBaselines = createServerFn({ method: "POST" })
       variantBySku.set(key, variant);
     }
 
-    const productIds = [...new Set(variants.map((variant: any) => variant.product_id))];
-    const { data: products, error: productError } = await db
-      .from("products")
-      .select("id, bizsathi_product_id")
-      .in("id", productIds);
-    if (productError) throw new Error(productError.message);
-    const productById = new Map((products ?? []).map((product: any) => [product.id, product]));
+    const productIds = [...new Set(variants.map((variant) => variant.product_id))];
+    const products: any[] = [];
+    for (const batch of chunks(productIds, 100)) {
+      const { data: found, error } = await db
+        .from("products")
+        .select("id, bizsathi_product_id")
+        .in("id", batch);
+      if (error) throw new Error(error.message);
+      products.push(...(found ?? []));
+    }
+    const productById = new Map(products.map((product) => [product.id, product]));
     const registrations = data.rows.map((row) => {
       const sku = row.sku.trim();
       const variant = variantBySku.get(sku.toLowerCase());
@@ -63,7 +79,6 @@ export const registerAuraluxeStockBaselines = createServerFn({ method: "POST" })
       }
       return {
         sku,
-        quantity: row.quantity,
         params: {
           _bizsathi_product_id: product.bizsathi_product_id,
           _bizsathi_variant_id: variant.bizsathi_variant_id,
@@ -77,18 +92,24 @@ export const registerAuraluxeStockBaselines = createServerFn({ method: "POST" })
       };
     });
 
-    const results = await Promise.all(registrations.map(async (registration) => {
-      const { data: result, error } = await db.rpc("register_bizsathi_stock_baseline", registration.params);
-      return {
-        sku: registration.sku,
-        duplicate: (result as { duplicate?: boolean } | null)?.duplicate === true,
-        error: error?.message ?? null,
-      };
-    }));
-    const failed = results.find((result) => result.error);
-    const processed = results.filter((result) => !result.error).length;
-    const duplicates = results.filter((result) => !result.error && result.duplicate).length;
-    return failed
-      ? { ok: false, processed, duplicates, failedSku: failed.sku, error: failed.error }
-      : { ok: true, processed, duplicates };
+    let processed = 0;
+    let duplicates = 0;
+    for (const batch of chunks(registrations, 25)) {
+      const results = await Promise.all(batch.map(async (registration) => {
+        const { data: result, error } = await db.rpc("register_bizsathi_stock_baseline", registration.params);
+        return {
+          sku: registration.sku,
+          duplicate: (result as { duplicate?: boolean } | null)?.duplicate === true,
+          error: error?.message ?? null,
+        };
+      }));
+      const failed = results.find((result) => result.error);
+      processed += results.filter((result) => !result.error).length;
+      duplicates += results.filter((result) => !result.error && result.duplicate).length;
+      if (failed) {
+        return { ok: false, processed, duplicates, failedSku: failed.sku, error: failed.error };
+      }
+    }
+
+    return { ok: true, processed, duplicates };
   });
