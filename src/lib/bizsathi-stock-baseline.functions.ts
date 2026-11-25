@@ -19,11 +19,19 @@ type BaselineDb = {
   };
 };
 
+const BASELINE_ROW_COUNT = 395;
+const BASELINE_UNIT_COUNT = 1705;
+// Keep each request comfortably below the Cloudflare Workers subrequest ceiling.
+// The browser invokes this authenticated function once per batch.
+const REGISTRATION_BATCH_SIZE = 10;
+const REGISTRATION_BATCH_COUNT = Math.ceil(BASELINE_ROW_COUNT / REGISTRATION_BATCH_SIZE);
+
 const rowsSchema = z.object({
   rows: z.array(z.object({
     sku: z.string().trim().min(1).max(80),
     quantity: z.number().int().min(0).max(1000000),
-  })).length(395),
+  })).length(BASELINE_ROW_COUNT),
+  batchIndex: z.number().int().min(0).max(REGISTRATION_BATCH_COUNT - 1),
 });
 
 const COUNT_REFERENCE = "Aura Final Google Sheet – 25 November 2026";
@@ -52,7 +60,7 @@ export const registerAuraluxeStockBaselines = createServerFn({ method: "POST" })
       seen.add(normalized);
       quantityTotal += row.quantity;
     }
-    if (seen.size !== 395 || quantityTotal !== 1705) {
+    if (seen.size !== BASELINE_ROW_COUNT || quantityTotal !== BASELINE_UNIT_COUNT) {
       throw new Error("Count sheet must contain exactly 395 unique SKUs and 1,705 whole units");
     }
 
@@ -66,7 +74,7 @@ export const registerAuraluxeStockBaselines = createServerFn({ method: "POST" })
       if (error) throw new Error(error.message);
       variants.push(...((found ?? []) as BaselineVariant[]));
     }
-    if (variants.length !== 395) throw new Error("One or more SKUs are missing or ambiguous in Auraluxe");
+    if (variants.length !== BASELINE_ROW_COUNT) throw new Error("One or more SKUs are missing or ambiguous in Auraluxe");
     const variantBySku = new Map<string, BaselineVariant>();
     for (const variant of variants) {
       const key = variant.sku.trim().toLowerCase();
@@ -109,22 +117,34 @@ export const registerAuraluxeStockBaselines = createServerFn({ method: "POST" })
       };
     });
 
-    let processed = 0;
-    let duplicates = 0;
-    for (const batch of chunks(registrations, 25)) {
-      const results = await Promise.all(batch.map(async (registration) => {
-        const { data: result, error } = await db.rpc("register_bizsathi_stock_baseline", registration.params);
-        const duplicate = typeof result === "object" && result !== null && "duplicate" in result
-          && result.duplicate === true;
-        return { sku: registration.sku, duplicate, error: error?.message ?? null };
-      }));
-      const failed = results.find((result) => result.error);
-      processed += results.filter((result) => !result.error).length;
-      duplicates += results.filter((result) => !result.error && result.duplicate).length;
-      if (failed) {
-        return { ok: false, processed, duplicates, failedSku: failed.sku, error: failed.error };
-      }
+    const start = data.batchIndex * REGISTRATION_BATCH_SIZE;
+    const batch = registrations.slice(start, start + REGISTRATION_BATCH_SIZE);
+    const results = await Promise.all(batch.map(async (registration) => {
+      const { data: result, error } = await db.rpc("register_bizsathi_stock_baseline", registration.params);
+      const duplicate = typeof result === "object" && result !== null && "duplicate" in result
+        && result.duplicate === true;
+      return { sku: registration.sku, duplicate, error: error?.message ?? null };
+    }));
+    const failed = results.find((result) => result.error);
+    const processed = results.filter((result) => !result.error).length;
+    const duplicates = results.filter((result) => !result.error && result.duplicate).length;
+    if (failed) {
+      return {
+        ok: false,
+        batchIndex: data.batchIndex,
+        processed,
+        duplicates,
+        failedSku: failed.sku,
+        error: failed.error,
+      };
     }
 
-    return { ok: true, processed, duplicates };
+    return {
+      ok: true,
+      batchIndex: data.batchIndex,
+      processed,
+      duplicates,
+      completedBatches: data.batchIndex + 1,
+      totalBatches: REGISTRATION_BATCH_COUNT,
+    };
   });

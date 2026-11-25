@@ -119,17 +119,25 @@ function BaselineImport({ onComplete }: { onComplete: () => void }) {
   async function registerAll() {
     if (rows.length !== 395 || !approved || busy) return;
     setBusy(true);
-    setStatus('Registering the complete verified count sheet…');
+    setStatus('Starting safe 10-SKU registration batches…');
+    let processed = 0;
+    let duplicates = 0;
+    const totalBatches = 40;
     try {
-      const result = await register({ data: { rows } });
-      if (!result.ok) {
-        setStatus(`Stopped at SKU ${result.failedSku}. ${result.processed} baselines processed (${result.duplicates} already registered). Error: ${result.error}. You can safely retry the same file; identical baselines are idempotent.`);
-        return;
+      for (let batchIndex = 0; batchIndex < totalBatches; batchIndex += 1) {
+        const result = await register({ data: { rows, batchIndex } });
+        processed += result.processed;
+        duplicates += result.duplicates;
+        if (!result.ok) {
+          setStatus(`Paused in batch ${batchIndex + 1}/${totalBatches} at SKU ${result.failedSku}. ${processed} baselines processed (${duplicates} already registered). Error: ${result.error}. Retry the same approved file to safely resume; identical baselines are idempotent.`);
+          return;
+        }
+        setStatus(`Registering batch ${batchIndex + 1}/${totalBatches}… ${processed}/395 processed; ${duplicates} already registered.`);
       }
-      setStatus(`Completed: ${result.processed} baselines registered; ${result.duplicates} were already identical. Website stock sync is still OFF.`);
+      setStatus(`Completed: ${processed} baselines processed; ${duplicates} were already identical. Website stock sync is still OFF.`);
       onComplete();
     } catch (error) {
-      setStatus(`Registration failed: ${error instanceof Error ? error.message : 'Unknown error'}. No stock-sync switch was enabled.`);
+      setStatus(`Registration paused after ${processed}/395 processed: ${error instanceof Error ? error.message : 'Unknown error'}. Retry the same approved file; previously registered identical baselines will be safely skipped. No stock-sync switch was enabled.`);
     } finally {
       setBusy(false);
     }
