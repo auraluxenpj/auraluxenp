@@ -348,7 +348,7 @@ jobs:
               RAISE EXCEPTION 'Auraluxe product absent from BizSathi snapshot remained published';
             END IF;
             IF NOT EXISTS (SELECT 1 FROM public.products WHERE id=first_product AND name='Shared Test One') THEN
-              RAISE EXCEPTION 'BizSathi catalogue import must preserve the Auraluxe-owned product name';
+              RAISE EXCEPTION 'BizSathi catalogue import must mirror the source product name';
             END IF;
             IF NOT EXISTS (SELECT 1 FROM public.products WHERE id=first_product AND stock=7
               AND description='Website copy retained' AND meta_title='Keep this title') THEN
