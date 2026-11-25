@@ -24,7 +24,7 @@ export const Route = createFileRoute('/api/public/bizsathi-product-name')({
   server: { handlers: { POST: async ({ request }) => {
     const authorization = request.headers.get('authorization') ?? '';
     const token = authorization.startsWith('Bearer ') ? authorization.slice(7) : '';
-    if (!token || /[\\s,]/.test(token)) return json({ error: 'Unauthorized' }, 401);
+    if (!token || /[\s,]/.test(token)) return json({ error: 'Unauthorized' }, 401);
 
     let body: unknown;
     try { body = await request.json(); } catch { return json({ error: 'Invalid JSON' }, 400); }
@@ -34,7 +34,7 @@ export const Route = createFileRoute('/api/public/bizsathi-product-name')({
     const productId = input['product_id'];
     const name = input['name'];
     if (typeof productId !== 'string' || !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(productId)
-      || typeof name !== 'string' || name.trim().length < 2 || name.trim().length > 150 || /[\\u0000-\\u001f\\u007f]/.test(name)) {
+      || typeof name !== 'string' || name.trim().length < 2 || name.trim().length > 150 || /[\u0000-\u001f\u007f]/.test(name)) {
       return json({ error: 'Invalid product ID or name' }, 400);
     }
 
