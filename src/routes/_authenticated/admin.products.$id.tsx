@@ -68,6 +68,7 @@ function ProductEditor() {
   const [slugTouched, setSlugTouched] = useState(false);
   const [nameNeTouched, setNameNeTouched] = useState(false);
   const [descriptionNeTouched, setDescriptionNeTouched] = useState(false);
+  const [fabricNeTouched, setFabricNeTouched] = useState(false);
   const [saving, setSaving] = useState(false);
   const [skuSuffix, setSkuSuffix] = useState("");
   const { data: categories = [] } = useQuery({ queryKey: ["categories"], queryFn: fetchCategories });
@@ -143,6 +144,16 @@ function ProductEditor() {
     }, 850);
     return () => window.clearTimeout(timer);
   }, [f.description, f.description_ne, descriptionNeTouched]);
+
+  useEffect(() => {
+    if (!f.fabric.trim() || f.fabric_ne.trim() || fabricNeTouched) return;
+    const timer = window.setTimeout(() => {
+      void translateToNepali(f.fabric).then((translated) => {
+        if (translated) setF((prev) => prev.fabric === f.fabric && !fabricNeTouched && !prev.fabric_ne.trim() ? { ...prev, fabric_ne: translated } : prev);
+      }).catch(() => toast.error("Could not generate the Nepali fabric description. Please enter it manually."));
+    }, 650);
+    return () => window.clearTimeout(timer);
+  }, [f.fabric, f.fabric_ne, fabricNeTouched]);
 
   const selectedCategoryName = categories.find((c) => c.id === f.category_id)?.name ?? "";
   const skuPrefix = categorySkuPrefix(selectedCategoryName);
@@ -260,8 +271,8 @@ function ProductEditor() {
           <p className="text-xs leading-relaxed text-muted-foreground">{PHOTO_DISCLAIMER}</p>
           <div className="grid gap-4 sm:grid-cols-2">
             <label className={label}>Model code (optional)<input className={input} value={f.model_code} maxLength={64} onChange={(e) => set("model_code", e.target.value)} /></label>
-            <label className={label}>Fabric (English)<input className={input} value={f.fabric} onChange={(e) => set("fabric", e.target.value)} /></label>
-            <label className={label}>Fabric (नेपाली)<input className={input} value={f.fabric_ne} onChange={(e) => set("fabric_ne", e.target.value)} placeholder="कपडाको प्रकार" /></label>
+            <label className={label}>Fabric (English)<input className={input} value={f.fabric} onChange={(e) => { set("fabric", e.target.value); setFabricNeTouched(false); set("fabric_ne", ""); }} /></label>
+            <label className={label}>Fabric (नेपाली)<input className={input} value={f.fabric_ne} onChange={(e) => { setFabricNeTouched(true); set("fabric_ne", e.target.value); }} placeholder="कपडाको प्रकार" /></label>
             <label className={label}>Category
               <select className={input} value={f.category_id} onChange={(e) => set("category_id", e.target.value)}>
                 <option value="">None</option>
