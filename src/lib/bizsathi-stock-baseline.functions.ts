@@ -2,6 +2,23 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
+type DbError = { message: string };
+type BaselineVariant = {
+  id: string;
+  sku: string;
+  bizsathi_variant_id: string | null;
+  product_id: string;
+};
+type BaselineProduct = { id: string; bizsathi_product_id: string | null };
+type BaselineDb = {
+  rpc: (name: string, args: Record<string, unknown>) => Promise<{ data: unknown; error: DbError | null }>;
+  from: (table: string) => {
+    select: (columns: string) => {
+      in: (column: string, values: string[]) => Promise<{ data: unknown[] | null; error: DbError | null }>;
+    };
+  };
+};
+
 const rowsSchema = z.object({
   rows: z.array(z.object({
     sku: z.string().trim().min(1).max(80),
@@ -20,12 +37,12 @@ export const registerAuraluxeStockBaselines = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => rowsSchema.parse(input))
   .handler(async ({ data, context }) => {
-    const db = context.supabase as any;
+    const db = context.supabase as unknown as BaselineDb;
     const { data: isAdmin, error: roleError } = await db.rpc("has_role", {
       _user_id: context.userId,
       _role: "admin",
     });
-    if (roleError || !isAdmin) throw new Error("Auraluxe administrator access required");
+    if (roleError || isAdmin !== true) throw new Error("Auraluxe administrator access required");
 
     const seen = new Set<string>();
     let quantityTotal = 0;
@@ -40,19 +57,19 @@ export const registerAuraluxeStockBaselines = createServerFn({ method: "POST" })
     }
 
     const skuList = data.rows.map((row) => row.sku.trim());
-    const variants: any[] = [];
+    const variants: BaselineVariant[] = [];
     for (const batch of chunks(skuList, 100)) {
       const { data: found, error } = await db
         .from("product_variants")
         .select("id, sku, bizsathi_variant_id, product_id")
         .in("sku", batch);
       if (error) throw new Error(error.message);
-      variants.push(...(found ?? []));
+      variants.push(...((found ?? []) as BaselineVariant[]));
     }
     if (variants.length !== 395) throw new Error("One or more SKUs are missing or ambiguous in Auraluxe");
-    const variantBySku = new Map<string, any>();
+    const variantBySku = new Map<string, BaselineVariant>();
     for (const variant of variants) {
-      const key = String(variant.sku).trim().toLowerCase();
+      const key = variant.sku.trim().toLowerCase();
       if (variantBySku.has(key) || !variant.bizsathi_variant_id) {
         throw new Error(`Missing or duplicate BizSathi variant mapping: ${variant.sku}`);
       }
@@ -60,20 +77,20 @@ export const registerAuraluxeStockBaselines = createServerFn({ method: "POST" })
     }
 
     const productIds = [...new Set(variants.map((variant) => variant.product_id))];
-    const products: any[] = [];
+    const products: BaselineProduct[] = [];
     for (const batch of chunks(productIds, 100)) {
       const { data: found, error } = await db
         .from("products")
         .select("id, bizsathi_product_id")
         .in("id", batch);
       if (error) throw new Error(error.message);
-      products.push(...(found ?? []));
+      products.push(...((found ?? []) as BaselineProduct[]));
     }
-    const productById = new Map(products.map((product) => [product.id, product]));
+    const productById = new Map<string, BaselineProduct>(products.map((product) => [product.id, product]));
     const registrations = data.rows.map((row) => {
       const sku = row.sku.trim();
       const variant = variantBySku.get(sku.toLowerCase());
-      const product = variant ? productById.get(variant.product_id) as any : null;
+      const product = variant ? productById.get(variant.product_id) : null;
       if (!variant || !product?.bizsathi_product_id) {
         throw new Error(`Missing BizSathi product/variant mapping for SKU ${sku}`);
       }
@@ -97,11 +114,9 @@ export const registerAuraluxeStockBaselines = createServerFn({ method: "POST" })
     for (const batch of chunks(registrations, 25)) {
       const results = await Promise.all(batch.map(async (registration) => {
         const { data: result, error } = await db.rpc("register_bizsathi_stock_baseline", registration.params);
-        return {
-          sku: registration.sku,
-          duplicate: (result as { duplicate?: boolean } | null)?.duplicate === true,
-          error: error?.message ?? null,
-        };
+        const duplicate = typeof result === "object" && result !== null && "duplicate" in result
+          && result.duplicate === true;
+        return { sku: registration.sku, duplicate, error: error?.message ?? null };
       }));
       const failed = results.find((result) => result.error);
       processed += results.filter((result) => !result.error).length;
