@@ -261,8 +261,29 @@ function ProductEditor() {
         if (variantError) { setSaving(false); toast.error(variantError.message); return; }
       }
     }
+    let nameSyncWarning = false;
+    if (!isNew && product?.bizsathi_product_id && product.name !== f.name.trim()) {
+      try {
+        const { data: authData } = await supabase.auth.getSession();
+        const accessToken = authData.session?.access_token;
+        if (!accessToken) {
+          nameSyncWarning = true;
+        } else {
+          const syncResponse = await fetch("/api/public/bizsathi-product-name", {
+            method: "POST",
+            headers: { Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json" },
+            body: JSON.stringify({ product_id: productId, name: f.name.trim() }),
+          });
+          const syncResult = await syncResponse.json().catch(() => null) as { ok?: boolean; synced?: boolean } | null;
+          nameSyncWarning = !syncResponse.ok || syncResult?.ok !== true || syncResult.synced !== true;
+        }
+      } catch {
+        nameSyncWarning = true;
+      }
+    }
     setSaving(false);
     toast.success(isNew ? "Product created — it's on the shop now" : "Product saved");
+    if (nameSyncWarning) toast.warning("Auraluxe saved the product, but BizSathi name sync needs a retry.");
     qc.invalidateQueries();
     navigate({ to: "/admin/products" });
   }
