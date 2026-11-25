@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { SiteLayout } from "@/components/site/SiteLayout";
 import { ProductCard } from "@/components/site/ProductCard";
-import { effectivePrice, fetchCategories, fetchProducts, hasDiscount } from "@/lib/data";
+import { effectivePrice, fetchCategories, fetchProducts, hasDiscount, productImages } from "@/lib/data";
 import { useMoney } from "@/lib/store";
 import { categoryLabel, useLanguage } from "@/lib/i18n";
 
@@ -51,17 +51,6 @@ export const Route = createFileRoute("/shop/")({
 
 const PER_PAGE = 9;
 
-const DUMMY_CATEGORY_IMAGES = [
-  "https://images.unsplash.com/photo-1617627143750-d86bc21e42bb?auto=format&fit=crop&w=720&q=82",
-  "https://images.unsplash.com/photo-1583391733956-6c78276477e3?auto=format&fit=crop&w=720&q=82",
-  "https://images.unsplash.com/photo-1594633312681-425c7b97ccd1?auto=format&fit=crop&w=720&q=82",
-  "https://images.unsplash.com/photo-1585487000160-6ebcfceb0d03?auto=format&fit=crop&w=720&q=82",
-  "https://images.unsplash.com/photo-1595777457583-95e059d581b8?auto=format&fit=crop&w=720&q=82",
-  "https://images.unsplash.com/photo-1609357605129-26f69add5d6e?auto=format&fit=crop&w=720&q=82",
-  "https://images.unsplash.com/photo-1612336307429-8a898d10e223?auto=format&fit=crop&w=720&q=82",
-  "https://images.unsplash.com/photo-1617019114583-affb34d1b3cd?auto=format&fit=crop&w=720&q=82",
-];
-
 function Shop() {
   const search = Route.useSearch();
   const navigate = useNavigate({ from: "/shop/" });
@@ -108,14 +97,6 @@ function Shop() {
 
   const activeCategories = categories.filter((c) => c.is_active);
   const categoryId = categories.find((c) => c.slug === search.category)?.id;
-  const categoryFallbackImage = search.category
-    ? (() => {
-        const index = activeCategories.findIndex((c) => c.slug === search.category);
-        const category = activeCategories[index];
-        return category?.image_url || DUMMY_CATEGORY_IMAGES[(index >= 0 ? index : 0) % DUMMY_CATEGORY_IMAGES.length];
-      })()
-    : undefined;
-
   const filtered = useMemo(() => {
     // Never expose admin drafts or unpublished catalogue records on the public storefront.
     let list = [...publishedProducts];
@@ -164,7 +145,10 @@ function Shop() {
         });
         break;
       default:
-        list.sort((a, b) => (a.created_at < b.created_at ? 1 : -1));
+        list.sort((a, b) => {
+          const photoPriority = Number(productImages(b).length > 0) - Number(productImages(a).length > 0);
+          return photoPriority || (a.created_at < b.created_at ? 1 : -1);
+        });
     }
     return list;
   }, [publishedProducts, search, categoryId]);
@@ -268,21 +252,33 @@ function Shop() {
             <span className="text-[10px] uppercase tracking-[.16em] text-stone-500">{t("findLook")}</span>
           </div>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-            {categories.filter((c) => c.is_active).map((c, i) => (
+            {categories.filter((c) => c.is_active).map((c) => (
               <Link
                 key={c.id}
                 to="/shop"
                 search={{ category: c.slug }}
                 className="group relative aspect-[4/5] overflow-hidden rounded-sm bg-[#eee5dc]"
               >
-                <img
-                  src={c.image_url || DUMMY_CATEGORY_IMAGES[i % DUMMY_CATEGORY_IMAGES.length]}
-                  alt={categoryLabel(c.slug, c.name, language, c.name_ne)}
-                  loading="lazy"
-                  width={720}
-                  height={900}
-                  className="h-full w-full object-cover transition duration-700 group-hover:scale-105"
-                />
+                {(() => {
+                  const uploadedProductImage = publishedProducts
+                    .filter((product) => product.category_id === c.id)
+                    .flatMap((product) => productImages(product))[0];
+                  const image = c.image_url || uploadedProductImage;
+                  return image ? (
+                    <img
+                      src={image}
+                      alt={categoryLabel(c.slug, c.name, language, c.name_ne)}
+                      loading="lazy"
+                      width={720}
+                      height={900}
+                      className="h-full w-full object-cover transition duration-700 group-hover:scale-105"
+                    />
+                  ) : (
+                    <div className="grid h-full w-full place-items-center bg-gradient-to-br from-[#f7eee7] via-[#efe1d5] to-[#e4c9b8]">
+                      <span className="font-display text-2xl text-[#762b3b]">{categoryLabel(c.slug, c.name, language, c.name_ne)}</span>
+                    </div>
+                  );
+                })()}
                 <div className="absolute inset-0 bg-gradient-to-t from-[#241713]/75 via-transparent to-transparent" />
                 <div className="absolute inset-x-0 bottom-0 flex items-end justify-between p-3 sm:p-4">
                   <span className="font-display text-lg text-white sm:text-xl">{categoryLabel(c.slug, c.name, language, c.name_ne)}</span>
@@ -467,7 +463,7 @@ function Shop() {
 
       <section className="auraluxe-product-grid mt-5 grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-4 2xl:grid-cols-4">
         {catalogueVisible.slice(0, 12).map((p) => (
-          <ProductCard key={p.id} product={p} {...(categoryFallbackImage ? { fallbackImage: categoryFallbackImage } : {})} />
+          <ProductCard key={p.id} product={p} />
         ))}
       </section>
 
@@ -488,7 +484,7 @@ function Shop() {
       {catalogueVisible.length > 12 ? (
         <section className="auraluxe-product-grid mt-5 grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-4 2xl:grid-cols-4">
           {catalogueVisible.slice(12).map((p) => (
-            <ProductCard key={p.id} product={p} {...(categoryFallbackImage ? { fallbackImage: categoryFallbackImage } : {})} />
+            <ProductCard key={p.id} product={p} />
           ))}
         </section>
       ) : null}
