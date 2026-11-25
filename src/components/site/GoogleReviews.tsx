@@ -76,8 +76,8 @@ export function GoogleReviews() {
           </div>
         ) : (
           <div className="mt-5 flex items-center justify-center gap-2 text-sm">
-            <span className="text-xl tracking-[0.12em] text-[#bd8730]">★★★★★</span>
-            <span className="text-[#76666a]">Find us on Google</span>
+            <span className="font-semibold text-[#4285F4]">Google</span>
+            <span className="text-[#76666a]">Customer reviews</span>
           </div>
         )}
       </div>
