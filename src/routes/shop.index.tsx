@@ -252,7 +252,7 @@ function Shop() {
             <span className="text-[10px] uppercase tracking-[.16em] text-stone-500">{t("findLook")}</span>
           </div>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-            {categories.filter((c) => c.is_active).map((c, i) => (
+            {categories.filter((c) => c.is_active).map((c) => (
               <Link
                 key={c.id}
                 to="/shop"
