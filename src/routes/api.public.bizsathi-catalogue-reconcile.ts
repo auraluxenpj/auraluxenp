@@ -9,7 +9,7 @@ const itemSchema = z.object({
   category: z.string().trim().max(100).optional().nullable(),
   variant_name: z.string().trim().max(100).optional().nullable(),
   model_code: z.string().trim().max(64).optional().nullable(),
-  sku: z.string().trim().min(1).max(80).regex(/^\\S+$/),
+  sku: z.string().trim().min(1).max(80).regex(/^\S+$/),
   unit: z.string().trim().max(30).optional().nullable(),
   sizes: z.array(z.string().trim().max(30)).max(30).optional(),
   qty: z.number().finite().min(0).optional(),
