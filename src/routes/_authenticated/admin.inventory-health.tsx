@@ -45,7 +45,7 @@ function ProductIdentity({ product }: { product: HealthProduct }) {
 }
 
 function parseCsvRecords(source: string): string[][] {
-  const input = source.replace(/^\\uFEFF/, '');
+  const input = source.replace(/^\uFEFF/, '');
   const records: string[][] = [];
   let record: string[] = [];
   let field = '';
@@ -60,8 +60,8 @@ function parseCsvRecords(source: string): string[][] {
     } else if (char === ',' && !quoted) {
       record.push(field);
       field = '';
-    } else if ((char === '\\n' || char === '\\r') && !quoted) {
-      if (char === '\\r' && input[i + 1] === '\\n') i += 1;
+    } else if ((char === '\n' || char === '\r') && !quoted) {
+      if (char === '\r' && input[i + 1] === '\n') i += 1;
       record.push(field);
       if (record.some((cell) => cell.trim() !== '')) records.push(record);
       record = [];
@@ -99,7 +99,7 @@ function BaselineImport({ onComplete }: { onComplete: () => void }) {
       const parsed = records.slice(1).map((record, index) => {
         const sku = (record[skuIndex] ?? '').trim();
         const rawQuantity = (record[qtyIndex] ?? '').trim();
-        if (!sku || !/^\\d+$/.test(rawQuantity)) throw new Error(`Invalid SKU or whole-unit qty on CSV row ${index + 2}`);
+        if (!sku || !/^\d+$/.test(rawQuantity)) throw new Error(`Invalid SKU or whole-unit qty on CSV row ${index + 2}`);
         return { sku, quantity: Number(rawQuantity) };
       });
       const unique = new Set(parsed.map((row) => row.sku.toLowerCase()));
