@@ -48,6 +48,20 @@ const EMPTY: Form = {
 
 const list = (s: string) => s.split(/[,\n]/).map((x) => x.trim()).filter(Boolean);
 
+function buildSearchTitle(name: string): string {
+  const clean = name.trim();
+  return clean ? `${clean} | Auraluxe Nepalgunj`.slice(0, 60).trim() : "";
+}
+
+function buildSearchDescription(name: string, description: string): string {
+  const source = description.trim() || (name.trim() ? `Explore ${name.trim()} at Auraluxe Nepalgunj.` : "");
+  if (source.length <= 155) return source;
+  const shortened = source.slice(0, 152);
+  const boundary = shortened.lastIndexOf(" ");
+  return `${(boundary > 110 ? shortened.slice(0, boundary) : shortened).trimEnd()}...`;
+}
+
+
 // Translate short catalogue fields to Nepali without requiring a user-managed API key.
 async function translateToNepali(value: string): Promise<string> {
   const text = value.trim();
@@ -69,6 +83,8 @@ function ProductEditor() {
   const [nameNeTouched, setNameNeTouched] = useState(false);
   const [descriptionNeTouched, setDescriptionNeTouched] = useState(false);
   const [fabricNeTouched, setFabricNeTouched] = useState(false);
+  const [metaTitleManual, setMetaTitleManual] = useState(false);
+  const [metaDescriptionManual, setMetaDescriptionManual] = useState(false);
   const [saving, setSaving] = useState(false);
   const [skuSuffix, setSkuSuffix] = useState("");
   const { data: categories = [] } = useQuery({ queryKey: ["categories"], queryFn: fetchCategories });
@@ -120,9 +136,22 @@ function ProductEditor() {
       is_featured: product.is_featured, is_published: product.is_published,
       meta_title: product.meta_title ?? "", meta_description: product.meta_description ?? "",
     });
+    setMetaTitleManual(!!product.meta_title?.trim());
+    setMetaDescriptionManual(!!product.meta_description?.trim());
   }, [product]);
 
   const set = <K extends keyof Form>(k: K, v: Form[K]) => setF((prev) => ({ ...prev, [k]: v }));
+
+  // Prefill SEO metadata from English product content; manual values are preserved.
+  useEffect(() => {
+    if (!metaTitleManual && f.name.trim()) set("meta_title", buildSearchTitle(f.name));
+  }, [f.name, metaTitleManual]);
+
+  useEffect(() => {
+    if (!metaDescriptionManual && (f.description.trim() || f.name.trim())) {
+      set("meta_description", buildSearchDescription(f.name, f.description));
+    }
+  }, [f.name, f.description, metaDescriptionManual]);
 
   // Auto-fill Nepali fields after typing pauses; manually edited Nepali text is left untouched.
   useEffect(() => {
@@ -381,8 +410,8 @@ function ProductEditor() {
             ))}
           </div>
           <div className="space-y-4 rounded-2xl border border-border bg-card p-5">
-            <label className={label + " block"}>Search title<input className={input} value={f.meta_title} onChange={(e) => set("meta_title", e.target.value)} /></label>
-            <label className={label + " block"}>Search description<textarea rows={3} className={input} value={f.meta_description} onChange={(e) => set("meta_description", e.target.value)} /></label>
+            <label className={label + " block"}>Search title<input className={input} value={f.meta_title} onChange={(e) => { setMetaTitleManual(true); set("meta_title", e.target.value); }} /></label>
+            <label className={label + " block"}>Search description<textarea rows={3} className={input} value={f.meta_description} onChange={(e) => { setMetaDescriptionManual(true); set("meta_description", e.target.value); }} /></label>
           </div>
         </div>
       </div>
