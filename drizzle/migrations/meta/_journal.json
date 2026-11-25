@@ -218,6 +218,13 @@
       "when": 1795635000001,
       "tag": "0034_bizsathi_new_sku_stock_bootstrap",
       "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "7",
+      "when": 1795640000000,
+      "tag": "0035_auraluxe_product_name_authority_after_safe_receiver",
+      "breakpoints": true
     }
   ]
 }
