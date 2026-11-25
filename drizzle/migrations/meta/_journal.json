@@ -2,208 +2,35 @@
   "version": "7",
   "dialect": "postgresql",
   "entries": [
-    {
-      "idx": 0,
-      "version": "7",
-      "when": 1790842398854,
-      "tag": "0000_auraluxe_core_schema",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "7",
-      "when": 1790901591553,
-      "tag": "0001_admin_bootstrap",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "7",
-      "when": 1791078100739,
-      "tag": "0002_product_images_policies",
-      "breakpoints": true
-    },
-    {
-      "idx": 3,
-      "version": "7",
-      "when": 1792671155702,
-      "tag": "0003_payment_settings_secure_checkout",
-      "breakpoints": true
-    },
-    {
-      "idx": 4,
-      "version": "7",
-      "when": 1792714690590,
-      "tag": "0004_order_restock",
-      "breakpoints": true
-    },
-    {
-      "idx": 5,
-      "version": "7",
-      "when": 1792809251638,
-      "tag": "0005_banner_mobile_image",
-      "breakpoints": true
-    },
-    {
-      "idx": 6,
-      "version": "7",
-      "when": 1792810942130,
-      "tag": "0006_public_order_tracking",
-      "breakpoints": true
-    },
-    {
-      "idx": 7,
-      "version": "7",
-      "when": 1792812024135,
-      "tag": "0007_tighten_public_reads",
-      "breakpoints": true
-    },
-    {
-      "idx": 8,
-      "version": "7",
-      "when": 1792814495730,
-      "tag": "0008_per_size_stock_checkout",
-      "breakpoints": true
-    },
-    {
-      "idx": 9,
-      "version": "7",
-      "when": 1792814515892,
-      "tag": "0009_restock_size_variants",
-      "breakpoints": true
-    },
-    {
-      "idx": 10,
-      "version": "7",
-      "when": 1792819015995,
-      "tag": "0010_auraluxe_pos_counter",
-      "breakpoints": true
-    },
-    {
-      "idx": 11,
-      "version": "7",
-      "when": 1792819364531,
-      "tag": "0011_pos_least_privilege_grants",
-      "breakpoints": true
-    },
-    {
-      "idx": 12,
-      "version": "7",
-      "when": 1792819640576,
-      "tag": "0012_khata_settlements_expenses",
-      "breakpoints": true
-    },
-    {
-      "idx": 13,
-      "version": "7",
-      "when": 1792819903456,
-      "tag": "0013_consistent_customer_statement",
-      "breakpoints": true
-    },
-    {
-      "idx": 14,
-      "version": "7",
-      "when": 1792820160865,
-      "tag": "0014_vendor_purchase_tracking",
-      "breakpoints": true
-    },
-    {
-      "idx": 15,
-      "version": "7",
-      "when": 1792820220865,
-      "tag": "0015_inventory_sync",
-      "breakpoints": true
-    },
-    {
-      "idx": 16,
-      "version": "7",
-      "when": 1792820280865,
-      "tag": "0016_inventory_sync_push_guard",
-      "breakpoints": true
-    },
-    {
-      "idx": 17,
-      "version": "7",
-      "when": 1795280000000,
-      "tag": "0020_bizsathi_inventory_integration_foundation",
-      "breakpoints": true
-    },
-    {
-      "idx": 18,
-      "version": "7",
-      "when": 1795281000000,
-      "tag": "0021_bizsathi_draft_catalogue_import",
-      "breakpoints": true
-    },
-    {
-      "idx": 19,
-      "version": "7",
-      "when": 1795282000000,
-      "tag": "0022_checkout_bizsathi_identity",
-      "breakpoints": true
-    },
-    {
-      "idx": 20,
-      "version": "7",
-      "when": 1795283000000,
-      "tag": "0023_bizsathi_inventory_authority",
-      "breakpoints": true
-    },
-    {
-      "idx": 21,
-      "version": "7",
-      "when": 1795430000000,
-      "tag": "0024_model_code_catalogue_identity",
-      "breakpoints": true
-    },
-    {
-      "idx": 22,
-      "version": "7",
-      "when": 1795435000000,
-      "tag": "0025_shared_sku_first_catalogue",
-      "breakpoints": true
-    },
-    {
-      "idx": 23,
-      "version": "7",
-      "when": 1795436000000,
-      "tag": "0026_bizsathi_catalogue_outbox",
-      "breakpoints": true
-    },
-    {
-      "idx": 24,
-      "version": "7",
-      "when": 1795437000000,
-      "tag": "0027_bizsathi_stock_event_projection",
-      "breakpoints": true
-    },
-    {
-      "idx": 25,
-      "version": "7",
-      "when": 1795438000000,
-      "tag": "0028_bizsathi_single_catalogue_authority",
-      "breakpoints": true
-    },
-    {
-      "idx": 26,
-      "version": "7",
-      "when": 1795439000000,
-      "tag": "0029_bizsathi_catalogue_receiver_gate",
-      "breakpoints": true
-    },
-    {
-      "idx": 27,
-      "version": "7",
-      "when": 1795545405799,
-      "tag": "0030_bizsathi_catalogue_mapping_response",
-      "breakpoints": true
-    },
-    {
-      "idx": 28,
-      "version": "7",
-      "when": 1795630000001,
-      "tag": "0031_auraluxe_product_name_only_sync",
-      "breakpoints": true
-    }
+    {"idx":0,"version":"7","when":1790842398854,"tag":"0000_auraluxe_core_schema","breakpoints":true},
+    {"idx":1,"version":"7","when":1790901591553,"tag":"0001_admin_bootstrap","breakpoints":true},
+    {"idx":2,"version":"7","when":1791078100739,"tag":"0002_product_images_policies","breakpoints":true},
+    {"idx":3,"version":"7","when":1792671155702,"tag":"0003_payment_settings_secure_checkout","breakpoints":true},
+    {"idx":4,"version":"7","when":1792714690590,"tag":"0004_order_restock","breakpoints":true},
+    {"idx":5,"version":"7","when":1792809251638,"tag":"0005_banner_mobile_image","breakpoints":true},
+    {"idx":6,"version":"7","when":1792810942130,"tag":"0006_public_order_tracking","breakpoints":true},
+    {"idx":7,"version":"7","when":1792812024135,"tag":"0007_tighten_public_reads","breakpoints":true},
+    {"idx":8,"version":"7","when":1792814495730,"tag":"0008_per_size_stock_checkout","breakpoints":true},
+    {"idx":9,"version":"7","when":1792814515890,"tag":"0009_restock_size_variants","breakpoints":true},
+    {"idx":10,"version":"7","when":1792819015995,"tag":"0010_auraluxe_pos_counter","breakpoints":true},
+    {"idx":11,"version":"7","when":1792819364531,"tag":"0011_pos_least_privilege_grants","breakpoints":true},
+    {"idx":12,"version":"7","when":1792819640576,"tag":"0012_khata_settlements_expenses","breakpoints":true},
+    {"idx":13,"version":"7","when":1792819903456,"tag":"0013_consistent_customer_statement","breakpoints":true},
+    {"idx":14,"version":"7","when":1792820160865,"tag":"0014_vendor_purchase_tracking","breakpoints":true},
+    {"idx":15,"version":"7","when":1792820220865,"tag":"0015_inventory_sync","breakpoints":true},
+    {"idx":16,"version":"7","when":1792820280865,"tag":"0016_inventory_sync_push_guard","breakpoints":true},
+    {"idx":17,"version":"7","when":1795280000000,"tag":"0020_bizsathi_inventory_integration_foundation","breakpoints":true},
+    {"idx":18,"version":"7","when":1795281000000,"tag":"0021_bizsathi_draft_catalogue_import","breakpoints":true},
+    {"idx":19,"version":"7","when":1795282000000,"tag":"0022_checkout_bizsathi_identity","breakpoints":true},
+    {"idx":20,"version":"7","when":1795283000000,"tag":"0023_bizsathi_inventory_authority","breakpoints":true},
+    {"idx":21,"version":"7","when":1795430000000,"tag":"0024_model_code_catalogue_identity","breakpoints":true},
+    {"idx":22,"version":"7","when":1795435000000,"tag":"0025_shared_sku_first_catalogue","breakpoints":true},
+    {"idx":23,"version":"7","when":1795436000000,"tag":"0026_bizsathi_catalogue_outbox","breakpoints":true},
+    {"idx":24,"version":"7","when":1795437000000,"tag":"0027_bizsathi_stock_event_projection","breakpoints":true},
+    {"idx":25,"version":"7","when":1795438000000,"tag":"0028_bizsathi_single_catalogue_authority","breakpoints":true},
+    {"idx":26,"version":"7","when":1795439000000,"tag":"0029_bizsathi_catalogue_receiver_gate","breakpoints":true},
+    {"idx":27,"version":"7","when":1795545405799,"tag":"0030_bizsathi_catalogue_mapping_response","breakpoints":true},
+    {"idx":28,"version":"7","when":1795630000001,"tag":"0031_auraluxe_product_name_only_sync","breakpoints":true},
+    {"idx":29,"version":"7","when":1795635000000,"tag":"0032_safe_bizsathi_catalogue_receiver","breakpoints":true}
   ]
 }
