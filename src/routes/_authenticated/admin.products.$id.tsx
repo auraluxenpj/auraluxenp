@@ -48,13 +48,26 @@ const EMPTY: Form = {
 
 const list = (s: string) => s.split(/[,\n]/).map((x) => x.trim()).filter(Boolean);
 
+// Translate short catalogue fields to Nepali without requiring a user-managed API key.
+async function translateToNepali(value: string): Promise<string> {
+  const text = value.trim();
+  if (!text) return "";
+  const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=ne&dt=t&q=${encodeURIComponent(text)}`;
+  const response = await fetch(url);
+  if (!response.ok) throw new Error("Nepali translation is temporarily unavailable");
+  const data = await response.json() as [Array<[string, string]>];
+  return (data[0] ?? []).map((part) => part[0]).join("").trim();
+}
+
 function ProductEditor() {
   const { id } = Route.useParams();
   const isNew = id === "new";
   const navigate = useNavigate();
   const qc = useQueryClient();
   const [f, setF] = useState<Form>(EMPTY);
-  const [slugTouched, setSlugTouched] = useState(!isNew);
+  const [slugTouched, setSlugTouched] = useState(false);
+  const [nameNeTouched, setNameNeTouched] = useState(false);
+  const [descriptionNeTouched, setDescriptionNeTouched] = useState(false);
   const [saving, setSaving] = useState(false);
   const [skuSuffix, setSkuSuffix] = useState("");
   const { data: categories = [] } = useQuery({ queryKey: ["categories"], queryFn: fetchCategories });
@@ -109,6 +122,27 @@ function ProductEditor() {
   }, [product]);
 
   const set = <K extends keyof Form>(k: K, v: Form[K]) => setF((prev) => ({ ...prev, [k]: v }));
+
+  // Auto-fill Nepali fields after typing pauses; manually edited Nepali text is left untouched.
+  useEffect(() => {
+    if (!f.name.trim() || f.name_ne.trim() || nameNeTouched) return;
+    const timer = window.setTimeout(() => {
+      void translateToNepali(f.name).then((translated) => {
+        if (translated) setF((prev) => prev.name === f.name && !nameNeTouched && !prev.name_ne.trim() ? { ...prev, name_ne: translated } : prev);
+      }).catch(() => toast.error("Could not generate the Nepali product name. Please enter it manually."));
+    }, 650);
+    return () => window.clearTimeout(timer);
+  }, [f.name, f.name_ne, nameNeTouched]);
+
+  useEffect(() => {
+    if (!f.description.trim() || f.description_ne.trim() || descriptionNeTouched) return;
+    const timer = window.setTimeout(() => {
+      void translateToNepali(f.description).then((translated) => {
+        if (translated) setF((prev) => prev.description === f.description && !descriptionNeTouched && !prev.description_ne.trim() ? { ...prev, description_ne: translated } : prev);
+      }).catch(() => toast.error("Could not generate the Nepali description. Please enter it manually."));
+    }, 850);
+    return () => window.clearTimeout(timer);
+  }, [f.description, f.description_ne, descriptionNeTouched]);
 
   const selectedCategoryName = categories.find((c) => c.id === f.category_id)?.name ?? "";
   const skuPrefix = categorySkuPrefix(selectedCategoryName);
@@ -209,19 +243,19 @@ function ProductEditor() {
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="space-y-4 rounded-2xl border border-border bg-card p-5 lg:col-span-2">
           <label className={label + " block"}>Name
-            <input className={input} value={f.name} onChange={(e) => { set("name", e.target.value); if (!slugTouched) set("slug", slugify(e.target.value)); }} />
+            <input className={input} value={f.name} onChange={(e) => { const value = e.target.value; set("name", value); if (!slugTouched) set("slug", slugify(value)); setNameNeTouched(false); set("name_ne", ""); }} />
           </label>
           <label className={label + " block"}>Page link (/shop/product/…)
             <input className={input} value={f.slug} onChange={(e) => { setSlugTouched(true); set("slug", e.target.value); }} />
           </label>
           <label className={label + " block"}>Description (English)
-            <textarea rows={5} className={input} value={f.description} onChange={(e) => set("description", e.target.value)} />
+            <textarea rows={5} className={input} value={f.description} onChange={(e) => { set("description", e.target.value); setDescriptionNeTouched(false); set("description_ne", ""); }} />
           </label>
           <label className={label + " block"}>Product name (नेपाली)
-            <input className={input} value={f.name_ne} onChange={(e) => set("name_ne", e.target.value)} placeholder="नेपालीमा उत्पादनको नाम" />
+            <input className={input} value={f.name_ne} onChange={(e) => { setNameNeTouched(true); set("name_ne", e.target.value); }} placeholder="नेपालीमा उत्पादनको नाम" />
           </label>
           <label className={label + " block"}>Description (नेपाली)
-            <textarea rows={5} className={input} value={f.description_ne} onChange={(e) => set("description_ne", e.target.value)} placeholder="उत्पादनको विवरण नेपालीमा लेख्नुहोस्" />
+            <textarea rows={5} className={input} value={f.description_ne} onChange={(e) => { setDescriptionNeTouched(true); set("description_ne", e.target.value); }} placeholder="उत्पादनको विवरण नेपालीमा लेख्नुहोस्" />
           </label>
           <p className="text-xs leading-relaxed text-muted-foreground">{PHOTO_DISCLAIMER}</p>
           <div className="grid gap-4 sm:grid-cols-2">
