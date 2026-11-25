@@ -72,6 +72,8 @@ function ProductEditor() {
   const qc = useQueryClient();
   const [f, setF] = useState<Form>(EMPTY);
   const [slugTouched, setSlugTouched] = useState(!isNew);
+  const [nameNeTouched, setNameNeTouched] = useState(false);
+  const [descriptionNeTouched, setDescriptionNeTouched] = useState(false);
   const [saving, setSaving] = useState(false);
   const [skuSuffix, setSkuSuffix] = useState("");
   const { data: categories = [] } = useQuery({ queryKey: ["categories"], queryFn: fetchCategories });
@@ -113,6 +115,8 @@ function ProductEditor() {
     if (!product) return;
     const parts = splitProductSku(product.sku, product.name);
     setSkuSuffix(parts.suffix);
+    setNameNeTouched(!!product.name_ne?.trim());
+    setDescriptionNeTouched(!!product.description_ne?.trim());
     setF({
       name: product.name, name_ne: product.name_ne ?? "", slug: product.slug, sku: product.sku ?? "", model_code: product.model_code ?? "", description: product.description ?? "", description_ne: product.description_ne ?? "",
       fabric: product.fabric ?? "", fabric_ne: product.fabric_ne ?? "", category_id: product.category_id ?? "",
@@ -126,6 +130,40 @@ function ProductEditor() {
   }, [product]);
 
   const set = <K extends keyof Form>(k: K, v: Form[K]) => setF((prev) => ({ ...prev, [k]: v }));
+
+  useEffect(() => {
+    const source = f.name.trim();
+    if (!source || nameNeTouched) return;
+    let active = true;
+    const timer = window.setTimeout(async () => {
+      try {
+        const translated = await translateEnglishToNepali(source);
+        if (active && translated) {
+          setF((prev) => prev.name.trim() === source && !nameNeTouched ? { ...prev, name_ne: translated } : prev);
+        }
+      } catch {
+        // Translation is optional; saving remains available if the service is offline.
+      }
+    }, 650);
+    return () => { active = false; window.clearTimeout(timer); };
+  }, [f.name, nameNeTouched]);
+
+  useEffect(() => {
+    const source = f.description.trim();
+    if (!source || descriptionNeTouched) return;
+    let active = true;
+    const timer = window.setTimeout(async () => {
+      try {
+        const translated = await translateEnglishToNepali(source);
+        if (active && translated) {
+          setF((prev) => prev.description.trim() === source && !descriptionNeTouched ? { ...prev, description_ne: translated } : prev);
+        }
+      } catch {
+        // Translation is optional; saving remains available if the service is offline.
+      }
+    }, 900);
+    return () => { active = false; window.clearTimeout(timer); };
+  }, [f.description, descriptionNeTouched]);
 
   const selectedCategoryName = categories.find((c) => c.id === f.category_id)?.name ?? "";
   const skuPrefix = categorySkuPrefix(selectedCategoryName);
@@ -234,7 +272,8 @@ function ProductEditor() {
           <label className={label + " block"}>Description (English)
             <textarea rows={5} className={input} value={f.description} onChange={(e) => { setDescriptionNeTouched(false); set("description", e.target.value); }} />
           </label>
-          <p className="text-xs text-muted-foreground">Nepali name and description are generated automatically from the English fields. You can edit either Nepali field manually.</p>\n          <label className={label + " block"}>Product name (नेपाली)
+          <p className="text-xs text-muted-foreground">Nepali name and description are generated automatically from the English fields. You can edit either Nepali field manually.</p>
+          <label className={label + " block"}>Product name (नेपाली)
             <input className={input} value={f.name_ne} onChange={(e) => { setNameNeTouched(true); set("name_ne", e.target.value); }} placeholder="नेपालीमा उत्पादनको नाम" />
           </label>
           <label className={label + " block"}>Description (नेपाली)
