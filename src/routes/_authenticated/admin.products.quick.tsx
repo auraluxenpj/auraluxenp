@@ -50,7 +50,6 @@ function QuickAdd() {
   const [categoryId, setCategoryId] = useState("");
   const [sizes, setSizes] = useState("S, M, L, XL");
   const [colors, setColors] = useState("");
-  const [skuKind, setSkuKind] = useState("K");
   const [skuSuffix, setSkuSuffix] = useState("");
   const [price, setPrice] = useState("");
   const [salePrice, setSalePrice] = useState("");
@@ -181,10 +180,8 @@ function QuickAdd() {
           <label className={label}>Stock<input type="number" min={0} className={input} value={stock} onChange={(e) => setStock(e.target.value)} /></label>
         </div>
         <fieldset className="grid gap-4 sm:grid-cols-2">
-          <label className={label}>Kind of dress
-            <select className={input} value={skuKind} onChange={(e) => setSkuKind(e.target.value)}>
-              {GARMENT_TYPES.map((kind) => <option key={kind} value={kind}>{GARMENT_LABELS[kind] ?? kind}</option>)}
-            </select>
+          <label className={label}>Category code
+            <input className={input} value={skuPrefix || "Select a category first"} readOnly />
           </label>
           <label className={label}>Final SKU identifier
             <input required pattern="[A-Za-z0-9]+(-[A-Za-z0-9]+)*" className={input} value={skuSuffix} onChange={(e) => setSkuSuffix(e.target.value)} placeholder="e.g. 001" />
