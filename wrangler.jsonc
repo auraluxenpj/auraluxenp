@@ -1,6 +1,16 @@
 {
   // Keep production Worker runtime compatibility in source control.
   "compatibility_date": "2026-11-20",
-  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+  "compatibility_flags": [
+    "nodejs_compat",
+    "nodejs_compat_populate_process_env",
+    "global_fetch_strictly_public"
+  ],
+  // These are public Supabase project settings required by authenticated
+  // TanStack Start server functions. Never put service-role keys here.
+  "vars": {
+    "SUPABASE_URL": "https://jsshaoucrjorbyuzagdr.supabase.co",
+    "SUPABASE_PUBLISHABLE_KEY": "sb_publishable_ti84mMAfbpf5l2a6n-czjw_8OLu-OJA"
+  },
   "previews": {}
 }
