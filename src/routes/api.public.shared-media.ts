@@ -43,7 +43,7 @@ export const Route = createFileRoute('/api/public/shared-media')({
     const input = body as Record<string, unknown>;
     const mime = input.mime_type;
     const encoded = input.base64;
-    if (typeof mime !== 'string' || !['image/webp','image/jpeg','image/png','image/avif'].includes(mime)
+    if (typeof mime !== 'string' || !['image/webp','image/jpeg','image/png'].includes(mime)
       || typeof encoded !== 'string' || encoded.length > 21_000_000) return json({ error: 'Unsupported image or payload too large' }, 400);
     const bytes = decodeBase64(encoded);
     if (!bytes || bytes.byteLength === 0) return json({ error: 'Invalid image payload' }, 400);
@@ -59,7 +59,7 @@ export const Route = createFileRoute('/api/public/shared-media')({
     try {
       const digest = await crypto.subtle.digest('SHA-256', bytes);
       const hash = Array.from(new Uint8Array(digest), b => b.toString(16).padStart(2,'0')).join('');
-      const ext = mime === 'image/jpeg' ? 'jpg' : mime === 'image/png' ? 'png' : mime === 'image/avif' ? 'avif' : 'webp';
+      const ext = mime === 'image/jpeg' ? 'jpg' : mime === 'image/png' ? 'png' : 'webp';
       const path = `${hash.slice(0,2)}/${hash}.${ext}`;
       const { supabaseAdmin } = await import('@/integrations/supabase/client.server');
       const db = supabaseAdmin as any;
