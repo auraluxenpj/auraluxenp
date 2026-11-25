@@ -119,24 +119,17 @@ function BaselineImport({ onComplete }: { onComplete: () => void }) {
   async function registerAll() {
     if (rows.length !== 395 || !approved || busy) return;
     setBusy(true);
-    let processed = 0;
-    let duplicates = 0;
+    setStatus('Registering the complete verified count sheet…');
     try {
-      for (let offset = 0; offset < rows.length; offset += 25) {
-        const batch = rows.slice(offset, offset + 25);
-        const result = await register({ data: { rows: batch } });
-        processed += result.processed;
-        duplicates += result.duplicates;
-        if (!result.ok) {
-          setStatus(`Stopped at SKU ${result.failedSku}. ${processed} baselines processed (${duplicates} already registered). Error: ${result.error}. You can safely retry the same file; identical baselines are idempotent.`);
-          return;
-        }
-        setStatus(`Registering verified baselines: ${processed}/395`);
+      const result = await register({ data: { rows } });
+      if (!result.ok) {
+        setStatus(`Stopped at SKU ${result.failedSku}. ${result.processed} baselines processed (${result.duplicates} already registered). Error: ${result.error}. You can safely retry the same file; identical baselines are idempotent.`);
+        return;
       }
-      setStatus(`Completed: ${processed} baselines registered; ${duplicates} were already identical. Website stock sync is still OFF.`);
+      setStatus(`Completed: ${result.processed} baselines registered; ${result.duplicates} were already identical. Website stock sync is still OFF.`);
       onComplete();
     } catch (error) {
-      setStatus(`Registration stopped after ${processed} rows: ${error instanceof Error ? error.message : 'Unknown error'}. Retry the same file after resolving the issue.`);
+      setStatus(`Registration failed: ${error instanceof Error ? error.message : 'Unknown error'}. No stock-sync switch was enabled.`);
     } finally {
       setBusy(false);
     }
