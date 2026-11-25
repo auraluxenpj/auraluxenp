@@ -5,7 +5,17 @@ describe("AURALUXE SKU rules", () => {
   it("starts with AL, includes the garment letter and retains the admin identifier", () => {
     expect(buildProductSku("K", "007")).toBe("AL-K-007");
   });
-  it("uses the first three letters of the selected category for new SKUs", () => {\n    expect(categorySkuPrefix("Winter Wear")).toBe("WIN");\n    expect(buildCategoryProductSku("Winter Wear", "001")).toBe("AL-WIN-001");\n    expect(buildCategoryProductSku("Kurti Set", "007")).toBe("AL-KUR-007");\n    expect(buildCategoryProductSku("Accessories", "012")).toBe("AL-ACC-012");\n  });\n  it("requires a valid category and final identifier", () => {\n    expect(() => buildCategoryProductSku("", "001")).toThrow();\n    expect(() => buildCategoryProductSku("Dress", "")).toThrow();\n  });\n  it("requires the admin to fill the final identifier", () => {
+  it("uses the first three letters of the selected category for new SKUs", () => {
+    expect(categorySkuPrefix("Winter Wear")).toBe("WIN");
+    expect(buildCategoryProductSku("Winter Wear", "001")).toBe("AL-WIN-001");
+    expect(buildCategoryProductSku("Kurti Set", "007")).toBe("AL-KUR-007");
+    expect(buildCategoryProductSku("Accessories", "012")).toBe("AL-ACC-012");
+  });
+  it("requires a valid category and final identifier", () => {
+    expect(() => buildCategoryProductSku("", "001")).toThrow();
+    expect(() => buildCategoryProductSku("Dress", "")).toThrow();
+  });
+  it("requires the admin to fill the final identifier", () => {
     expect(() => buildProductSku("D", "")).toThrow();
   });
   it("keeps the garment letter already used in the catalogue", () => {
