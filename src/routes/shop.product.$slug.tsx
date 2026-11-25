@@ -11,6 +11,7 @@ import {
   fetchProducts,
   fetchVariantsForProduct,
   productImage,
+  productImages,
 } from "@/lib/data";
 import { sizeStockLabel, sizeStocks, stockForSize } from "@/lib/size-stock";
 import { useCart, useMoney, useSettings, whatsappLink } from "@/lib/store";
@@ -171,7 +172,8 @@ function ProductDetail() {
   const displayFabric = localizedContent(product.fabric, product.fabric_ne, language);
   const price = effectivePrice(product);
   const hasDiscount = productHasDiscount(product);
-  const baseImages = product.images?.length ? product.images : [productImage(product)];
+  const realProductImages = productImages(product);
+  const baseImages = realProductImages.length ? realProductImages : [productImage(product)];
   const exactVariantImage = variants.find((variant) =>
     variant.image_url &&
     (!d.effectiveSize || variant.size === d.effectiveSize) &&

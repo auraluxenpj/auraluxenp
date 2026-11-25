@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Heart } from "lucide-react";
 import { Link } from "@tanstack/react-router";
-import { effectivePrice, hasDiscount, productImage, type StorefrontProduct } from "@/lib/data";
+import { effectivePrice, hasDiscount, productImage, productImages, type StorefrontProduct } from "@/lib/data";
 import { useCart, useMoney } from "@/lib/store";
 import { toast } from "sonner";
 import { QuickPickDialog } from "@/components/site/QuickPickDialog";
@@ -21,7 +21,7 @@ export function ProductCard({
   const displayProduct = { ...product, name: displayName, fabric: displayFabric };
   const { add, toggleWishlist, isWishlisted } = useCart();
   const price = effectivePrice(product);
-  const cardImage = product.images?.[0] ?? fallbackImage ?? productImage(product);
+  const cardImage = productImages(product)[0] ?? fallbackImage ?? productImage(product);
   const discounted = hasDiscount(product);
   const outOfStock = product.stock <= 0;
   const [picking, setPicking] = useState(false);
