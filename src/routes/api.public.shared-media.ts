@@ -19,8 +19,37 @@ function decodeBase64(value: string): Uint8Array | null {
   } catch { return null; }
 }
 
+async function assignSkuImage(db: any, sku: unknown, url: string): Promise<boolean> {
+  if (typeof sku !== 'string' || !sku.trim()) return true;
+  const { data, error } = await db.from('product_variants').update({ image_url: url })
+    .eq('sku', sku.trim()).select('id');
+  return !error && Array.isArray(data) && data.length === 1;
+}
+async function authorizeSharedMedia(request: Request): Promise<boolean> {
+  const auth = request.headers.get('authorization') ?? '';
+  const token = auth.startsWith('Bearer ') ? auth.slice(7) : '';
+  const sharedSecret = process.env['WEBSITE_INVENTORY_SYNC_SECRET'] ?? '';
+  return !!token && !/[\\s,]/.test(token) && sharedSecret.length >= 24 && equalSecret(token, sharedSecret);
+}
 export const Route = createFileRoute('/api/public/shared-media')({
-  server: { handlers: { POST: async ({ request }) => {
+  server: { handlers: {
+    GET: async ({ request }) => {
+      if (!(await authorizeSharedMedia(request))) return json({ error: 'Unauthorized' }, 401);
+      try {
+        const { supabaseAdmin } = await import('@/integrations/supabase/client.server');
+        const db = supabaseAdmin as any;
+        const { data: rows, error } = await db.from('media_assets')
+          .select('id,storage_path,mime_type,byte_size,created_at')
+          .order('created_at', { ascending: false }).limit(100);
+        if (error) return json({ error: 'Media registry unavailable' }, 503);
+        const assets = (rows ?? []).map((row: { id: string; storage_path: string; mime_type: string; byte_size: number; created_at: string }) => {
+          const { data } = db.storage.from('product-images').getPublicUrl(row.storage_path);
+          return { id: row.id, url: data.publicUrl, mime_type: row.mime_type, byte_size: row.byte_size, created_at: row.created_at };
+        });
+        return json({ ok: true, assets });
+      } catch { return json({ error: 'Media service unavailable' }, 503); }
+    },
+    POST: async ({ request }) => {
     const auth = request.headers.get('authorization') ?? '';
     const token = auth.startsWith('Bearer ') ? auth.slice(7) : '';
     if (!token || /[\s,]/.test(token)) return json({ error: 'Unauthorized' }, 401);
@@ -50,6 +79,8 @@ export const Route = createFileRoute('/api/public/shared-media')({
     const input = body as Record<string, unknown>;
     const mime = input.mime_type;
     const encoded = input.base64;
+    const sku = typeof input.sku === 'string' ? input.sku.trim() : null;
+    if (sku && (sku.length > 80 || /[\\u0000-\\u001f]/.test(sku))) return json({ error: 'Invalid SKU' }, 400);
     if (typeof mime !== 'string' || !['image/webp','image/jpeg','image/png'].includes(mime)
       || typeof encoded !== 'string' || encoded.length > 21_000_000) return json({ error: 'Unsupported image or payload too large' }, 400);
     const bytes = decodeBase64(encoded);
@@ -74,6 +105,7 @@ export const Route = createFileRoute('/api/public/shared-media')({
       if (found.error) return json({ error: 'Media registry unavailable' }, 503);
       if (found.data) {
         const { data } = db.storage.from('product-images').getPublicUrl(found.data.storage_path);
+        if (!(await assignSkuImage(db, sku, data.publicUrl))) return json({ error: 'SKU was not found uniquely in the Auraluxe catalogue' }, 409);
         return json({ ok: true, asset_id: found.data.id, path: found.data.storage_path, url: data.publicUrl, deduplicated: true });
       }
       const upload = await db.storage.from('product-images').upload(path, bytes, { contentType: mime, upsert: true, cacheControl: '31536000' });
@@ -84,12 +116,15 @@ export const Route = createFileRoute('/api/public/shared-media')({
         const retry = await db.from('media_assets').select('id,storage_path').eq('sha256', hash).maybeSingle();
         if (!retry.data) return json({ error: 'Media registry write failed' }, 503);
         const { data } = db.storage.from('product-images').getPublicUrl(retry.data.storage_path);
+        if (!(await assignSkuImage(db, sku, data.publicUrl))) return json({ error: 'SKU was not found uniquely in the Auraluxe catalogue' }, 409);
         return json({ ok: true, asset_id: retry.data.id, path: retry.data.storage_path, url: data.publicUrl, deduplicated: true });
       }
       const { data } = db.storage.from('product-images').getPublicUrl(path);
+      if (!(await assignSkuImage(db, sku, data.publicUrl))) return json({ error: 'SKU was not found uniquely in the Auraluxe catalogue' }, 409);
       return json({ ok: true, asset_id: inserted.data.id, path, url: data.publicUrl, deduplicated: false });
     } catch {
       return json({ error: 'Media service unavailable' }, 503);
     }
-  } } },
+    },
+  } },
 });
