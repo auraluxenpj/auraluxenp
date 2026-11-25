@@ -1,9 +1,19 @@
 import { describe, expect, it } from "vitest";
-import { buildProductSku, isProductSku, splitProductSku, skuTypeForProduct } from "./product-information";
+import { buildCategoryProductSku, buildProductSku, categorySkuPrefix, isProductSku, splitProductSku, skuTypeForProduct } from "./product-information";
 
 describe("AURALUXE SKU rules", () => {
   it("starts with AL, includes the garment letter and retains the admin identifier", () => {
     expect(buildProductSku("K", "007")).toBe("AL-K-007");
+  });
+  it("uses the first three letters of the selected category for new SKUs", () => {
+    expect(categorySkuPrefix("Winter Wear")).toBe("WIN");
+    expect(buildCategoryProductSku("Winter Wear", "001")).toBe("AL-WIN-001");
+    expect(buildCategoryProductSku("Kurti Set", "007")).toBe("AL-KUR-007");
+    expect(buildCategoryProductSku("Accessories", "012")).toBe("AL-ACC-012");
+  });
+  it("requires a valid category and final identifier", () => {
+    expect(() => buildCategoryProductSku("", "001")).toThrow();
+    expect(() => buildCategoryProductSku("Dress", "")).toThrow();
   });
   it("requires the admin to fill the final identifier", () => {
     expect(() => buildProductSku("D", "")).toThrow();
