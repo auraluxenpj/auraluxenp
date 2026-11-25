@@ -24,7 +24,7 @@ const BASELINE_UNIT_COUNT = 1705;
 // Keep each request comfortably below the Cloudflare Workers subrequest ceiling.
 // The browser invokes this authenticated function once per batch.
 const REGISTRATION_BATCH_SIZE = 10;
-const REGISTRATION_BATCH_COUNT = BASELINE_ROW_COUNT / REGISTRATION_BATCH_SIZE;
+const REGISTRATION_BATCH_COUNT = Math.ceil(BASELINE_ROW_COUNT / REGISTRATION_BATCH_SIZE);
 
 const rowsSchema = z.object({
   rows: z.array(z.object({
