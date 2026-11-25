@@ -192,7 +192,39 @@ function ProductDetail() {
   const outOfStock =
     product.stock <= 0 || d.allSizesSoldOut || (d.effectiveSize != null && d.sizeSoldOut);
   const missingOptions = requiredOptionLabels(product, d.effectiveSize, d.effectiveColor);
-  const related = all.filter((p) => p.category_id === product.category_id && p.id !== product.id).slice(0, 3);
+  // Keep recommendations useful: prefer in-stock pieces from the same catalogue,
+  // then use fabric, price band, size and merchandising signals as relevance hints.
+  const related = all
+    .filter((p) => {
+      if (p.id === product.id || p.stock <= 0) return false;
+      const sameCategory = p.category_id === product.category_id;
+      const sameFabric = Boolean(product.fabric && p.fabric &&
+        product.fabric.trim().toLowerCase() === p.fabric.trim().toLowerCase());
+      const currentPrice = effectivePrice(product);
+      const candidatePrice = effectivePrice(p);
+      const similarPrice = currentPrice > 0 &&
+        candidatePrice >= currentPrice * 0.75 &&
+        candidatePrice <= currentPrice * 1.25;
+      return sameCategory || sameFabric || similarPrice;
+    })
+    .map((p) => {
+      let score = 0;
+      if (p.category_id === product.category_id) score += 100;
+      if (product.fabric && p.fabric &&
+        product.fabric.trim().toLowerCase() === p.fabric.trim().toLowerCase()) score += 35;
+      const currentPrice = effectivePrice(product);
+      const candidatePrice = effectivePrice(p);
+      if (currentPrice > 0 && candidatePrice >= currentPrice * 0.75 &&
+        candidatePrice <= currentPrice * 1.25) score += 20;
+      if ((p.sizes ?? []).some((candidateSize) => (product.sizes ?? []).includes(candidateSize))) score += 8;
+      if (p.is_bestseller) score += 5;
+      if (p.is_featured) score += 3;
+      if (p.is_new) score += 2;
+      return { product: p, score };
+    })
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 4)
+    .map(({ product: p }) => p);
 
   const chosen = {
     productId: product.id,
