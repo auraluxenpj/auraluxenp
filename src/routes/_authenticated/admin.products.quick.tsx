@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
@@ -32,6 +32,20 @@ const schema = z.object({
 
 const list = (s: string) => s.split(/[,\n]/).map((x) => x.trim()).filter(Boolean);
 
+function buildSearchTitle(name: string): string {
+  const clean = name.trim();
+  return clean ? `${clean} | Auraluxe Nepalgunj`.slice(0, 60).trim() : "";
+}
+
+function buildSearchDescription(name: string, description: string): string {
+  const source = description.trim() || (name.trim() ? `Explore ${name.trim()} at Auraluxe Nepalgunj.` : "");
+  if (source.length <= 155) return source;
+  const shortened = source.slice(0, 152);
+  const boundary = shortened.lastIndexOf(" ");
+  return `${(boundary > 110 ? shortened.slice(0, boundary) : shortened).trimEnd()}...`;
+}
+
+
 function QuickAdd() {
   const navigate = useNavigate();
   const qc = useQueryClient();
@@ -46,6 +60,8 @@ function QuickAdd() {
   const [description, setDescription] = useState("");
   const [metaTitle, setMetaTitle] = useState("");
   const [metaDescription, setMetaDescription] = useState("");
+  const [metaTitleManual, setMetaTitleManual] = useState(false);
+  const [metaDescriptionManual, setMetaDescriptionManual] = useState(false);
   const [fabric, setFabric] = useState("");
   const [categoryId, setCategoryId] = useState("");
   const [sizes, setSizes] = useState("S, M, L, XL");
@@ -57,6 +73,16 @@ function QuickAdd() {
   const [isPublished, setIsPublished] = useState(true);
   const [isNew, setIsNew] = useState(true);
   const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (draftReady && name.trim() && !metaTitleManual) setMetaTitle(buildSearchTitle(name));
+  }, [draftReady, name, metaTitleManual]);
+
+  useEffect(() => {
+    if (draftReady && (description.trim() || name.trim()) && !metaDescriptionManual) {
+      setMetaDescription(buildSearchDescription(name, description));
+    }
+  }, [draftReady, name, description, metaDescriptionManual]);
 
   const selectedCategoryName = categories.find((c) => c.id === categoryId)?.name ?? "";
   const skuPrefix = categorySkuPrefix(selectedCategoryName);
@@ -169,8 +195,8 @@ function QuickAdd() {
             </label>
             <label className={label}>Sizes (comma separated)<input className={input} value={sizes} onChange={(e) => setSizes(e.target.value)} /></label>
             <label className={label}>Colours (comma separated)<input className={input} value={colors} onChange={(e) => setColors(e.target.value)} /></label>
-            <label className={label}>Search title<input className={input} value={metaTitle} onChange={(e) => setMetaTitle(e.target.value)} /></label>
-            <label className={label}>Search description<input className={input} value={metaDescription} onChange={(e) => setMetaDescription(e.target.value)} /></label>
+            <label className={label}>Search title<input className={input} value={metaTitle} onChange={(e) => { setMetaTitleManual(true); setMetaTitle(e.target.value); }} /></label>
+            <label className={label}>Search description<input className={input} value={metaDescription} onChange={(e) => { setMetaDescriptionManual(true); setMetaDescription(e.target.value); }} /></label>
           </div>
         </div>
       ) : null}
