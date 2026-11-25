@@ -55,3 +55,16 @@ export function isProductSku(value: string): boolean {
   const parsed = splitProductSku(value, "");
   try { return buildProductSku(parsed.kind, parsed.suffix) === value; } catch { return false; }
 }
+
+
+export function categorySkuPrefix(categoryName: string): string {
+  return categoryName.trim().toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 3);
+}
+
+export function buildCategoryProductSku(categoryName: string, suffix: string): string {
+  const prefix = categorySkuPrefix(categoryName);
+  const ending = suffix.trim().toUpperCase();
+  if (prefix.length !== 3) throw new Error("Choose a category with at least three letters for the SKU");
+  if (!/^[A-Z0-9]+(?:-[A-Z0-9]+)*$/.test(ending)) throw new Error("Enter the final SKU identifier using letters, numbers or dashes");
+  return `AL-${prefix}-${ending}`;
+}
