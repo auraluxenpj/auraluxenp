@@ -18,8 +18,9 @@ Required operational values: SKU, Category, Unit, Qty, Purchase Price, MRP, Sell
 Description, fabric, colours, images, SEO title/description, slug/URL merchandising fields, collection mapping, new-arrival, bestseller, and featured are website enrichment fields. They are optional and must never reject a catalogue sync. Preserve existing website enrichment when a BizSathi update omits it; leave it blank for new records. A missing website field does not imply that the product should be published.
 
 ## Authority and direction
-- BizSathi is the single source of truth for Auraluxe catalogue and inventory. Auraluxe is a storefront/projection, not a second catalogue or stock authority.
-- Catalogue changes flow only BizSathi → Auraluxe. Auraluxe-origin catalogue ingestion and publishing are disabled.
+- BizSathi is the source of truth for catalogue and inventory except the product-name field. Auraluxe is authoritative for the name of an already-mapped product; all other shared catalogue fields remain BizSathi-owned.
+- Auraluxe product-name edits flow Auraluxe → BizSathi by the persisted cross-system product mapping. The name-only endpoint accepts no other fields, requires the server integration credential, and suppresses catalogue outbox echo. Product names are never used as identity keys.
+- All other catalogue changes flow BizSathi → Auraluxe. Auraluxe-origin writes to SKU, category, prices, variant data, publication state and stock remain disabled.
 - Stock movements flow only BizSathi → Auraluxe as immutable, idempotent deltas. Auraluxe checkout reservations and commits must be recorded in BizSathi; Auraluxe must not originate stock adjustments.
 - Website-only enrichment (images, descriptions, SEO, colours, fabric and merchandising) may be maintained on matched Auraluxe SKUs. It cannot create an independently sellable product or override BizSathi-owned fields.
 - SKU is the only cross-system matching key. Model Code is optional reference metadata, may repeat, and must never be used as a merge key or uniqueness constraint.
