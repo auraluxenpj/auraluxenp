@@ -65,12 +65,22 @@ export function ImageUploader({ onUploaded, defaultAspect = 4 / 5 }: { onUploade
     try {
       const cropped = await cropToBlob(current, area);
       const webp = await compressToWebp(new File([cropped], "product-photo.jpg", { type: "image/jpeg" }));
-      const path = `products/${Date.now()}-${crypto.randomUUID().slice(0, 8)}.webp`;
-      const { error } = await supabase.storage.from("product-images").upload(path, webp, { contentType: "image/webp" });
-      if (error) throw error;
-      const { data, error: sErr } = await supabase.storage.from("product-images").createSignedUrl(path, 60 * 60 * 24 * 365 * 20);
-      if (sErr || !data) throw sErr ?? new Error("Could not get link");
-      onUploaded(data.signedUrl);
+      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+      if (sessionError || !sessionData.session?.access_token) throw new Error("Please sign in again before uploading.");
+      const bytes = new Uint8Array(await webp.arrayBuffer());
+      let binary = "";
+      const chunkSize = 0x8000;
+      for (let i = 0; i < bytes.length; i += chunkSize) {
+        binary += String.fromCharCode(...bytes.subarray(i, i + chunkSize));
+      }
+      const response = await fetch("/api/public/shared-media", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${sessionData.session.access_token}` },
+        body: JSON.stringify({ mime_type: "image/webp", base64: btoa(binary) }),
+      });
+      const result = await response.json().catch(() => null) as { ok?: boolean; url?: string; error?: string } | null;
+      if (!response.ok || result?.ok !== true || !result.url) throw new Error(result?.error || "Shared media upload failed.");
+      onUploaded(result.url);
       toast.success("Photo uploaded");
       next();
     } catch (e) {
