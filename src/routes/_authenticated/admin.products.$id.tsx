@@ -48,6 +48,23 @@ const EMPTY: Form = {
 
 const list = (s: string) => s.split(/[,\n]/).map((x) => x.trim()).filter(Boolean);
 
+async function translateEnglishToNepali(value: string): Promise<string> {
+  const url = new URL("https://translate.googleapis.com/translate_a/single");
+  url.searchParams.set("client", "gtx");
+  url.searchParams.set("sl", "en");
+  url.searchParams.set("tl", "ne");
+  url.searchParams.set("dt", "t");
+  url.searchParams.set("q", value);
+  const response = await fetch(url);
+  if (!response.ok) throw new Error("Nepali translation is temporarily unavailable");
+  const payload: unknown = await response.json();
+  if (!Array.isArray(payload) || !Array.isArray(payload[0])) return "";
+  return payload[0]
+    .map((part: unknown) => Array.isArray(part) && typeof part[0] === "string" ? part[0] : "")
+    .join("")
+    .trim();
+}
+
 function ProductEditor() {
   const { id } = Route.useParams();
   const isNew = id === "new";
@@ -209,19 +226,19 @@ function ProductEditor() {
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="space-y-4 rounded-2xl border border-border bg-card p-5 lg:col-span-2">
           <label className={label + " block"}>Name
-            <input className={input} value={f.name} onChange={(e) => { set("name", e.target.value); if (!slugTouched) set("slug", slugify(e.target.value)); }} />
+            <input className={input} value={f.name} onChange={(e) => { setNameNeTouched(false); set("name", e.target.value); if (!slugTouched) set("slug", slugify(e.target.value)); }} />
           </label>
           <label className={label + " block"}>Page link (/shop/product/…)
             <input className={input} value={f.slug} onChange={(e) => { setSlugTouched(true); set("slug", e.target.value); }} />
           </label>
           <label className={label + " block"}>Description (English)
-            <textarea rows={5} className={input} value={f.description} onChange={(e) => set("description", e.target.value)} />
+            <textarea rows={5} className={input} value={f.description} onChange={(e) => { setDescriptionNeTouched(false); set("description", e.target.value); }} />
           </label>
-          <label className={label + " block"}>Product name (नेपाली)
-            <input className={input} value={f.name_ne} onChange={(e) => set("name_ne", e.target.value)} placeholder="नेपालीमा उत्पादनको नाम" />
+          <p className="text-xs text-muted-foreground">Nepali name and description are generated automatically from the English fields. You can edit either Nepali field manually.</p>\n          <label className={label + " block"}>Product name (नेपाली)
+            <input className={input} value={f.name_ne} onChange={(e) => { setNameNeTouched(true); set("name_ne", e.target.value); }} placeholder="नेपालीमा उत्पादनको नाम" />
           </label>
           <label className={label + " block"}>Description (नेपाली)
-            <textarea rows={5} className={input} value={f.description_ne} onChange={(e) => set("description_ne", e.target.value)} placeholder="उत्पादनको विवरण नेपालीमा लेख्नुहोस्" />
+            <textarea rows={5} className={input} value={f.description_ne} onChange={(e) => { setDescriptionNeTouched(true); set("description_ne", e.target.value); }} placeholder="उत्पादनको विवरण नेपालीमा लेख्नुहोस्" />
           </label>
           <p className="text-xs leading-relaxed text-muted-foreground">{PHOTO_DISCLAIMER}</p>
           <div className="grid gap-4 sm:grid-cols-2">
