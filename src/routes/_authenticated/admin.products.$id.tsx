@@ -56,9 +56,7 @@ function ProductEditor() {
   const [f, setF] = useState<Form>(EMPTY);
   const [slugTouched, setSlugTouched] = useState(!isNew);
   const [saving, setSaving] = useState(false);
-  const [skuKind, setSkuKind] = useState("KURTI");
   const [skuSuffix, setSkuSuffix] = useState("");
-  const [skuKindTouched, setSkuKindTouched] = useState(false);
   const { data: categories = [] } = useQuery({ queryKey: ["categories"], queryFn: fetchCategories });
   const { data: product } = useQuery({
     queryKey: ["admin", "product", id],
@@ -97,9 +95,7 @@ function ProductEditor() {
   useEffect(() => {
     if (!product) return;
     const parts = splitProductSku(product.sku, product.name);
-    setSkuKind(parts.kind);
     setSkuSuffix(parts.suffix);
-    setSkuKindTouched(true);
     setF({
       name: product.name, name_ne: product.name_ne ?? "", slug: product.slug, sku: product.sku ?? "", model_code: product.model_code ?? "", description: product.description ?? "", description_ne: product.description_ne ?? "",
       fabric: product.fabric ?? "", fabric_ne: product.fabric_ne ?? "", category_id: product.category_id ?? "",
@@ -114,17 +110,15 @@ function ProductEditor() {
 
   const set = <K extends keyof Form>(k: K, v: Form[K]) => setF((prev) => ({ ...prev, [k]: v }));
 
-  useEffect(() => {
-    if (isNew && !skuKindTouched) {
-      setSkuKind(skuTypeForProduct(f.name, categories.find((c) => c.id === f.category_id)?.name));
-    }
-  }, [isNew, skuKindTouched, f.name, f.category_id, categories]);
+  const selectedCategoryName = categories.find((c) => c.id === f.category_id)?.name ?? "";
+  const skuPrefix = categorySkuPrefix(selectedCategoryName);
 
   async function save(e: React.FormEvent) {
     e.preventDefault();
     let sku: string;
-    try { sku = buildProductSku(skuKind, skuSuffix); }
+    try { sku = isNew ? buildCategoryProductSku(selectedCategoryName, skuSuffix) : (f.sku.trim() || ""); }
     catch (error) { toast.error(error instanceof Error ? error.message : "Check the SKU"); return; }
+    if (!sku) { toast.error("SKU is required"); return; }
     const parsed = schema.safeParse({
       name: f.name, slug: f.slug, price: Number(f.price),
       sale_price: f.sale_price === "" ? null : Number(f.sale_price), stock: Number(f.stock),
@@ -280,15 +274,15 @@ function ProductEditor() {
             <label className={label + " block"}>Sale price (optional)<input type="number" min={0} step="0.01" className={input} value={f.sale_price} onChange={(e) => set("sale_price", e.target.value)} /></label>
             <fieldset className="space-y-2">
               <legend className={label}>SKU</legend>
-              <label className="block text-xs text-muted-foreground">Kind of dress
-                <select className={input} value={skuKind} onChange={(e) => { setSkuKind(e.target.value); setSkuKindTouched(true); }}>
-                  {GARMENT_TYPES.map((kind) => <option key={kind} value={kind}>{GARMENT_LABELS[kind] ?? kind}</option>)}
-                </select>
-              </label>
-              <label className="block text-xs text-muted-foreground">Final SKU identifier
-                <input required pattern="[A-Za-z0-9]+(-[A-Za-z0-9]+)*" className={input} value={skuSuffix} onChange={(e) => setSkuSuffix(e.target.value)} placeholder="e.g. 001" />
-              </label>
-              <p className="break-words text-sm font-medium">AL-{skuKind}-{skuSuffix.trim().toUpperCase() || "…"}</p>
+              {isNew ? <>
+                <label className="block text-xs text-muted-foreground">Category code
+                  <input className={input} value={skuPrefix || "Select a category first"} readOnly />
+                </label>
+                <label className="block text-xs text-muted-foreground">Final SKU identifier
+                  <input required pattern="[A-Za-z0-9]+(-[A-Za-z0-9]+)*" className={input} value={skuSuffix} onChange={(e) => setSkuSuffix(e.target.value)} placeholder="e.g. 001" />
+                </label>
+                <p className="break-words text-sm font-medium">AL-{skuPrefix || "CAT"}-{skuSuffix.trim().toUpperCase() || "…"}</p>
+              </> : <p className="break-words text-sm font-medium">{f.sku || "—"} <span className="text-xs text-muted-foreground">(preserved)</span></p>}
             </fieldset>
             <label className={label + " block"}>Stock{trackBySize ? (
               <input type="number" min={0} className={input} disabled value={list(f.sizes).reduce((n, s) => n + (Math.max(0, Math.floor(Number(sizeStock[s] ?? "0")) || 0)), 0)} />
