@@ -177,9 +177,19 @@ export function slugify(value: string): string {
     .replace(/^-+|-+$/g, "");
 }
 
-export function productImage(p: Pick<Product, "images">): string {
-  return (
-    p.images?.[0] ??
-    "https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=1000&q=82"
+const DEFAULT_PRODUCT_PLACEHOLDER =
+  "https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=1000&q=82";
+
+export function productImages(p: Pick<Product, "images">): string[] {
+  // The Unsplash image above is a temporary catalogue placeholder. If a real
+  // product photo is later added to the same product, prefer it even when the
+  // old placeholder remains earlier in the images array.
+  return (p.images ?? []).filter(
+    (image): image is string =>
+      Boolean(image?.trim()) && !image.includes("photo-1610030469983"),
   );
+}
+
+export function productImage(p: Pick<Product, "images">): string {
+  return productImages(p)[0] ?? DEFAULT_PRODUCT_PLACEHOLDER;
 }
