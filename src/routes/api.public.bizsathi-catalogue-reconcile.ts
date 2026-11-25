@@ -60,7 +60,10 @@ export const Route = createFileRoute('/api/public/bizsathi-catalogue-reconcile')
     try {
       const { supabaseAdmin } = await import('@/integrations/supabase/client.server');
       const db = supabaseAdmin as unknown as Db;
-      const result = await db.rpc('reconcile_bizsathi_catalogue', { _items: parsed.items });
+      // Catalogue import is explicitly a draft-only operation. Ignore any source-side
+      // website_published flag so this reconciliation cannot publish products.
+      const draftItems = parsed.items.map((item) => ({ ...item, published: false }));
+      const result = await db.rpc('reconcile_bizsathi_catalogue', { _items: draftItems });
       if (result.error || !result.data || typeof result.data !== 'object') {
         console.error('[bizsathi-catalogue-reconcile] failed', result.error?.message ?? 'invalid RPC response');
         return json({ error: 'Catalogue reconciliation failed' }, 503);
