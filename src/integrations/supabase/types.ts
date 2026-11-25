@@ -296,6 +296,7 @@ export type Database = {
           unit_price: number
         }
         Insert: {
+          image_url?: string | null
           color?: string | null
           created_at?: string
           id?: string
@@ -309,6 +310,7 @@ export type Database = {
           unit_price?: number
         }
         Update: {
+          image_url?: string | null
           color?: string | null
           created_at?: string
           id?: string
@@ -769,6 +771,7 @@ export type Database = {
       }
       product_variants: {
         Row: {
+          image_url: string | null
           color: string | null
           created_at: string
           id: string
