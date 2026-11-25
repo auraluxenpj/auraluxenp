@@ -29,51 +29,66 @@ export const registerAuraluxeStockBaselines = createServerFn({ method: "POST" })
       seen.add(normalized);
     }
 
-    let processed = 0;
-    let duplicates = 0;
-    for (const row of data.rows) {
-      const sku = row.sku.trim();
-      const { data: variants, error: variantError } = await db
-        .from("product_variants")
-        .select("id, sku, bizsathi_variant_id, product_id")
-        .eq("sku", sku)
-        .limit(2);
-      if (variantError) {
-        return { ok: false, processed, duplicates, failedSku: sku, error: variantError.message };
+    const skuList = data.rows.map((row) => row.sku.trim());
+    const { data: variants, error: variantError } = await db
+      .from("product_variants")
+      .select("id, sku, bizsathi_variant_id, product_id")
+      .in("sku", skuList);
+    if (variantError) throw new Error(variantError.message);
+    if (!variants || variants.length !== data.rows.length) {
+      throw new Error("One or more SKUs are missing or ambiguous in Auraluxe");
+    }
+    const variantBySku = new Map<string, any>();
+    for (const variant of variants) {
+      const key = String(variant.sku).trim().toLowerCase();
+      if (variantBySku.has(key) || !variant.bizsathi_variant_id) {
+        throw new Error(`Missing or duplicate BizSathi variant mapping: ${variant.sku}`);
       }
-      if (!variants || variants.length !== 1 || !variants[0].bizsathi_variant_id) {
-        return { ok: false, processed, duplicates, failedSku: sku, error: "SKU mapping is missing or ambiguous" };
-      }
-
-      const variant = variants[0];
-      const { data: products, error: productError } = await db
-        .from("products")
-        .select("id, bizsathi_product_id")
-        .eq("id", variant.product_id)
-        .limit(2);
-      if (productError) {
-        return { ok: false, processed, duplicates, failedSku: sku, error: productError.message };
-      }
-      if (!products || products.length !== 1 || !products[0].bizsathi_product_id) {
-        return { ok: false, processed, duplicates, failedSku: sku, error: "Product mapping is missing or ambiguous" };
-      }
-
-      const { data: result, error: baselineError } = await db.rpc("register_bizsathi_stock_baseline", {
-        _bizsathi_product_id: products[0].bizsathi_product_id,
-        _bizsathi_variant_id: variant.bizsathi_variant_id,
-        _auraluxe_product_id: products[0].id,
-        _auraluxe_variant_id: variant.id,
-        _sku: sku,
-        _quantity: row.quantity,
-        _bizsathi_ledger_quantity: row.quantity,
-        _verification_reference: COUNT_REFERENCE,
-      });
-      if (baselineError) {
-        return { ok: false, processed, duplicates, failedSku: sku, error: baselineError.message };
-      }
-      processed += 1;
-      if ((result as { duplicate?: boolean } | null)?.duplicate) duplicates += 1;
+      variantBySku.set(key, variant);
     }
 
-    return { ok: true, processed, duplicates };
+    const productIds = [...new Set(variants.map((variant: any) => variant.product_id))];
+    const { data: products, error: productError } = await db
+      .from("products")
+      .select("id, bizsathi_product_id")
+      .in("id", productIds);
+    if (productError) throw new Error(productError.message);
+    const productById = new Map((products ?? []).map((product: any) => [product.id, product]));
+    const registrations = data.rows.map((row) => {
+      const sku = row.sku.trim();
+      const variant = variantBySku.get(sku.toLowerCase());
+      const product = variant ? productById.get(variant.product_id) as any : null;
+      if (!variant || !product?.bizsathi_product_id) {
+        throw new Error(`Missing BizSathi product/variant mapping for SKU ${sku}`);
+      }
+      return {
+        sku,
+        quantity: row.quantity,
+        params: {
+          _bizsathi_product_id: product.bizsathi_product_id,
+          _bizsathi_variant_id: variant.bizsathi_variant_id,
+          _auraluxe_product_id: product.id,
+          _auraluxe_variant_id: variant.id,
+          _sku: sku,
+          _quantity: row.quantity,
+          _bizsathi_ledger_quantity: row.quantity,
+          _verification_reference: COUNT_REFERENCE,
+        },
+      };
+    });
+
+    const results = await Promise.all(registrations.map(async (registration) => {
+      const { data: result, error } = await db.rpc("register_bizsathi_stock_baseline", registration.params);
+      return {
+        sku: registration.sku,
+        duplicate: (result as { duplicate?: boolean } | null)?.duplicate === true,
+        error: error?.message ?? null,
+      };
+    }));
+    const failed = results.find((result) => result.error);
+    const processed = results.filter((result) => !result.error).length;
+    const duplicates = results.filter((result) => !result.error && result.duplicate).length;
+    return failed
+      ? { ok: false, processed, duplicates, failedSku: failed.sku, error: failed.error }
+      : { ok: true, processed, duplicates };
   });
