@@ -171,7 +171,19 @@ function ProductDetail() {
   const displayFabric = localizedContent(product.fabric, product.fabric_ne, language);
   const price = effectivePrice(product);
   const hasDiscount = productHasDiscount(product);
-  const images = product.images?.length ? product.images : [productImage(product)];
+  const baseImages = product.images?.length ? product.images : [productImage(product)];
+  const exactVariantImage = variants.find((variant) =>
+    variant.image_url &&
+    (!d.effectiveSize || variant.size === d.effectiveSize) &&
+    (!d.effectiveColor || variant.color === d.effectiveColor)
+  )?.image_url;
+  const sizeVariantImage = variants.find((variant) =>
+    variant.image_url && d.effectiveSize && variant.size === d.effectiveSize
+  )?.image_url;
+  const selectedVariantImage = exactVariantImage ?? sizeVariantImage;
+  const images = selectedVariantImage
+    ? [selectedVariantImage, ...baseImages.filter((image) => image !== selectedVariantImage)]
+    : baseImages;
   const comboEmpty = d.comboStock != null && d.comboStock <= 0 && (d.sizeTotalStock ?? 0) > 0;
   const outOfStock =
     product.stock <= 0 || d.allSizesSoldOut || (d.effectiveSize != null && d.sizeSoldOut);
