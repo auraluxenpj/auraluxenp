@@ -10,11 +10,12 @@ DECLARE
 BEGIN
   SELECT pg_get_functiondef('public.upsert_shared_catalogue_from_bizsathi(jsonb)'::regprocedure)
     INTO body;
-  changed := replace(body, old_block, new_block);
-  IF changed = body THEN
-    RAISE EXCEPTION 'Could not locate the mapped-product name assignment in BizSathi catalogue import';
+  IF position(old_block IN body) > 0 THEN
+    changed := replace(body, old_block, new_block);
+    EXECUTE changed;
+  ELSIF position(new_block IN body) = 0 THEN
+    RAISE EXCEPTION 'BizSathi catalogue upsert does not match the expected safe name-preserving implementation';
   END IF;
-  EXECUTE changed;
 END
 $preserve_auraluxe_product_names$;
 
