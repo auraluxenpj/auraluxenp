@@ -11,19 +11,18 @@ BEGIN
   SELECT pg_get_functiondef('public.upsert_shared_catalogue_from_bizsathi(jsonb)'::regprocedure)
     INTO body;
 
-  IF position(new_assignment in body) > 0 THEN
-    RETURN;
-  END IF;
-  IF position(old_assignment in body) = 0 THEN
-    RAISE EXCEPTION 'Could not locate the BizSathi publication assignment';
-  END IF;
+  IF position(new_assignment in body) = 0 THEN
+    IF position(old_assignment in body) = 0 THEN
+      RAISE EXCEPTION 'Could not locate the BizSathi publication assignment';
+    END IF;
 
-  changed := replace(body, old_assignment, new_assignment);
-  IF changed = body OR position(new_assignment in changed) = 0 THEN
-    RAISE EXCEPTION 'BizSathi publication-state patch was not applied';
-  END IF;
+    changed := replace(body, old_assignment, new_assignment);
+    IF changed = body OR position(new_assignment in changed) = 0 THEN
+      RAISE EXCEPTION 'BizSathi publication-state patch was not applied';
+    END IF;
 
-  EXECUTE changed;
+    EXECUTE changed;
+  END IF;
 END
 $bizsathi_publication_state$;
 
