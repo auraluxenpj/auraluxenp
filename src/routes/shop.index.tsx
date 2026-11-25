@@ -178,7 +178,51 @@ function Shop() {
   }, [search]);
 
   const visible = filtered.slice(0, limit);
+
+  // After the shopper has explored the first 12 pieces, surface a small set of
+  // same-catalogue alternatives. Those pieces are removed from the remaining
+  // stream so a product never appears twice as the shopper keeps scrolling.
+  const similarRecommendations = useMemo(() => {
+    if (visible.length < 16) return [];
+    const anchor = visible[11];
+    if (!anchor) return [];
+    const candidates = filtered.slice(12).filter((product) => product.id !== anchor.id);
+    return [...candidates]
+      .sort((a, b) => {
+        const score = (product: typeof a) =>
+          Number(product.category_id === anchor.category_id) * 5 +
+          Number(Boolean(product.fabric && product.fabric === anchor.fabric)) * 2 +
+          Number((product.colors ?? []).some((color) => (anchor.colors ?? []).includes(color))) +
+          Number(product.stock > 0);
+        return score(b) - score(a);
+      })
+      .slice(0, 4);
+  }, [visible, filtered]);
+
+  const similarIds = useMemo(
+    () => new Set(similarRecommendations.map((product) => product.id)),
+    [similarRecommendations],
+  );
+  const catalogueVisible = visible.filter((product, index) => index < 12 || !similarIds.has(product.id));
   const hasMore = visible.length < filtered.length;
+
+  // Complementary categories are deliberately separate from clothing
+  // alternatives and only appear when the current catalogue is exhausted.
+  const complementaryRecommendations = useMemo(() => {
+    const complementaryCategoryIds = new Set(
+      activeCategories
+        .filter((category) => /bag|jutt|accessor/i.test(`${category.slug} ${category.name}`))
+        .map((category) => category.id),
+    );
+    const alreadyShown = new Set(filtered.map((product) => product.id));
+    return publishedProducts
+      .filter((product) =>
+        complementaryCategoryIds.has(product.category_id ?? "") &&
+        !alreadyShown.has(product.id) &&
+        product.stock > 0,
+      )
+      .slice(0, 4);
+  }, [activeCategories, filtered, publishedProducts]);
 
   // Load the next batch automatically as the shopper scrolls
   useEffect(() => {
@@ -422,10 +466,32 @@ function Shop() {
       </div>
 
       <section className="auraluxe-product-grid mt-5 grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-4 2xl:grid-cols-4">
-        {visible.map((p) => (
+        {catalogueVisible.slice(0, 12).map((p) => (
           <ProductCard key={p.id} product={p} {...(categoryFallbackImage ? { fallbackImage: categoryFallbackImage } : {})} />
         ))}
       </section>
+
+      {similarRecommendations.length > 0 ? (
+        <section className="mt-12" aria-label={language === "ne" ? "यस्तै डिजाइनहरू" : "Similar pieces"}>
+          <div className="mb-4 border-b border-[#e8ded5] pb-3">
+            <p className="auraluxe-kicker">{language === "ne" ? "तपाईंको छनोटअनुसार" : "Picked from this collection"}</p>
+            <h2 className="mt-2 font-display text-2xl text-[#422d2a] sm:text-3xl">
+              {language === "ne" ? "यस्तै डिजाइनहरू" : "You May Also Like"}
+            </h2>
+          </div>
+          <div className="auraluxe-product-grid grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-4">
+            {similarRecommendations.map((product) => <ProductCard key={product.id} product={product} />)}
+          </div>
+        </section>
+      ) : null}
+
+      {catalogueVisible.length > 12 ? (
+        <section className="auraluxe-product-grid mt-5 grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-4 2xl:grid-cols-4">
+          {catalogueVisible.slice(12).map((p) => (
+            <ProductCard key={p.id} product={p} {...(categoryFallbackImage ? { fallbackImage: categoryFallbackImage } : {})} />
+          ))}
+        </section>
+      ) : null}
 
       {productsError ? (
         <div
@@ -451,6 +517,20 @@ function Shop() {
         <p className="glass mt-6 rounded-3xl p-8 text-sm text-muted-foreground">
           {t("noPieces")}
         </p>
+      ) : null}
+
+      {!hasMore && complementaryRecommendations.length > 0 ? (
+        <section className="mt-14" aria-label={language === "ne" ? "मिल्दोजुल्दो सामानहरू" : "Complete the look"}>
+          <div className="mb-4 border-b border-[#e8ded5] pb-3">
+            <p className="auraluxe-kicker">{language === "ne" ? "लुक पूरा गर्नुहोस्" : "Complete the look"}</p>
+            <h2 className="mt-2 font-display text-2xl text-[#422d2a] sm:text-3xl">
+              {language === "ne" ? "मिल्दोजुल्दो ब्याग र जुत्ती" : "Bags, Juttis & Accessories"}
+            </h2>
+          </div>
+          <div className="auraluxe-product-grid grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-4">
+            {complementaryRecommendations.map((product) => <ProductCard key={product.id} product={product} />)}
+          </div>
+        </section>
       ) : null}
 
       {hasMore ? (
