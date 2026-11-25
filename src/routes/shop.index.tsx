@@ -214,7 +214,7 @@ function Shop() {
       </div>
 
       {/* Visual category discovery — temporary editorial imagery until the catalogue is fully photographed. */}
-      {categories.some((c) => c.is_active) ? (
+      {!search.category && categories.some((c) => c.is_active) ? (
         <section className="mt-8" aria-label={t("shopCategory")}>
           <div className="mb-4 flex items-end justify-between gap-3">
             <div>
