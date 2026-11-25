@@ -8,7 +8,7 @@ import { BILINGUAL_MIGRATION_REQUIRED, fetchCategories, isMissingBilingualCatalo
 import { ImageUploader } from "@/components/admin/ImageUploader";
 import { Button } from "@/components/ui/button";
 import { WomensSizeGuide } from "@/components/site/WomensSizeGuide";
-import { buildProductSku, GARMENT_LABELS, GARMENT_TYPES, PHOTO_DISCLAIMER, skuTypeForProduct, splitProductSku } from "@/lib/product-information";
+import { buildCategoryProductSku, categorySkuPrefix, PHOTO_DISCLAIMER, splitProductSku } from "@/lib/product-information";
 
 export const Route = createFileRoute("/_authenticated/admin/products/$id")({
   head: ({ params }) => ({ meta: [
