@@ -31,8 +31,15 @@ export const Route = createFileRoute('/api/public/shared-media')({
         const { supabaseAdmin } = await import('@/integrations/supabase/client.server');
         const { data: userData, error: userError } = await supabaseAdmin.auth.getUser(token);
         if (userError || !userData.user) return json({ error: 'Unauthorized' }, 401);
-        const { data: isAdmin, error: roleError } = await supabaseAdmin.rpc('has_role', { _user_id: userData.user.id, _role: 'admin' });
-        if (roleError || isAdmin !== true) return json({ error: 'Administrator access required' }, 403);
+        // The service-role client has no auth.uid(); public.has_role() intentionally
+        // requires an authenticated caller, so verify the target user's role directly.
+        const { data: adminRole, error: roleError } = await supabaseAdmin
+          .from('user_roles')
+          .select('user_id')
+          .eq('user_id', userData.user.id)
+          .eq('role', 'admin')
+          .maybeSingle();
+        if (roleError || !adminRole) return json({ error: 'Administrator access required' }, 403);
         createdBy = userData.user.id;
       } catch { return json({ error: 'Media service unavailable' }, 503); }
     }
@@ -53,7 +60,7 @@ export const Route = createFileRoute('/api/public/shared-media')({
     const valid = mime === 'image/jpeg' ? starts(0xff,0xd8,0xff)
       : mime === 'image/png' ? starts(0x89,0x50,0x4e,0x47,0x0d,0x0a,0x1a,0x0a)
       : mime === 'image/webp' ? starts(0x52,0x49,0x46,0x46) && bytes[8] === 0x57 && bytes[9] === 0x45 && bytes[10] === 0x42 && bytes[11] === 0x50
-      : starts(0,0,0,0);
+      : false;
     if (!valid) return json({ error: 'Image content does not match its declared type' }, 400);
 
     try {
