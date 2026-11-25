@@ -65,7 +65,7 @@ function ProductEditor() {
   const navigate = useNavigate();
   const qc = useQueryClient();
   const [f, setF] = useState<Form>(EMPTY);
-  const [slugTouched, setSlugTouched] = useState(!isNew);
+  const [slugTouched, setSlugTouched] = useState(false);
   const [nameNeTouched, setNameNeTouched] = useState(false);
   const [descriptionNeTouched, setDescriptionNeTouched] = useState(false);
   const [saving, setSaving] = useState(false);
