@@ -347,7 +347,7 @@ jobs:
             IF EXISTS (SELECT 1 FROM public.products WHERE name='Shared Test Two' AND is_published) THEN
               RAISE EXCEPTION 'Auraluxe product absent from BizSathi snapshot remained published';
             END IF;
-            IF NOT EXISTS (SELECT 1 FROM public.products WHERE id=first_product AND name='Shared Test One') THEN
+            IF NOT EXISTS (SELECT 1 FROM public.products WHERE id=first_product AND name='Updated Test One') THEN
               RAISE EXCEPTION 'BizSathi catalogue import must mirror the source product name';
             END IF;
             IF NOT EXISTS (SELECT 1 FROM public.products WHERE id=first_product AND stock=7
