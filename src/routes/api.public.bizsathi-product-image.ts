@@ -3,6 +3,19 @@ import { createFileRoute } from '@tanstack/react-router';
 const BIZSATHI_IMAGE_URL = 'https://bizsathi-migration.auraluxe26.workers.dev/api/public/auraluxe-product-image';
 const SHARED_IMAGE_PREFIX = 'https://jsshaoucrjorbyuzagdr.supabase.co/storage/v1/object/public/product-images/';
 
+function isSharedImageUrl(value: unknown): value is string {
+  if (typeof value !== 'string' || value.length > 2048) return false;
+  try {
+    const url = new URL(value);
+    return url.origin === 'https://jsshaoucrjorbyuzagdr.supabase.co'
+      && url.pathname.startsWith('/storage/v1/object/public/product-images/')
+      && !url.pathname.split('/').some((segment) => segment === '..' || segment === '.')
+      && /\\.(webp|jpe?g|png)$/i.test(url.pathname);
+  } catch {
+    return false;
+  }
+}
+
 function json(body: unknown, status = 200): Response {
   return Response.json(body, { status, headers: { 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff' } });
 }
@@ -21,7 +34,7 @@ export const Route = createFileRoute('/api/public/bizsathi-product-image')({
     const imageUrl = input['image_url'];
     if (Object.keys(input).some((key) => !['product_id', 'image_url'].includes(key))
       || typeof productId !== 'string' || !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(productId)
-      || (imageUrl !== null && (typeof imageUrl !== 'string' || imageUrl.length > 200 || !imageUrl.startsWith(SHARED_IMAGE_PREFIX) || imageUrl.includes('..') || !(imageUrl.toLowerCase().endsWith('.webp') || imageUrl.toLowerCase().endsWith('.jpg') || imageUrl.toLowerCase().endsWith('.png'))))) {
+      || (imageUrl !== null && !isSharedImageUrl(imageUrl))) {
       return json({ error: 'Invalid product ID or shared image URL' }, 400);
     }
 
