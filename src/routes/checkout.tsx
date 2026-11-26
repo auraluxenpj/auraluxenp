@@ -183,7 +183,23 @@ function CheckoutPage() {
   }
 
   if (!methodsLoading && methods.length === 0) {
-    const wa = whatsappLink(s["whatsapp"] ?? "", "Namaste! I'd like to place an order, but online payment seems unavailable.");
+    const origin = typeof window !== "undefined" ? window.location.origin : "https://auraluxe.com.np";
+    const orderItems = items.map((item, index) =>
+      `${index + 1}. ${item.name}${item.size ? ` | Size: ${item.size}` : ""}${item.color ? ` | Colour: ${item.color}` : ""} | Qty: ${item.quantity}\nProduct link: ${origin}/shop/product/${item.slug}`
+    ).join("\n\n");
+    const message = [
+      "Namaste! I'd like to place an order, but online payment seems unavailable.",
+      "",
+      "My selected products:",
+      orderItems,
+      "",
+      `Order subtotal: ${money(subtotal)}`,
+      "",
+      "Please help me place this order and confirm the available payment options.",
+      "",
+      "Thank you!",
+    ].join("\n");
+    const wa = whatsappLink(s["whatsapp"] ?? "", message);
     return (
       <SiteLayout>
         <div className="glass mt-10 rounded-3xl p-8 text-center">
