@@ -85,6 +85,62 @@ function ProductsList() {
 
   // ---------- Bulk selection ----------
   const [selected, setSelected] = useState<string[]>([]);
+  const [imageSyncBusy, setImageSyncBusy] = useState(false);
+  const [imageSyncReport, setImageSyncReport] = useState<{ synced: number; failed: string[]; skipped: number } | null>(null);
+
+  // Reconcile every currently mapped catalogue image. Safe to rerun: only the
+  // BizSathi image_path field is updated by the authenticated receiver.
+  const syncAllBizSathiImages = async () => {
+    if (imageSyncBusy) return;
+    const candidates = products.filter((p) => {
+      const mapped = (p as Product & { bizsathi_product_id?: string | null }).bizsathi_product_id;
+      return !!mapped && Array.isArray(p.images) && p.images.length > 0;
+    });
+    if (!candidates.length) {
+      toast.info("No mapped Auraluxe products with images were found.");
+      return;
+    }
+    if (!window.confirm(`Sync primary images for ${candidates.length} mapped products to BizSathi? Only product images will change.`)) return;
+    setImageSyncBusy(true);
+    setImageSyncReport(null);
+    let synced = 0;
+    const failed: string[] = [];
+    const { data: authData } = await supabase.auth.getSession();
+    const accessToken = authData.session?.access_token;
+    if (!accessToken) {
+      setImageSyncBusy(false);
+      toast.error("Please sign in again before syncing product images.");
+      return;
+    }
+    for (const p of candidates) {
+      const imageUrl = p.images[0] ?? null;
+      if (!imageUrl) { continue; }
+      let ok = false;
+      let lastError = "Sync was not confirmed";
+      for (let attempt = 0; attempt < 3 && !ok; attempt++) {
+        try {
+          const response = await fetch("/api/public/bizsathi-product-image", {
+            method: "POST",
+            headers: { Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json" },
+            body: JSON.stringify({ product_id: p.id, image_url: imageUrl }),
+          });
+          const result = await response.json().catch(() => null) as { ok?: boolean; synced?: boolean; error?: string } | null;
+          ok = response.ok && result?.ok === true && result.synced === true;
+          if (!ok) lastError = result?.error ?? `HTTP ${response.status}`;
+        } catch (error) {
+          lastError = error instanceof Error ? error.message : "Network error";
+        }
+        if (!ok && attempt < 2) await new Promise((resolve) => window.setTimeout(resolve, 500 * (attempt + 1)));
+      }
+      if (ok) synced++; else failed.push(`${p.name} (${p.sku ?? p.id}): ${lastError}`);
+    }
+    const skipped = products.filter((p) => !(p as Product & { bizsathi_product_id?: string | null }).bizsathi_product_id || !p.images?.length).length;
+    setImageSyncReport({ synced, failed, skipped });
+    setImageSyncBusy(false);
+    if (failed.length) toast.warning(`Image sync finished: ${synced} synced, ${failed.length} need attention.`);
+    else toast.success(`Image sync complete: ${synced} product images synced.`);
+  };
+
   const [bulkBusy, setBulkBusy] = useState(false);
   const allSelected = list.length > 0 && list.every((p) => selected.includes(p.id));
 
@@ -209,6 +265,9 @@ function ProductsList() {
           <button onClick={() => fileRef.current?.click()} disabled={importing} className="rounded-full border border-border px-5 py-2.5 text-[12px] uppercase tracking-[0.15em] disabled:opacity-50">
             {importing ? "Importing…" : "Import CSV"}
           </button>
+          <button onClick={syncAllBizSathiImages} disabled={imageSyncBusy || isLoading || products.length === 0} className="rounded-full border border-border px-5 py-2.5 text-[12px] uppercase tracking-[0.15em] disabled:opacity-50">
+            {imageSyncBusy ? "Syncing images…" : "Sync BizSathi images"}
+          </button>
           <button onClick={exportCsv} disabled={products.length === 0} className="rounded-full border border-border px-5 py-2.5 text-[12px] uppercase tracking-[0.15em] disabled:opacity-50">
             Export CSV
           </button>
@@ -223,6 +282,12 @@ function ProductsList() {
       <p className="text-xs text-muted-foreground">
         Import tip: export first, edit in Excel, then import. Rows matching an existing SKU (or slug, or Model Code) are updated; others become new products (need Name and Price). Separate sizes/colours/image links with "|". Category can be a name like "Kurtis".
       </p>
+      {imageSyncReport ? (
+        <div className="rounded-2xl border border-border bg-card p-4 text-sm">
+          <p className="font-medium">BizSathi image sync: {imageSyncReport.synced} synced · {imageSyncReport.failed.length} failed · {imageSyncReport.skipped} skipped (unmapped or no image)</p>
+          {imageSyncReport.failed.length ? <ul className="mt-2 max-h-48 list-disc overflow-auto pl-5 text-xs text-destructive">{imageSyncReport.failed.map((item) => <li key={item}>{item}</li>)}</ul> : null}
+        </div>
+      ) : null}
       {report ? (
         <div className="rounded-2xl border border-border bg-card p-4 text-sm">
           <p>{report.created} added · {report.updated} updated · {report.errors.length} skipped</p>
