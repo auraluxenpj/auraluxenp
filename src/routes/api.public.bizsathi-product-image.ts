@@ -4,16 +4,26 @@ const BIZSATHI_IMAGE_URL = 'https://bizsathi-migration.auraluxe26.workers.dev/ap
 const SHARED_IMAGE_PREFIX = 'https://jsshaoucrjorbyuzagdr.supabase.co/storage/v1/object/public/product-images/';
 
 function isSharedImageUrl(value: unknown): value is string {
-  if (typeof value !== 'string' || value.length > 2048) return false;
+  if (typeof value !== 'string' || value.length > 4096) return false;
   try {
     const url = new URL(value);
+    const allowedPath = url.pathname.startsWith('/storage/v1/object/public/product-images/')
+      || url.pathname.startsWith('/storage/v1/object/sign/product-images/');
     return url.origin === 'https://jsshaoucrjorbyuzagdr.supabase.co'
-      && url.pathname.startsWith('/storage/v1/object/public/product-images/')
+      && allowedPath
       && !url.pathname.split('/').some((segment) => segment === '..' || segment === '.')
       && /\.(webp|jpe?g|png)$/i.test(url.pathname);
   } catch {
     return false;
   }
+}
+
+function toPublicImageUrl(value: string): string {
+  const url = new URL(value);
+  url.pathname = url.pathname.replace('/storage/v1/object/sign/product-images/', '/storage/v1/object/public/product-images/');
+  url.search = '';
+  url.hash = '';
+  return url.toString();
 }
 
 function json(body: unknown, status = 200): Response {
@@ -60,7 +70,7 @@ export const Route = createFileRoute('/api/public/bizsathi-product-image')({
       const response = await fetch(BIZSATHI_IMAGE_URL, {
         method: 'POST', redirect: 'manual', signal: AbortSignal.timeout(15000),
         headers: { Authorization: `Bearer ${secret}`, 'Content-Type': 'application/json', Accept: 'application/json' },
-        body: JSON.stringify({ bizsathi_product_id: bizsathiProductId, sku: product.sku ?? null, image_url: imageUrl }),
+        body: JSON.stringify({ bizsathi_product_id: bizsathiProductId, sku: product.sku ?? null, image_url: toPublicImageUrl(imageUrl as string) }),
       });
       if (response.status >= 300 && response.status < 400) {
         await response.body?.cancel();
