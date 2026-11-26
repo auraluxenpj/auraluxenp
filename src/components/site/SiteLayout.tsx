@@ -27,7 +27,7 @@ export function SiteLayout({ children }: { children: ReactNode }) {
 
       {/* Small WhatsApp button, bottom-right (mobile) */}
       <a
-        href={whatsappLink(s["whatsapp"] ?? "", "Hello Auraluxe! I'd like to ask about a piece.")}
+        href={whatsappLink(s["whatsapp"] ?? "", whatsappProductMessage("Hello Auraluxe! I'd like to ask about a piece.", items))}
         target="_blank"
         rel="noreferrer"
         aria-label={t("chatWhatsApp")}
