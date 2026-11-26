@@ -11,7 +11,7 @@ export const Route = createFileRoute('/api/public/bizsathi-product-image')({
   server: { handlers: { POST: async ({ request }) => {
     const authorization = request.headers.get('authorization') ?? '';
     const accessToken = authorization.startsWith('Bearer ') ? authorization.slice(7) : '';
-    if (!accessToken || /[\\s,]/.test(accessToken)) return json({ error: 'Unauthorized' }, 401);
+    if (!accessToken || accessToken.trim() !== accessToken || accessToken.includes(',')) return json({ error: 'Unauthorized' }, 401);
 
     let body: unknown;
     try { body = await request.json(); } catch { return json({ error: 'Invalid JSON' }, 400); }
