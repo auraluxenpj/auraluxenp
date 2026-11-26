@@ -262,6 +262,29 @@ function ProductEditor() {
       }
     }
     let nameSyncWarning = false;
+    let imageSyncWarning = false;
+    const primaryImageUrl = list(f.images)[0] ?? null;
+    const imageSyncNeeded = !isNew && !!product?.bizsathi_product_id
+      && (product.images?.[0] ?? null) !== primaryImageUrl;
+    if (imageSyncNeeded) {
+      try {
+        const { data: authData } = await supabase.auth.getSession();
+        const accessToken = authData.session?.access_token;
+        if (!accessToken) {
+          imageSyncWarning = true;
+        } else {
+          const syncResponse = await fetch("/api/public/bizsathi-product-image", {
+            method: "POST",
+            headers: { Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json" },
+            body: JSON.stringify({ product_id: productId, image_url: primaryImageUrl }),
+          });
+          const syncResult = await syncResponse.json().catch(() => null) as { ok?: boolean; synced?: boolean } | null;
+          imageSyncWarning = !syncResponse.ok || syncResult?.ok !== true || syncResult.synced !== true;
+        }
+      } catch {
+        imageSyncWarning = true;
+      }
+    }
     if (!isNew && product?.bizsathi_product_id && product.name !== f.name.trim()) {
       try {
         const { data: authData } = await supabase.auth.getSession();
@@ -284,6 +307,7 @@ function ProductEditor() {
     setSaving(false);
     toast.success(isNew ? "Product created — it's on the shop now" : "Product saved");
     if (nameSyncWarning) toast.warning("Auraluxe saved the product, but BizSathi name sync needs a retry.");
+    if (imageSyncWarning) toast.warning("Auraluxe saved the photo, but BizSathi image sync needs a retry.");
     qc.invalidateQueries();
     navigate({ to: "/admin/products" });
   }
