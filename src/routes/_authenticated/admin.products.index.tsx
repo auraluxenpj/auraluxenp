@@ -26,6 +26,7 @@ function ProductsList() {
   const [q, setQ] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [stockFilter, setStockFilter] = useState("all");
+  const [publicationFilter, setPublicationFilter] = useState<"published" | "unpublished">("published");
   const { data: products = [], isLoading } = useQuery({ queryKey: ["admin", "products"], queryFn: fetchAllProducts });
   const { data: categories = [] } = useQuery({ queryKey: ["categories"], queryFn: fetchCategories });
   const categoryNames = new Map(categories.map((category) => [category.id, category.name]));
@@ -80,7 +81,8 @@ function ProductsList() {
       || (stockFilter === "in-stock" && Number(p.stock) > 0)
       || (stockFilter === "out-of-stock" && Number(p.stock) <= 0)
       || (stockFilter === "low-stock" && Number(p.stock) > 0 && Number(p.stock) <= Number(p.low_stock_threshold ?? 0));
-    return matchesSearch && matchesCategory && matchesStock;
+    const matchesPublication = publicationFilter === "published" ? p.is_published : !p.is_published;
+    return matchesSearch && matchesCategory && matchesStock && matchesPublication;
   });
 
   // ---------- Bulk selection ----------
@@ -112,6 +114,23 @@ function ProductsList() {
         `${failed.length} couldn't be deleted (they likely have orders). Unpublish them instead: ${failed.slice(0, 3).join(", ")}${failed.length > 3 ? "…" : ""}`,
       );
     }
+    refresh();
+  };
+
+  const bulkPublish = async () => {
+    const targets = products.filter((p) => selected.includes(p.id));
+    if (targets.length === 0) return;
+    const invalid = targets.filter((p) => !p.sku || !isProductSku(p.sku));
+    if (invalid.length) {
+      toast.error(`Cannot publish: add a valid AL garment-type SKU to ${invalid.length} selected product(s) first.`);
+      return;
+    }
+    setBulkBusy(true);
+    const { error } = await supabase.from("products").update({ is_published: true }).in("id", targets.map((p) => p.id));
+    setBulkBusy(false);
+    if (error) { toast.error(error.message); return; }
+    toast.success(`${targets.length} product${targets.length > 1 ? "s" : ""} published`);
+    setSelected([]);
     refresh();
   };
 
@@ -229,6 +248,26 @@ function ProductsList() {
           {report.errors.length ? <ul className="mt-2 list-disc pl-5 text-xs text-destructive">{report.errors.map((e) => <li key={e}>{e}</li>)}</ul> : null}
         </div>
       ) : null}
+      <div className="flex flex-wrap gap-2 border-b border-border pb-3" role="tablist" aria-label="Product publication status">
+        <button
+          type="button"
+          role="tab"
+          aria-selected={publicationFilter === "published"}
+          onClick={() => { setPublicationFilter("published"); setSelected([]); }}
+          className={`rounded-full px-5 py-2.5 text-sm ${publicationFilter === "published" ? "bg-primary text-primary-foreground" : "border border-border text-muted-foreground"}`}
+        >
+          Published ({products.filter((p) => p.is_published).length})
+        </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={publicationFilter === "unpublished"}
+          onClick={() => { setPublicationFilter("unpublished"); setSelected([]); }}
+          className={`rounded-full px-5 py-2.5 text-sm ${publicationFilter === "unpublished" ? "bg-primary text-primary-foreground" : "border border-border text-muted-foreground"}`}
+        >
+          Unpublished ({products.filter((p) => !p.is_published).length})
+        </button>
+      </div>
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(180px,0.7fr)_minmax(160px,0.6fr)_auto]">
         <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search by product name, model or SKU" aria-label="Search products" className="w-full rounded-xl border border-border bg-card px-4 py-3 text-sm" />
         <select value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)} aria-label="Filter by category" className="w-full rounded-xl border border-border bg-card px-4 py-3 text-sm">
@@ -256,7 +295,11 @@ function ProductsList() {
             <div className="flex flex-wrap items-center gap-2 text-xs">
               <span className="text-sm font-medium">{selected.length} selected</span>
               <button onClick={() => setSelected([])} disabled={bulkBusy} className="rounded-full border border-border px-3 py-2 disabled:opacity-50">Clear</button>
-              <button onClick={bulkUnpublish} disabled={bulkBusy} className="rounded-full border border-border px-3 py-2 disabled:opacity-50">Unpublish selected</button>
+              {publicationFilter === "published" ? (
+                <button onClick={bulkUnpublish} disabled={bulkBusy} className="rounded-full border border-border px-3 py-2 disabled:opacity-50">Unpublish selected</button>
+              ) : (
+                <button onClick={bulkPublish} disabled={bulkBusy} className="rounded-full border border-border px-3 py-2 disabled:opacity-50">Publish selected</button>
+              )}
               <button onClick={bulkDelete} disabled={bulkBusy} className="rounded-full bg-destructive px-3 py-2 text-destructive-foreground disabled:opacity-50">
                 {bulkBusy ? "Working…" : "Delete selected"}
               </button>
