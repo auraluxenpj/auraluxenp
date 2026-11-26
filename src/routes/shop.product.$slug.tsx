@@ -14,7 +14,7 @@ import {
   productImages,
 } from "@/lib/data";
 import { sizeStockLabel, sizeStocks, stockForSize } from "@/lib/size-stock";
-import { useCart, useMoney, useSettings, whatsappLink } from "@/lib/store";
+import { useCart, useMoney, useSettings, whatsappLink, whatsappProductMessage } from "@/lib/store";
 import { requiredOptionLabels } from "@/lib/product-options";
 import { PhotoZoom } from "@/components/site/PhotoZoom";
 import { WomensSizeGuide } from "@/components/site/WomensSizeGuide";
@@ -477,7 +477,7 @@ function ProductDetail() {
           <a
             href={whatsappLink(
               settings["whatsapp"] ?? "",
-              `Namaste! I'd like to place an order, but online payment seems unavailable.\n\nProduct: ${displayName}\nProduct link: ${typeof window !== "undefined" ? window.location.origin : "https://auraluxe.com.np"}/shop/product/${product.slug}\n\nPlease help me place the order and confirm the available payment options.\n\nThank you!`,
+              whatsappProductMessage("Namaste! I would like to enquire about this product.", [{ productId: product.id, slug: product.slug, name: displayName + (product.sku ? " (SKU: " + product.sku + ")" : ""), image: images[0] ?? null, price, size: d.effectiveSize, color: d.effectiveColor, quantity: d.qty }]),
             )}
             target="_blank"
             rel="noreferrer"
