@@ -83,7 +83,7 @@ function CheckoutPage() {
   const s = useSettings();
   const { t } = useLanguage();
   const placeOrderFn = useServerFn(placeOrder);
-  const { data: methodsData, isLoading: methodsLoading } = useQuery({
+  const { data: methodsData, isLoading: methodsLoading, isError: methodsError, refetch: refetchMethods } = useQuery({
     queryKey: ["checkout", "payment-methods"],
     queryFn: () => getCheckoutPaymentMethods(),
     staleTime: 60_000,
@@ -182,8 +182,27 @@ function CheckoutPage() {
     );
   }
 
+  if (methodsError) {
+    return (
+      <SiteLayout>
+        <div className="glass mt-10 rounded-3xl p-8 text-center">
+          <h1 className="font-display text-4xl">{t("paymentUnavailableTitle")}</h1>
+          <p className="mx-auto mt-3 max-w-md text-sm text-muted-foreground">
+            We couldn't load the payment options. Your cart is safe; please try again.
+          </p>
+          <button type="button" onClick={() => void refetchMethods()} className="mt-6 rounded-full bg-primary px-7 py-3.5 text-[12px] uppercase tracking-[0.18em] text-primary-foreground">
+            Retry payment options
+          </button>
+        </div>
+      </SiteLayout>
+    );
+  }
+
   if (!methodsLoading && methods.length === 0) {
-    const message = whatsappProductMessage("Namaste! I want to place an order, but online payment seems unavailable.", items) + "\n\nOrder subtotal: " + money(subtotal);
+    const message = whatsappProductMessage(
+      "Namaste! I'd like to place the following order from Auraluxe. Online payment options are not available at checkout. Please confirm my order and advise how I can pay.",
+      items,
+    ) + "\n\nEstimated shipping: " + (estShipping === 0 ? "Free" : money(estShipping)) + "\nEstimated total: " + money(subtotal + estShipping);
     const wa = whatsappLink(s["whatsapp"] ?? "", message);
     return (
       <SiteLayout>
