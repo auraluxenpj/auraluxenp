@@ -47,7 +47,7 @@ export const Route = createFileRoute('/api/public/bizsathi-product-image')({
       if (roleError || !adminRole) return json({ error: 'Administrator access required' }, 403);
 
       const { data: product, error: productError } = await supabaseAdmin.from('products')
-        .select('id,bizsathi_product_id')
+        .select('id,bizsathi_product_id,sku')
         .eq('id', productId).maybeSingle();
       if (productError || !product) return json({ error: 'Auraluxe product not found' }, 404);
       const bizsathiProductId = product.bizsathi_product_id;
@@ -60,7 +60,7 @@ export const Route = createFileRoute('/api/public/bizsathi-product-image')({
       const response = await fetch(BIZSATHI_IMAGE_URL, {
         method: 'POST', redirect: 'manual', signal: AbortSignal.timeout(15000),
         headers: { Authorization: `Bearer ${secret}`, 'Content-Type': 'application/json', Accept: 'application/json' },
-        body: JSON.stringify({ bizsathi_product_id: bizsathiProductId, image_url: imageUrl }),
+        body: JSON.stringify({ bizsathi_product_id: bizsathiProductId, sku: product.sku ?? null, image_url: imageUrl }),
       });
       if (response.status >= 300 && response.status < 400) {
         await response.body?.cancel();
