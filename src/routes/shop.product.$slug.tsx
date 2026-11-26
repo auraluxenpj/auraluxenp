@@ -477,7 +477,7 @@ function ProductDetail() {
           <a
             href={whatsappLink(
               settings["whatsapp"] ?? "",
-              `Hello Auraluxe! I'm interested in ${displayName} (${product.sku ?? product.slug}).`,
+              `Hello Auraluxe! I'm interested in ${displayName} (${product.sku ?? product.slug}).\n\nView this product: ${typeof window !== "undefined" ? window.location.origin : "https://auraluxe.com.np"}/shop/product/${product.slug}`,
             )}
             target="_blank"
             rel="noreferrer"
