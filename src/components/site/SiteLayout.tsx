@@ -3,11 +3,11 @@ import { Link } from "@tanstack/react-router";
 import { MessageCircle } from "lucide-react";
 import { Header } from "./Header";
 import { Footer } from "./Footer";
-import { useCart, useMoney, useSettings, whatsappLink } from "@/lib/store";
+import { useCart, useMoney, useSettings, whatsappLink, whatsappProductMessage } from "@/lib/store";
 import { useLanguage } from "@/lib/i18n";
 
 export function SiteLayout({ children }: { children: ReactNode }) {
-  const { count, subtotal } = useCart();
+  const { items, count, subtotal } = useCart();
   const { t } = useLanguage();
   const money = useMoney();
   const s = useSettings();
