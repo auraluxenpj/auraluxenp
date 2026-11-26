@@ -83,7 +83,7 @@ function CheckoutPage() {
   const s = useSettings();
   const { t } = useLanguage();
   const placeOrderFn = useServerFn(placeOrder);
-  const { data: methodsData, isLoading: methodsLoading } = useQuery({
+  const { data: methodsData, isLoading: methodsLoading, isError: methodsError, refetch: refetchMethods } = useQuery({
     queryKey: ["checkout", "payment-methods"],
     queryFn: () => getCheckoutPaymentMethods(),
     staleTime: 60_000,
