@@ -184,7 +184,8 @@ function CheckoutPage() {
 
   if (!methodsLoading && methods.length === 0) {
     const origin = typeof window !== "undefined" ? window.location.origin : "https://auraluxe.com.np";
-    const message = whatsappProductMessage("Namaste! I want to place an order, but online payment seems unavailable.", items) + "\\n\\nOrder subtotal: " + money(subtotal);\n    const wa = whatsappLink(s["whatsapp"] ?? "", message);
+    const message = whatsappProductMessage("Namaste! I want to place an order, but online payment seems unavailable.", items) + "\\n\\nOrder subtotal: " + money(subtotal);
+    const wa = whatsappLink(s["whatsapp"] ?? "", message);
     return (
       <SiteLayout>
         <div className="glass mt-10 rounded-3xl p-8 text-center">
