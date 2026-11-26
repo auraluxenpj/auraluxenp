@@ -148,3 +148,29 @@ export function whatsappLink(number: string, message: string) {
   const digits = (number || "").replace(/\D/g, "");
   return `https://wa.me/${digits}?text=${encodeURIComponent(message)}`;
 }
+
+
+/** Build a WhatsApp enquiry with a direct link for every selected product. */
+export function whatsappProductMessage(
+  intro: string,
+  items: CartItem[],
+  origin = typeof window !== "undefined" ? window.location.origin : "https://www.auraluxe.com.np",
+  fallbackUrl = "https://www.auraluxe.com.np/shop",
+) {
+  const lines = [intro.trim(), ""];
+  if (items.length > 0) {
+    lines.push("Product details:");
+    items.forEach((item, index) => {
+      lines.push(
+        `${index + 1}. ${item.name}${item.size ? ` | Size: ${item.size}` : ""}${item.color ? ` | Colour: ${item.color}` : ""} | Qty: ${item.quantity} | Price: ${formatMoney(item.price)}`,
+        `Product link: ${origin}/shop/product/${item.slug}`,
+        "",
+      );
+    });
+    lines.push(`Items subtotal: ${formatMoney(items.reduce((sum, item) => sum + item.price * item.quantity, 0))}`);
+  } else {
+    lines.push("I am enquiring about the products on this page.", `Page / shop link: ${typeof window !== "undefined" ? window.location.href : fallbackUrl}`);
+  }
+  lines.push("", "Please help me with this enquiry/order.", "", "Thank you!");
+  return lines.join("\\n");
+}
