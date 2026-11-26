@@ -58,7 +58,7 @@ function Contact() {
             window.open(
               whatsappLink(
                 s["whatsapp"] ?? "",
-                `Hello Auraluxe!\nName: ${parsed.data.name}\nPhone: ${parsed.data.phone}\n\n${parsed.data.message}`,
+                whatsappProductMessage(`Hello Auraluxe!\nName: ${parsed.data.name}\nPhone: ${parsed.data.phone}\n\n${parsed.data.message}`, items),
               ),
               "_blank",
             );
