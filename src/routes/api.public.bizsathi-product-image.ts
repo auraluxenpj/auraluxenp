@@ -21,7 +21,7 @@ export const Route = createFileRoute('/api/public/bizsathi-product-image')({
     const imageUrl = input['image_url'];
     if (Object.keys(input).some((key) => !['product_id', 'image_url'].includes(key))
       || typeof productId !== 'string' || !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(productId)
-      || (imageUrl !== null && (typeof imageUrl !== 'string' || imageUrl.length > 200 || !imageUrl.startsWith(SHARED_IMAGE_PREFIX) || imageUrl.includes('..') || !/\\.(webp|jpg|png)$/i.test(imageUrl)))) {
+      || (imageUrl !== null && (typeof imageUrl !== 'string' || imageUrl.length > 200 || !imageUrl.startsWith(SHARED_IMAGE_PREFIX) || imageUrl.includes('..') || !(imageUrl.toLowerCase().endsWith('.webp') || imageUrl.toLowerCase().endsWith('.jpg') || imageUrl.toLowerCase().endsWith('.png'))))) {
       return json({ error: 'Invalid product ID or shared image URL' }, 400);
     }
 
