@@ -264,9 +264,7 @@ function ProductEditor() {
     let nameSyncWarning = false;
     let imageSyncWarning = false;
     const primaryImageUrl = list(f.images)[0] ?? null;
-    const imageSyncNeeded = !isNew && !!product?.bizsathi_product_id
-      && (product.images?.[0] ?? null) !== primaryImageUrl;
-    if (imageSyncNeeded) {
+    if (!isNew && product?.bizsathi_product_id) {
       try {
         const { data: authData } = await supabase.auth.getSession();
         const accessToken = authData.session?.access_token;
