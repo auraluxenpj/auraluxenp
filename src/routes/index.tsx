@@ -16,7 +16,7 @@ import {
 import { SiteLayout } from "@/components/site/SiteLayout";
 import { ProductCard } from "@/components/site/ProductCard";
 import { HeroCarousel } from "@/components/site/HeroCarousel";
-import { useSettings, whatsappLink } from "@/lib/store";
+import { useCart, useSettings, whatsappLink, whatsappProductMessage } from "@/lib/store";
 import { categoryLabel, localizedContent, useLanguage } from "@/lib/i18n";
 import { GoogleReviews } from "@/components/site/GoogleReviews";
 
@@ -220,6 +220,7 @@ function CategoryTile({
 
 function Home() {
   const settings = useSettings();
+  const { items } = useCart();
   const { language, t } = useLanguage();
   const initial = Route.useLoaderData();
   const { data: products = [], isLoading: productsLoading } = useQuery({
@@ -515,7 +516,7 @@ function Home() {
           <a
             href={whatsappLink(
               settings["whatsapp"] ?? "",
-              "Hello Auraluxe! I'd like to place an order.",
+              whatsappProductMessage("Hello Auraluxe! I'd like to place an order.", items),
             )}
             target="_blank"
             rel="noreferrer"

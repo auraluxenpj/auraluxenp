@@ -3,7 +3,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { z } from "zod";
 import { SiteLayout } from "@/components/site/SiteLayout";
-import { useSettings, whatsappLink } from "@/lib/store";
+import { useCart, useSettings, whatsappLink, whatsappProductMessage } from "@/lib/store";
 
 export const Route = createFileRoute("/contact")({
   head: () => ({
@@ -32,6 +32,7 @@ const schema = z.object({
 
 function Contact() {
   const s = useSettings();
+  const { items } = useCart();
   const [form, setForm] = useState({ name: "", phone: "", message: "" });
 
   const field =
@@ -57,7 +58,7 @@ function Contact() {
             window.open(
               whatsappLink(
                 s["whatsapp"] ?? "",
-                `Hello Auraluxe!\nName: ${parsed.data.name}\nPhone: ${parsed.data.phone}\n\n${parsed.data.message}`,
+                whatsappProductMessage(`Hello Auraluxe!\nName: ${parsed.data.name}\nPhone: ${parsed.data.phone}\n\n${parsed.data.message}`, items),
               ),
               "_blank",
             );

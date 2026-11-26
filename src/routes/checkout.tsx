@@ -8,7 +8,7 @@ import { SiteLayout } from "@/components/site/SiteLayout";
 import { getCheckoutPaymentMethods } from "@/lib/payment-settings.functions";
 import { placeOrder } from "@/lib/checkout.functions";
 import type { CheckoutMethod } from "@/lib/payment-settings";
-import { useCart, useMoney, useSettings, whatsappLink } from "@/lib/store";
+import { useCart, useMoney, useSettings, whatsappLink, whatsappProductMessage } from "@/lib/store";
 import { useLanguage } from "@/lib/i18n";
 
 export const Route = createFileRoute("/checkout")({
@@ -38,10 +38,10 @@ const schema = z.object({
 
 type Form = z.infer<typeof schema>;
 
-function PaymentInstructions({ method, orderNumber, total }: { method: CheckoutMethod; orderNumber: string; total: string }) {
+function PaymentInstructions({ method, orderNumber, total, items }: { method: CheckoutMethod; orderNumber: string; total: string; items: import('@/lib/store').CartItem[] }) {
   const s = useSettings();
   const { t } = useLanguage();
-  const wa = whatsappLink(s["whatsapp"] ?? "", `Namaste! I've placed order ${orderNumber} (${total}) and I'm sending my payment screenshot.`);
+  const wa = whatsappLink(s["whatsapp"] ?? "", whatsappProductMessage("Namaste! I've placed order " + orderNumber + " (" + total + ") and I'm sending my payment screenshot.", items));
   return (
     <div className="mt-6 rounded-2xl border border-border bg-background/70 p-5 text-left">
       <h2 className="font-display text-xl">{t("howToPay")}</h2>
@@ -99,7 +99,7 @@ function CheckoutPage() {
   const [code, setCode] = useState("");
   const [coupon, setCoupon] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-  const [placed, setPlaced] = useState<{ orderNumber: string; total: number; method: CheckoutMethod } | null>(null);
+  const [placed, setPlaced] = useState<{ orderNumber: string; total: number; method: CheckoutMethod; items: import('@/lib/store').CartItem[] } | null>(null);
   // One key per checkout attempt set, so a retried submit returns the same
   // order instead of duplicating it.
   const [checkoutKey] = useState(() => crypto.randomUUID());
@@ -138,7 +138,7 @@ function CheckoutPage() {
         },
       });
       clear();
-      setPlaced({ orderNumber: result.order_number, total: Number(result.total), method: selected });
+      setPlaced({ orderNumber: result.order_number, total: Number(result.total), method: selected, items: [...items] });
       window.scrollTo({ top: 0 });
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "We couldn't place your order. Please try again.");
@@ -159,7 +159,7 @@ function CheckoutPage() {
           <h1 className="mt-2 font-display text-4xl">{t("orderPlaced")}</h1>
           <p className="mt-3 text-sm text-muted-foreground">{t("orderNumber")}</p>
           <p className="mt-1 font-display text-2xl text-primary">{placed.orderNumber}</p>
-          <PaymentInstructions method={placed.method} orderNumber={placed.orderNumber} total={money(placed.total)} />
+          <PaymentInstructions method={placed.method} orderNumber={placed.orderNumber} total={money(placed.total)} items={placed.items} />
           <Link to="/shop" className="mt-6 inline-block rounded-full bg-primary px-7 py-3.5 text-[12px] uppercase tracking-[0.18em] text-primary-foreground">
             {t("continueShopping")}
           </Link>
@@ -183,22 +183,7 @@ function CheckoutPage() {
   }
 
   if (!methodsLoading && methods.length === 0) {
-    const origin = typeof window !== "undefined" ? window.location.origin : "https://auraluxe.com.np";
-    const orderItems = items.map((item, index) =>
-      `${index + 1}. ${item.name}${item.size ? ` | Size: ${item.size}` : ""}${item.color ? ` | Colour: ${item.color}` : ""} | Qty: ${item.quantity}\nProduct link: ${origin}/shop/product/${item.slug}`
-    ).join("\n\n");
-    const message = [
-      "Namaste! I'd like to place an order, but online payment seems unavailable.",
-      "",
-      "My selected products:",
-      orderItems,
-      "",
-      `Order subtotal: ${money(subtotal)}`,
-      "",
-      "Please help me place this order and confirm the available payment options.",
-      "",
-      "Thank you!",
-    ].join("\n");
+    const message = whatsappProductMessage("Namaste! I want to place an order, but online payment seems unavailable.", items) + "\n\nOrder subtotal: " + money(subtotal);
     const wa = whatsappLink(s["whatsapp"] ?? "", message);
     return (
       <SiteLayout>

@@ -3,11 +3,11 @@ import { Link } from "@tanstack/react-router";
 import { MessageCircle } from "lucide-react";
 import { Header } from "./Header";
 import { Footer } from "./Footer";
-import { useCart, useMoney, useSettings, whatsappLink } from "@/lib/store";
+import { useCart, useMoney, useSettings, whatsappLink, whatsappProductMessage } from "@/lib/store";
 import { useLanguage } from "@/lib/i18n";
 
 export function SiteLayout({ children }: { children: ReactNode }) {
-  const { count, subtotal } = useCart();
+  const { items, count, subtotal } = useCart();
   const { t } = useLanguage();
   const money = useMoney();
   const s = useSettings();
@@ -27,7 +27,7 @@ export function SiteLayout({ children }: { children: ReactNode }) {
 
       {/* Small WhatsApp button, bottom-right (mobile) */}
       <a
-        href={whatsappLink(s["whatsapp"] ?? "", "Hello Auraluxe! I'd like to ask about a piece.")}
+        href={whatsappLink(s["whatsapp"] ?? "", whatsappProductMessage("Hello Auraluxe! I'd like to ask about a piece.", items))}
         target="_blank"
         rel="noreferrer"
         aria-label={t("chatWhatsApp")}
