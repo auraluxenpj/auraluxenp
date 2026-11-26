@@ -3,12 +3,6 @@ import { createFileRoute } from '@tanstack/react-router';
 const BIZSATHI_IMAGE_URL = 'https://bizsathi-migration.auraluxe26.workers.dev/api/public/auraluxe-product-image';
 const SHARED_IMAGE_PREFIX = 'https://jsshaoucrjorbyuzagdr.supabase.co/storage/v1/object/public/product-images/';
 
-function equal(a: string, b: string): boolean {
-  const x = new TextEncoder().encode(a), y = new TextEncoder().encode(b);
-  let diff = x.length ^ y.length;
-  for (let i = 0; i < Math.max(x.length, y.length); i += 1) diff |= (x[i] ?? 0) ^ (y[i] ?? 0);
-  return diff === 0;
-}
 function json(body: unknown, status = 200): Response {
   return Response.json(body, { status, headers: { 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff' } });
 }
