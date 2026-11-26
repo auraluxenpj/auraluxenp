@@ -4,7 +4,7 @@ import { useRef, useState } from "react";
 import { mapRows, matchProduct, parseCsv } from "@/lib/csv-import";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { fetchAllProducts, productImage, type Product } from "@/lib/data";
+import { fetchAllProducts, fetchCategories, productImage, type Product } from "@/lib/data";
 import { useMoney } from "@/lib/store";
 import { isProductSku } from "@/lib/product-information";
 
@@ -24,7 +24,11 @@ function ProductsList() {
   const money = useMoney();
   const qc = useQueryClient();
   const [q, setQ] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState("all");
+  const [stockFilter, setStockFilter] = useState("all");
   const { data: products = [], isLoading } = useQuery({ queryKey: ["admin", "products"], queryFn: fetchAllProducts });
+  const { data: categories = [] } = useQuery({ queryKey: ["categories"], queryFn: fetchCategories });
+  const categoryNames = new Map(categories.map((category) => [category.id, category.name]));
 
   const refresh = () => qc.invalidateQueries();
 
@@ -68,7 +72,16 @@ function ProductsList() {
     onError: (e) => toast.error((e as Error).message),
   });
 
-  const list = products.filter((p) => `${p.model_code ?? ""} ${p.sku ?? ""}`.toLowerCase().includes(q.trim().toLowerCase()));
+  const list = products.filter((p) => {
+    const searchText = `${p.name ?? ""} ${p.model_code ?? ""} ${p.sku ?? ""}`.toLowerCase();
+    const matchesSearch = searchText.includes(q.trim().toLowerCase());
+    const matchesCategory = categoryFilter === "all" || p.category_id === categoryFilter;
+    const matchesStock = stockFilter === "all"
+      || (stockFilter === "in-stock" && Number(p.stock) > 0)
+      || (stockFilter === "out-of-stock" && Number(p.stock) <= 0)
+      || (stockFilter === "low-stock" && Number(p.stock) > 0 && Number(p.stock) <= Number(p.low_stock_threshold ?? 0));
+    return matchesSearch && matchesCategory && matchesStock;
+  });
 
   // ---------- Bulk selection ----------
   const [selected, setSelected] = useState<string[]>([]);
@@ -216,7 +229,21 @@ function ProductsList() {
           {report.errors.length ? <ul className="mt-2 list-disc pl-5 text-xs text-destructive">{report.errors.map((e) => <li key={e}>{e}</li>)}</ul> : null}
         </div>
       ) : null}
-      <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search by model name or SKU" className="w-full rounded-xl border border-border bg-card px-4 py-3 text-sm" />
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(180px,0.7fr)_minmax(160px,0.6fr)_auto]">
+        <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search by product name, model or SKU" aria-label="Search products" className="w-full rounded-xl border border-border bg-card px-4 py-3 text-sm" />
+        <select value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)} aria-label="Filter by category" className="w-full rounded-xl border border-border bg-card px-4 py-3 text-sm">
+          <option value="all">All categories</option>
+          {categories.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}
+        </select>
+        <select value={stockFilter} onChange={(e) => setStockFilter(e.target.value)} aria-label="Filter by stock status" className="w-full rounded-xl border border-border bg-card px-4 py-3 text-sm">
+          <option value="all">All stock statuses</option>
+          <option value="in-stock">In stock</option>
+          <option value="low-stock">Low stock</option>
+          <option value="out-of-stock">Out of stock</option>
+        </select>
+        {q || categoryFilter !== "all" || stockFilter !== "all" ? <button type="button" onClick={() => { setQ(""); setCategoryFilter("all"); setStockFilter("all"); }} className="rounded-xl border border-border px-4 py-3 text-sm">Clear filters</button> : null}
+      </div>
+      <p className="text-xs text-muted-foreground">Showing {list.length} of {products.length} products</p>
       {isLoading ? <p className="text-sm text-muted-foreground">Loading…</p> : null}
 
       {list.length > 0 ? (
@@ -252,7 +279,7 @@ function ProductsList() {
             <div className="min-w-0 flex-1">
               <p className="truncate font-medium">{p.name}</p>
               <p className="text-xs text-muted-foreground">
-                {p.sku ?? "No SKU"} · {money(Number(p.sale_price ?? p.price))} · {p.stock} in stock · {p.is_published ? "Live" : "Hidden"}
+                {p.sku ?? "No SKU"} · {categoryNames.get(p.category_id ?? "") ?? "Uncategorised"} · {money(Number(p.sale_price ?? p.price))} · {p.stock} in stock · {p.is_published ? "Live" : "Hidden"}
               </p>
               {!p.sku || !isProductSku(p.sku) ? <p className="text-xs text-muted-foreground">SKU format needs admin review</p> : null}
             </div>
