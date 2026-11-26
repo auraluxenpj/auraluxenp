@@ -169,7 +169,7 @@ export function whatsappProductMessage(
     });
     lines.push(`Items subtotal: ${formatMoney(items.reduce((sum, item) => sum + item.price * item.quantity, 0))}`);
   } else {
-    lines.push("I am enquiring about the products on this page.", `Page / shop link: ${typeof window !== "undefined" ? window.location.href : fallbackUrl}`);
+    lines.push(`Product / page: ${typeof document !== "undefined" ? document.title : "Auraluxe products"}`, `Product / page link: ${typeof window !== "undefined" ? window.location.href : fallbackUrl}`);
   }
   lines.push("", "Please help me with this enquiry/order.", "", "Thank you!");
   return lines.join("\\n");
