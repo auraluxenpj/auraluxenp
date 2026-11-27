@@ -301,7 +301,7 @@ function Shop() {
             Women’s fashion and accessories in Nepalgunj
           </h2>
           <p className="mt-3 text-sm leading-7 text-stone-600">
-            Explore the Auraluxe online shop for women’s traditional clothing, occasion wear and accessories. Browse the current saree, kurti set, party wear, dress, winter wear, purse and accessory collections, then use the filters to narrow products by size, colour, fabric, price or availability.
+            Explore the Auraluxe online shop for women’s traditional clothing, occasion wear and accessories. Browse the current saree, kurti set, party wear, dress, winter wear, plus-size, bottom-wear, purse and accessory collections, then use the filters to narrow products by size, colour, fabric, price or availability.
           </p>
           <p className="mt-2 text-sm leading-7 text-stone-600">
             Auraluxe is based in Nepalgunj, Nepal. Open a collection or product page to review its photos, details and current price, or visit the contact page for store information and assistance.
