@@ -1,9 +1,10 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { PackageSearch, Truck, CheckCircle2, Clock } from "lucide-react";
 import { trackOrder, type TrackedOrder } from "@/lib/orders.functions";
 import { useMoney } from "@/lib/store";
+import { SiteLayout } from "@/components/site/SiteLayout";
 
 export const Route = createFileRoute("/track")({
   head: () => ({
@@ -16,6 +17,7 @@ export const Route = createFileRoute("/track")({
       { property: "og:title", content: "Track Your Order — Auraluxe Nepalgunj" },
       { property: "og:description", content: "Check delivery status with your order number and contact details." },
       { property: "og:type", content: "website" },
+      { name: "robots", content: "noindex,follow" },
       { name: "twitter:card", content: "summary" },
     ],
     links: [{ rel: "canonical", href: "https://www.auraluxe.com.np/track" }],
@@ -95,7 +97,8 @@ function TrackPage() {
   };
 
   return (
-    <main className="mx-auto max-w-2xl">
+    <SiteLayout>
+      <main className="mx-auto max-w-2xl">
       <header className="text-center">
         <p className="text-[11px] uppercase tracking-[0.3em] text-brand">Order tracking</p>
         <h1 className="mt-2 font-display text-3xl sm:text-5xl">Where's my order?</h1>
@@ -137,6 +140,10 @@ function TrackPage() {
           {loading ? "Checking…" : "Track order"}
         </button>
       </form>
+
+      <p className="mt-5 text-center text-sm leading-6 text-muted-foreground">
+        Need help with an order? <Link to="/contact" className="text-brand underline underline-offset-4">Contact the Auraluxe team</Link> for assistance, or <Link to="/shop" className="text-brand underline underline-offset-4">browse the current collection</Link>.
+      </p>
 
       {error ? (
         <p className="mt-6 rounded-2xl border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive">
@@ -191,6 +198,7 @@ function TrackPage() {
           </div>
         </section>
       ) : null}
-    </main>
+      </main>
+    </SiteLayout>
   );
 }
