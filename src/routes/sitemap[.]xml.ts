@@ -49,7 +49,7 @@ export const Route = createFileRoute("/sitemap.xml")({
           }
 
           const entries = new Map<string, string | null>();
-          for (const path of ["/", "/shop", "/about", "/contact", "/stylist", "/track"]) entries.set(path, null);
+          for (const path of ["/", "/shop", "/about", "/contact", "/stylist"]) entries.set(path, null);
 
           const categoryProductCounts = new Map<string, number>();
           const categoryLastmod = new Map<string, string>();

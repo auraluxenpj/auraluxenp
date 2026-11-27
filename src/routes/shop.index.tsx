@@ -247,7 +247,7 @@ function Shop() {
       </div>
 
       {/* Visual category discovery — temporary editorial imagery until the catalogue is fully photographed. */}
-      {!search.category && categories.some((c) => c.is_active) ? (
+      {!search.category && activeCategories.length > 0 ? (
         <section className="mt-8" aria-label={t("shopCategory")}>
           <div className="mb-4 flex items-end justify-between gap-3">
             <div>
@@ -257,7 +257,7 @@ function Shop() {
             <span className="text-[10px] uppercase tracking-[.16em] text-stone-500">{t("findLook")}</span>
           </div>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-            {categories.filter((c) => c.is_active).map((c) => (
+            {activeCategories.map((c) => (
               <Link
                 key={c.id}
                 to="/collections/$slug"
@@ -292,6 +292,20 @@ function Shop() {
               </Link>
             ))}
           </div>
+        </section>
+      ) : null}
+
+      {!search.category ? (
+        <section className="mt-8 max-w-4xl" aria-labelledby="shop-nepalgunj-heading">
+          <h2 id="shop-nepalgunj-heading" className="font-display text-2xl text-[#422d2a] sm:text-3xl">
+            Women’s fashion and accessories in Nepalgunj
+          </h2>
+          <p className="mt-3 text-sm leading-7 text-stone-600">
+            Explore the Auraluxe online shop for women’s traditional clothing, occasion wear and accessories. Browse the current saree, kurti set, party wear, dress, winter wear, plus-size, bottom-wear, purse and accessory collections, then use the filters to narrow products by size, colour, fabric, price or availability.
+          </p>
+          <p className="mt-2 text-sm leading-7 text-stone-600">
+            Auraluxe is based in Nepalgunj, Nepal. Open a collection or product page to review its photos, details and current price, or visit the contact page for store information and assistance.
+          </p>
         </section>
       ) : null}
 
@@ -334,9 +348,7 @@ function Shop() {
               {item.label}
             </button>
           ))}
-          {categories
-            .filter((c) => c.is_active)
-            .map((c) => (
+          {activeCategories.map((c) => (
               <button
                 key={c.id}
                 type="button"

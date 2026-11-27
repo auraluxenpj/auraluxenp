@@ -68,11 +68,11 @@ export const Route = createFileRoute("/shop/product/$slug")({
       savedMeta.length < 90 ||
       /^(?:explore|shop) .+ at auraluxe nepalgunj\\.?$/i.test(savedMeta) ||
       /^\d+(?:\.\d+)?\s+(?:per piece|each|only)\b/i.test(savedMeta);
-    const selectedCopy = genericMeta && productCopy.length >= 90
-      ? productCopy
-      : savedMeta || productCopy;
     const contextualFallback = `Shop ${product.name}${categoryName ? ` in ${categoryName}` : ""} at Auraluxe Nepalgunj. Check product details, price, availability and delivery across Nepal.`;
-    const description = fitMetaDescription(selectedCopy.length >= 60 ? selectedCopy : contextualFallback);
+    const selectedCopy = genericMeta
+      ? productCopy.length >= 90 ? productCopy : contextualFallback
+      : savedMeta || productCopy || contextualFallback;
+    const description = fitMetaDescription(selectedCopy);
     const title = product.meta_title?.trim() || `${product.name} | Auraluxe Nepalgunj`;
     const images = (product.images ?? []).filter(
       (image): image is string =>

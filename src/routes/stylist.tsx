@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { ShoppingBag, Sparkles } from "lucide-react";
@@ -7,6 +7,7 @@ import { recommendProducts, type StylistResult } from "@/lib/stylist.functions";
 import { StylistPickCard } from "@/components/site/StylistPickCard";
 import { useCart } from "@/lib/store";
 import { stylistCartItems } from "@/lib/stylist-cart";
+import { SiteLayout } from "@/components/site/SiteLayout";
 
 
 export const Route = createFileRoute("/stylist")({
@@ -79,7 +80,8 @@ function StylistPage() {
   };
 
   return (
-    <main className="mx-auto max-w-5xl">
+    <SiteLayout>
+      <main className="mx-auto max-w-5xl">
       <header className="text-center">
         <p className="text-[11px] uppercase tracking-[0.3em] text-brand">Personal shopping</p>
         <h1 className="mt-2 font-display text-3xl sm:text-5xl">AI Stylist</h1>
@@ -88,6 +90,16 @@ function StylistPage() {
           AURALUXE collection.
         </p>
       </header>
+
+      <section className="mx-auto mt-6 max-w-3xl text-center">
+        <p className="text-sm leading-7 text-muted-foreground">
+          The Auraluxe AI Stylist helps shoppers explore published products by occasion, preferred look and optional budget. Recommendations are drawn from the current catalogue; review each product page for its latest details and availability before adding it to your bag.
+        </p>
+        <div className="mt-4 flex flex-wrap justify-center gap-5 text-xs uppercase tracking-[0.16em] text-brand">
+          <Link to="/shop" className="underline underline-offset-4">Browse all collections</Link>
+          <Link to="/contact" className="underline underline-offset-4">Ask the Nepalgunj store</Link>
+        </div>
+      </section>
 
       <form onSubmit={submit} className="glass mt-8 grid gap-4 rounded-3xl p-5 sm:grid-cols-3 sm:p-8">
         <label className="block">
@@ -184,6 +196,7 @@ function StylistPage() {
           </p>
         </div>
       </section>
-    </main>
+      </main>
+    </SiteLayout>
   );
 }
