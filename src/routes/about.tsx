@@ -93,6 +93,9 @@ function About() {
           <p>
             Browse the current range of kurti sets, sarees, dresses, party wear, winter styles, bags and accessories online. Product pages show the available photos, descriptions, prices and size or colour details where provided. You can also visit the Nepalgunj store or contact the team for help with a product enquiry.
           </p>
+          <p>
+            Whether you are comparing an everyday kurti set, choosing a saree for a family occasion or looking for a bag or accessory, the online catalogue brings product information together in one place. Check each product page for current stock and pricing, as the selection can change over time.
+          </p>
         </div>
       </section>
     </SiteLayout>
