@@ -1,12 +1,13 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { z } from "zod";
 import { SiteLayout } from "@/components/site/SiteLayout";
 import { getCheckoutPaymentMethods } from "@/lib/payment-settings.functions";
 import { placeOrder } from "@/lib/checkout.functions";
+import { previewCoupon } from "@/lib/coupons.functions";
 import type { CheckoutMethod } from "@/lib/payment-settings";
 import { useCart, useMoney, useSettings, whatsappLink, whatsappProductMessage } from "@/lib/store";
 import { useLanguage } from "@/lib/i18n";
@@ -83,6 +84,7 @@ function CheckoutPage() {
   const s = useSettings();
   const { t } = useLanguage();
   const placeOrderFn = useServerFn(placeOrder);
+  const previewCouponFn = useServerFn(previewCoupon);
   const { data: methodsData, isLoading: methodsLoading, isError: methodsError, refetch: refetchMethods } = useQuery({
     queryKey: ["checkout", "payment-methods"],
     queryFn: () => getCheckoutPaymentMethods(),
@@ -98,6 +100,45 @@ function CheckoutPage() {
   });
   const [code, setCode] = useState("");
   const [coupon, setCoupon] = useState<string | null>(null);
+  const [couponPreview, setCouponPreview] = useState<{ code: string; discount: number } | null>(null);
+  const [couponBusy, setCouponBusy] = useState(false);
+  const [autoCouponResolved, setAutoCouponResolved] = useState(false);
+
+  useEffect(() => {
+    if (autoCouponResolved || items.length === 0) return;
+    let active = true;
+    setAutoCouponResolved(true);
+    void previewCouponFn({ data: { code: null, items: items.map((item) => ({ productId: item.productId, quantity: item.quantity })) } })
+      .then((result) => {
+        if (active && result.valid && result.code) {
+          setCoupon(result.code);
+          setCode(result.code);
+          setCouponPreview({ code: result.code, discount: result.discount });
+        }
+      })
+      .catch(() => { /* Automatic offers are optional; checkout remains available. */ });
+    return () => { active = false; };
+  }, [autoCouponResolved, items, previewCouponFn]);
+
+  async function applyCouponCode() {
+    const requested = code.trim();
+    if (!requested || couponBusy) return;
+    setCouponBusy(true);
+    try {
+      const result = await previewCouponFn({ data: { code: requested, items: items.map((item) => ({ productId: item.productId, quantity: item.quantity })) } });
+      if (!result.valid || !result.code) {
+        setCoupon(null); setCouponPreview(null);
+        toast.error(result.message ?? "This coupon cannot be applied to your order.");
+        return;
+      }
+      setCoupon(result.code);
+      setCode(result.code);
+      setCouponPreview({ code: result.code, discount: result.discount });
+      toast.success("Coupon applied");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Coupon check failed.");
+    } finally { setCouponBusy(false); }
+  }
   const [busy, setBusy] = useState(false);
   const [placed, setPlaced] = useState<{ orderNumber: string; total: number; method: CheckoutMethod; items: import('@/lib/store').CartItem[] } | null>(null);
   // One key per checkout attempt set, so a retried submit returns the same
@@ -109,6 +150,8 @@ function CheckoutPage() {
   const shippingCharge = Number(s["shipping_charge"] ?? 0);
   const threshold = Number(s["free_shipping_threshold"] ?? 0);
   const estShipping = threshold > 0 && subtotal >= threshold ? 0 : shippingCharge;
+  const estimatedDiscount = couponPreview?.discount ?? 0;
+  const estimatedTotal = Math.max(0, subtotal - estimatedDiscount + estShipping);
 
   async function submitOrder(e: React.FormEvent) {
     e.preventDefault();
@@ -273,16 +316,17 @@ function CheckoutPage() {
           <div className="flex gap-2">
             <input className={field} placeholder={t("couponCode")} value={code} onChange={(e) => setCode(e.target.value)} disabled={!!coupon} />
             {coupon ? (
-              <button type="button" onClick={() => { setCoupon(null); setCode(""); }} className="rounded-full border border-border px-4 text-xs">{t("remove")}</button>
+              <button type="button" onClick={() => { setCoupon(null); setCouponPreview(null); setCode(""); }} className="rounded-full border border-border px-4 text-xs">{t("remove")}</button>
             ) : (
-              <button type="button" onClick={() => { const c = code.trim(); if (c) { setCoupon(c); } }} className="rounded-full bg-secondary px-5 text-xs uppercase tracking-[0.15em]">{t("apply")}</button>
+              <button type="button" onClick={() => void applyCouponCode()} className="rounded-full bg-secondary px-5 text-xs uppercase tracking-[0.15em]">{couponBusy ? "Checking…" : t("apply")}</button>
             )}
           </div>
-          <p className="text-xs text-muted-foreground">{t("couponChecked")}</p>
+          <p className="text-xs text-muted-foreground">{couponPreview ? couponPreview.code + " applied — " + money(estimatedDiscount) + " saved." : t("couponChecked")}</p>
           <dl className="space-y-2 text-sm">
             <div className="flex justify-between"><dt className="text-muted-foreground">{t("subtotal")}</dt><dd>{money(subtotal)}</dd></div>
             <div className="flex justify-between"><dt className="text-muted-foreground">{t("shipping")} ({t("estimated")})</dt><dd>{estShipping === 0 ? t("free") : money(estShipping)}</dd></div>
-            <div className="flex justify-between border-t border-border pt-3 font-display text-xl"><dt>{t("estimatedTotal")}</dt><dd className="text-primary">{money(subtotal + estShipping)}</dd></div>
+            {estimatedDiscount > 0 ? <div className="flex justify-between text-emerald-700"><dt>Coupon discount</dt><dd>−{money(estimatedDiscount)}</dd></div> : null}
+            <div className="flex justify-between border-t border-border pt-3 font-display text-xl"><dt>{t("estimatedTotal")}</dt><dd className="text-primary">{money(estimatedTotal)}</dd></div>
           </dl>
           <p className="text-xs text-muted-foreground">{t("finalTotal")}</p>
           <button disabled={busy || !selected} className="w-full rounded-full bg-primary py-3.5 text-[12px] uppercase tracking-[0.18em] text-primary-foreground disabled:opacity-60">
