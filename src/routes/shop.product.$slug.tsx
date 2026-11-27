@@ -51,11 +51,28 @@ export const Route = createFileRoute("/shop/product/$slug")({
     const price = product.sale_price != null && salePrice > 0 && salePrice < regularPrice
       ? salePrice
       : regularPrice;
-    const description = (
-      product.meta_description?.trim() ||
-      product.description?.trim() ||
-      `Shop ${product.name} at Auraluxe Nepalgunj. View product details, price and availability.`
-    ).slice(0, 160);
+    const cleanSeoText = (value: string | null | undefined) =>
+      (value ?? "").replace(/<[^>]*>/g, " ").replace(/[\*_\x60]/g, " ").replace(/\s+/g, " ").trim();
+    const fitMetaDescription = (value: string) => {
+      const normalized = cleanSeoText(value);
+      if (normalized.length <= 160) return normalized;
+      const candidate = normalized.slice(0, 159);
+      const boundary = candidate.lastIndexOf(" ");
+      return `${candidate.slice(0, boundary >= 115 ? boundary : 159).trim()}…`;
+    };
+    const savedMeta = cleanSeoText(product.meta_description);
+    const productCopy = cleanSeoText(product.description);
+    const categoryName = cleanSeoText(product.categories?.name);
+    const genericMeta =
+      !savedMeta ||
+      savedMeta.length < 90 ||
+      /^(?:explore|shop) .+ at auraluxe nepalgunj\\.?$/i.test(savedMeta) ||
+      /^\d+(?:\.\d+)?\s+(?:per piece|each|only)\b/i.test(savedMeta);
+    const selectedCopy = genericMeta && productCopy.length >= 90
+      ? productCopy
+      : savedMeta || productCopy;
+    const contextualFallback = `Shop ${product.name}${categoryName ? ` in ${categoryName}` : ""} at Auraluxe Nepalgunj. Check product details, price, availability and delivery across Nepal.`;
+    const description = fitMetaDescription(selectedCopy.length >= 60 ? selectedCopy : contextualFallback);
     const title = product.meta_title?.trim() || `${product.name} | Auraluxe Nepalgunj`;
     const images = (product.images ?? []).filter(
       (image): image is string =>
