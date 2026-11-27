@@ -391,3 +391,18 @@ main .glass:not(article):not(a.group) {
 .auraluxe-language-switch button[aria-pressed="true"]{color:#762b3b;font-weight:700;text-decoration:underline;text-underline-offset:4px}
 html[lang="ne"] body,html[lang="ne"] button,html[lang="ne"] input,html[lang="ne"] select,html[lang="ne"] textarea{font-family:"Noto Sans Devanagari","Jost",system-ui,sans-serif}
 html[lang="ne"] .font-display{font-family:"Noto Sans Devanagari","Cormorant Garamond",Georgia,serif}
+
+
+/* Keep the desktop mega menu centered in the viewport instead of centering it
+   against the navigation row, which can push half the panel off-screen. */
+@media (min-width: 1280px) {
+  .auraluxe-mega {
+    left: 50vw !important;
+    right: auto !important;
+    width: min(1080px, calc(100vw - 32px)) !important;
+    max-height: calc(100dvh - 120px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
+  }
+}
