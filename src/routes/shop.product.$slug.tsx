@@ -20,24 +20,108 @@ import { PhotoZoom } from "@/components/site/PhotoZoom";
 import { WomensSizeGuide } from "@/components/site/WomensSizeGuide";
 import { PHOTO_DISCLAIMER } from "@/lib/product-information";
 import { localizedContent, useLanguage } from "@/lib/i18n";
+import { getPublicProductSeo } from "@/lib/seo.functions";
+
+const SITE_ORIGIN = "https://www.auraluxe.com.np";
+
+function safeJsonLd(value: unknown): string {
+  return JSON.stringify(value)
+    .replace(/</g, "\\u003c")
+    .replace(/>/g, "\\u003e")
+    .replace(/&/g, "\\u0026")
+    .replace(/\\u2028/g, "\\\\u2028")
+    .replace(/\\u2029/g, "\\\\u2029");
+}
 
 export const Route = createFileRoute("/shop/product/$slug")({
-  head: ({ params }) => {
-    const pretty = params.slug.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+  loader: ({ params }) => getPublicProductSeo({ data: params.slug }),
+  head: ({ params, loaderData }) => {
+    const product = loaderData;
+    const canonicalUrl = `${SITE_ORIGIN}/shop/product/${encodeURIComponent(params.slug)}`;
+
+    if (!product) {
+      return {
+        links: [{ rel: "canonical", href: canonicalUrl }],
+        meta: [
+          { title: "Product not found — Auraluxe" },
+          { name: "robots", content: "noindex,follow" },
+        ],
+      };
+    }
+
+    const regularPrice = Number(product.price);
+    const salePrice = Number(product.sale_price);
+    const price = product.sale_price != null && salePrice > 0 && salePrice < regularPrice
+      ? salePrice
+      : regularPrice;
+    const description = (
+      product.meta_description?.trim() ||
+      product.description?.trim() ||
+      `Shop ${product.name} at Auraluxe Nepalgunj. View product details, price and availability.`
+    ).slice(0, 300);
+    const title = product.meta_title?.trim() || `${product.name} | Auraluxe Nepalgunj`;
+    const images = (product.images ?? []).filter(
+      (image): image is string => typeof image === "string" && /^https?:\\/\\//i.test(image),
+    );
+    const availability = Number(product.stock) > 0
+      ? "https://schema.org/InStock"
+      : "https://schema.org/OutOfStock";
+    const productSchema = {
+      "@context": "https://schema.org",
+      "@type": "Product",
+      "@id": `${canonicalUrl}#product`,
+      name: product.name,
+      url: canonicalUrl,
+      ...(description ? { description } : {}),
+      ...(images.length ? { image: images } : {}),
+      ...(product.sku ? { sku: product.sku } : {}),
+      ...(product.categories?.name ? { category: product.categories.name } : {}),
+      brand: { "@type": "Brand", name: "Auraluxe" },
+      offers: {
+        "@type": "Offer",
+        url: canonicalUrl,
+        priceCurrency: "NPR",
+        price: Number.isFinite(price) ? String(price) : "0",
+        availability,
+        itemCondition: "https://schema.org/NewCondition",
+        seller: { "@type": "Organization", name: "Auraluxe" },
+      },
+    };
+    const breadcrumbSchema = {
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      itemListElement: [
+        { "@type": "ListItem", position: 1, name: "Home", item: SITE_ORIGIN },
+        { "@type": "ListItem", position: 2, name: "Shop", item: `${SITE_ORIGIN}/shop` },
+        ...(product.categories?.name
+          ? [{ "@type": "ListItem", position: 3, name: product.categories.name }]
+          : []),
+        {
+          "@type": "ListItem",
+          position: product.categories?.name ? 4 : 3,
+          name: product.name,
+          item: canonicalUrl,
+        },
+      ],
+    };
+
     return {
+      links: [{ rel: "canonical", href: canonicalUrl }],
       meta: [
-        { title: `${pretty} — Auraluxe` },
-        {
-          name: "description",
-          content: `${pretty} from Auraluxe, Nepalgunj. Sizes, colours, fabric details and secure QR or bank transfer payment across Nepal.`,
-        },
-        { property: "og:title", content: `${pretty} — Auraluxe` },
+        { title },
+        { name: "description", content: description },
+        { name: "robots", content: "index,follow,max-image-preview:large" },
+        { property: "og:title", content: title },
+        { property: "og:description", content: description },
         { property: "og:type", content: "product" },
-        { name: "twitter:card", content: "summary_large_image" },
-        {
-          property: "og:description",
-          content: `${pretty} from Auraluxe, Nepalgunj. Secure QR or bank transfer payment across Nepal.`,
-        },
+        { property: "og:url", content: canonicalUrl },
+        ...(images[0] ? [{ property: "og:image", content: images[0] }] : []),
+        { name: "twitter:card", content: images[0] ? "summary_large_image" : "summary" },
+        ...(images[0] ? [{ name: "twitter:image", content: images[0] }] : []),
+      ],
+      scripts: [
+        { type: "application/ld+json", children: safeJsonLd(productSchema) },
+        { type: "application/ld+json", children: safeJsonLd(breadcrumbSchema) },
       ],
     };
   },
