@@ -128,6 +128,7 @@ export const Route = createFileRoute("/shop/product/$slug")({
 
 function ProductDetail() {
   const { slug } = Route.useParams();
+  const initialProduct = Route.useLoaderData();
   const money = useMoney();
   const { t, language } = useLanguage();
   const settings = useSettings();
@@ -141,6 +142,7 @@ function ProductDetail() {
   } = useQuery({
     queryKey: ["product", slug],
     queryFn: () => fetchProductBySlug(slug),
+    initialData: initialProduct ?? undefined,
   });
   const { data: all = [] } = useQuery({ queryKey: ["products"], queryFn: fetchProducts });
   const productId = product?.id ?? null;
