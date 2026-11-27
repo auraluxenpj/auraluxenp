@@ -19,6 +19,7 @@ import { HeroCarousel } from "@/components/site/HeroCarousel";
 import { useCart, useSettings, whatsappLink, whatsappProductMessage } from "@/lib/store";
 import { categoryLabel, localizedContent, useLanguage } from "@/lib/i18n";
 import { GoogleReviews } from "@/components/site/GoogleReviews";
+import { getPublicLocalBusinessSeo } from "@/lib/seo.functions";
 
 export const Route = createFileRoute("/")({
   // Fetch the data the hero needs BEFORE the page renders (on the server), so the
@@ -26,12 +27,13 @@ export const Route = createFileRoute("/")({
   // If any fetch fails we fall back to the normal client-side loading.
   loader: async () => {
     const safe = <T,>(p: Promise<T>) => p.catch(() => undefined);
-    const [products, categories, banners] = await Promise.all([
+    const [products, categories, banners, business] = await Promise.all([
       safe(fetchProducts()),
       safe(fetchCategories()),
       safe(fetchBanners()),
+      safe(getPublicLocalBusinessSeo()),
     ]);
-    return { products, categories, banners };
+    return { products, categories, banners, business };
   },
   staleTime: 60_000,
   head: ({ loaderData }) => ({
@@ -57,6 +59,41 @@ export const Route = createFileRoute("/")({
     links: (() => {
       const img = heroImageFor(loaderData);
       return img ? [{ rel: "preload", as: "image", href: img }] : [];
+    })(),
+    scripts: (() => {
+      const business = loaderData?.business;
+      if (!business?.address || !business.phone) return [];
+      const hours = business.storeHours?.match(/(\\d{1,2}:\\d{2})\\s*[–-]\\s*(\\d{1,2}:\\d{2})/);
+      const sameAs = [business.instagram, business.facebook, business.tiktok].filter(
+        (value): value is string => Boolean(value),
+      );
+      const schema = {
+        "@context": "https://schema.org",
+        "@type": "ClothingStore",
+        "@id": "https://www.auraluxe.com.np/#store",
+        name: "Auraluxe",
+        url: "https://www.auraluxe.com.np/",
+        description: "Women's fashion and traditional clothing store in Nepalgunj, Nepal.",
+        telephone: business.phone,
+        ...(business.email ? { email: business.email } : {}),
+        address: {
+          "@type": "PostalAddress",
+          streetAddress: business.address,
+          addressLocality: "Nepalgunj",
+          addressRegion: "Lumbini Province",
+          addressCountry: "NP",
+        },
+        areaServed: [
+          { "@type": "City", name: "Nepalgunj" },
+          { "@type": "Country", name: "Nepal" },
+        ],
+        ...(hours ? { openingHours: [`Mo-Su ${hours[1]}-${hours[2]}`] } : {}),
+        ...(sameAs.length ? { sameAs } : {}),
+      };
+      return [{
+        type: "application/ld+json",
+        children: JSON.stringify(schema).replace(/</g, "\\u003c"),
+      }];
     })(),
   }),
   component: Home,
