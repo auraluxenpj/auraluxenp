@@ -40,7 +40,7 @@ export const Route = createFileRoute("/sitemap.xml")({
           }
 
           const entries = new Map<string, string | null>();
-          for (const path of ["/", "/shop", "/about", "/contact"]) entries.set(path, null);
+          for (const path of ["/", "/shop", "/about", "/contact", "/stylist", "/track"]) entries.set(path, null);
 
           for (const product of products ?? []) {
             if (typeof product.slug !== "string" || !/^[a-zA-Z0-9-]+$/.test(product.slug)) continue;
