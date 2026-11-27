@@ -24,24 +24,15 @@ export const Route = createFileRoute("/sitemap.xml")({
         try {
           const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
           const db = supabaseAdmin as any;
-          const [{ data: products, error: productsError }, { data: categories, error: categoriesError }] =
-            await Promise.all([
-              db.from("products")
-                .select("slug,updated_at")
-                .eq("is_published", true)
-                .not("slug", "is", null)
-                .order("updated_at", { ascending: false })
-                .limit(5000),
-              db.from("categories")
-                .select("slug,updated_at")
-                .eq("is_active", true)
-                .not("slug", "is", null)
-                .order("updated_at", { ascending: false })
-                .limit(500),
-            ]);
+          const { data: products, error: productsError } = await db.from("products")
+            .select("slug,updated_at")
+            .eq("is_published", true)
+            .not("slug", "is", null)
+            .order("updated_at", { ascending: false })
+            .limit(5000);
 
-          if (productsError || categoriesError) {
-            console.error("[sitemap] Supabase query failed", productsError ?? categoriesError);
+          if (productsError) {
+            console.error("[sitemap] Supabase query failed", productsError);
             return new Response("Sitemap temporarily unavailable", {
               status: 503,
               headers: { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "no-store" },
@@ -50,12 +41,6 @@ export const Route = createFileRoute("/sitemap.xml")({
 
           const entries = new Map<string, string | null>();
           for (const path of ["/", "/shop", "/about", "/contact"]) entries.set(path, null);
-
-          for (const category of categories ?? []) {
-            if (typeof category.slug !== "string" || !category.slug.trim()) continue;
-            // Category filters are query parameters on the existing shop route.
-            entries.set(`/shop?category=${encodeURIComponent(category.slug)}`, validLastmod(category.updated_at));
-          }
 
           for (const product of products ?? []) {
             if (typeof product.slug !== "string" || !/^[a-zA-Z0-9-]+$/.test(product.slug)) continue;
