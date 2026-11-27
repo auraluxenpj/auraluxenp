@@ -29,6 +29,7 @@ const NAV = [
   { to: "/admin/orders", label: "Orders" },
   { to: "/admin/products", label: "Products" },
   { to: "/admin/categories", label: "Categories" },
+  { to: "/admin/seo", label: "Google Visibility" },
   { to: "/admin/banners", label: "Banners" },
   { to: "/admin/inventory", label: "Inventory" },
   { to: "/admin/inventory-health", label: "Inventory Health" },

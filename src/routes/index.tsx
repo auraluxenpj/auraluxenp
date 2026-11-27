@@ -182,8 +182,8 @@ function CategoryTile({
 
   return (
     <Link
-      to="/shop"
-      search={{ category: slug }}
+      to="/collections/$slug"
+      params={{ slug }}
       className="group glass relative overflow-hidden rounded-3xl transition hover:-translate-y-1"
     >
       <div ref={boxRef} className="relative aspect-[4/5] w-full overflow-hidden bg-muted">
