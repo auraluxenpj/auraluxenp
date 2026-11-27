@@ -54,7 +54,7 @@ export const previewCoupon = createServerFn({ method: "POST" })
       return { valid: true, code: null, discount: 0, message: null };
     }
     const best = candidates
-      .map((c: any) => ({ ...c, calculated: Math.min(subtotal, Math.round((subtotal * Number(c.value) + Number.EPSILON) * 100 / 10000) / 100) }))
+      .map((c: any) => ({ ...c, calculated: Math.min(subtotal, Math.round((subtotal * Number(c.value) / 100 + Number.EPSILON) * 100) / 100) }))
       .sort((a: any, b: any) => b.calculated - a.calculated)[0];
     if (!best) return { valid: true, code: null, discount: 0, message: null };
     return { valid: true, code: String(best.code).toUpperCase(), discount: Number(best.calculated.toFixed(2)), message: null };
