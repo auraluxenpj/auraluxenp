@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import type { PointerEvent } from "react";
 import { Link } from "@tanstack/react-router";
 import type { Banner } from "@/lib/data";
 import { useLanguage } from "@/lib/i18n";
@@ -76,7 +77,7 @@ export function HeroCarousel({ banners }: { banners: Banner[] }) {
 
   const go = (dir: number) => setIndex((i) => (i + dir + count) % count);
 
-  const handlePointerDown = (event: React.PointerEvent<HTMLElement>) => {
+  const handlePointerDown = (event: PointerEvent<HTMLElement>) => {
     if (event.pointerType !== "touch" || count < 2) return;
     swipeStart.current = { x: event.clientX, y: event.clientY };
   };
