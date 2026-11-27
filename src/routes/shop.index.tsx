@@ -45,6 +45,7 @@ export const Route = createFileRoute("/shop/")({
         content: "Kurtis, co-ord sets, suits, dresses and party wear from Auraluxe.",
       },
     ],
+    links: [{ rel: "canonical", href: "https://www.auraluxe.com.np/shop" }],
   }),
   component: Shop,
 });

@@ -19,6 +19,7 @@ export const Route = createFileRoute("/about")({
         content: "The story and mission behind Auraluxe, a ladies' fashion label in Nepalgunj.",
       },
     ],
+    links: [{ rel: "canonical", href: "https://www.auraluxe.com.np/about" }],
   }),
   component: About,
 });

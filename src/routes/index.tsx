@@ -58,7 +58,10 @@ export const Route = createFileRoute("/")({
     ],
     links: (() => {
       const img = heroImageFor(loaderData);
-      return img ? [{ rel: "preload", as: "image", href: img }] : [];
+      return [
+        { rel: "canonical", href: "https://www.auraluxe.com.np/" },
+        ...(img ? [{ rel: "preload", as: "image", href: img }] : []),
+      ];
     })(),
     scripts: (() => {
       const business = loaderData?.business;

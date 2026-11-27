@@ -26,6 +26,7 @@ export const Route = createFileRoute("/stylist")({
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
+    links: [{ rel: "canonical", href: "https://www.auraluxe.com.np/stylist" }],
   }),
   component: StylistPage,
 });

@@ -20,6 +20,7 @@ export const Route = createFileRoute("/contact")({
         content: "Call, WhatsApp, email or visit the Auraluxe store in Nepalgunj.",
       },
     ],
+    links: [{ rel: "canonical", href: "https://www.auraluxe.com.np/contact" }],
   }),
   component: Contact,
 });
