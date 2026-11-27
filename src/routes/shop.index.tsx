@@ -255,8 +255,8 @@ function Shop() {
             {categories.filter((c) => c.is_active).map((c) => (
               <Link
                 key={c.id}
-                to="/shop"
-                search={{ category: c.slug }}
+                to="/collections/$slug"
+                params={{ slug: c.slug }}
                 className="group relative aspect-[4/5] overflow-hidden rounded-sm bg-[#eee5dc]"
               >
                 {(() => {
