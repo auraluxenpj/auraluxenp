@@ -96,7 +96,11 @@ function Shop() {
     [publishedProducts],
   );
 
-  const activeCategories = categories.filter((c) => c.is_active);
+  const publishedCategoryIds = useMemo(
+    () => new Set(publishedProducts.map((product) => product.category_id).filter((id): id is string => Boolean(id))),
+    [publishedProducts],
+  );
+  const activeCategories = categories.filter((category) => category.is_active && publishedCategoryIds.has(category.id));
   const categoryId = categories.find((c) => c.slug === search.category)?.id;
   const filtered = useMemo(() => {
     // Never expose admin drafts or unpublished catalogue records on the public storefront.
