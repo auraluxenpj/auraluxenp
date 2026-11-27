@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState } from "react";
+import type { PointerEvent } from "react";
 import { Link } from "@tanstack/react-router";
-import { ChevronLeft, ChevronRight } from "lucide-react";
 import type { Banner } from "@/lib/data";
 import { useLanguage } from "@/lib/i18n";
 
 const AUTOPLAY_MS = 6000;
+const SWIPE_THRESHOLD_PX = 45;
 
 function SlideImage({ banner, priority }: { banner: Banner; priority: boolean }) {
   const desktop = banner.image_url ?? "/images/hero-auraluxe.jpg";
@@ -55,6 +56,7 @@ export function HeroCarousel({ banners }: { banners: Banner[] }) {
   const [index, setIndex] = useState(0);
   const [paused, setPaused] = useState(false);
   const reduced = useRef(false);
+  const swipeStart = useRef<{ x: number; y: number } | null>(null);
   const count = banners.length;
 
   useEffect(() => {
@@ -63,8 +65,8 @@ export function HeroCarousel({ banners }: { banners: Banner[] }) {
 
   useEffect(() => {
     if (count < 2 || paused || reduced.current) return;
-    const t = window.setInterval(() => setIndex((i) => (i + 1) % count), AUTOPLAY_MS);
-    return () => window.clearInterval(t);
+    const timer = window.setInterval(() => setIndex((i) => (i + 1) % count), AUTOPLAY_MS);
+    return () => window.clearInterval(timer);
   }, [count, paused]);
 
   useEffect(() => {
@@ -75,13 +77,37 @@ export function HeroCarousel({ banners }: { banners: Banner[] }) {
 
   const go = (dir: number) => setIndex((i) => (i + dir + count) % count);
 
+  const handlePointerDown = (event: PointerEvent<HTMLElement>) => {
+    if (event.pointerType !== "touch" || count < 2) return;
+    swipeStart.current = { x: event.clientX, y: event.clientY };
+  };
+
+  const handlePointerUp = (event: React.PointerEvent<HTMLElement>) => {
+    const start = swipeStart.current;
+    swipeStart.current = null;
+    if (!start || event.pointerType !== "touch") return;
+
+    const deltaX = event.clientX - start.x;
+    const deltaY = event.clientY - start.y;
+    if (Math.abs(deltaX) < SWIPE_THRESHOLD_PX || Math.abs(deltaX) < Math.abs(deltaY) * 1.2) return;
+    go(deltaX < 0 ? 1 : -1);
+  };
+
   return (
     <section
       aria-roledescription="carousel"
       aria-label={t("featuredCampaigns")}
-      className="relative -mx-5 -mt-2 overflow-hidden sm:-mx-8 lg:-mx-12 2xl:-mx-16"
+      className="relative -mx-5 -mt-2 touch-pan-y overflow-hidden sm:-mx-8 lg:-mx-12 2xl:-mx-16"
       onMouseEnter={() => setPaused(true)}
-      onMouseLeave={() => setPaused(false)}
+      onMouseLeave={() => {
+        setPaused(false);
+        swipeStart.current = null;
+      }}
+      onPointerDown={handlePointerDown}
+      onPointerUp={handlePointerUp}
+      onPointerCancel={() => {
+        swipeStart.current = null;
+      }}
     >
       <h1 className="sr-only">{t("homeSeoTitle")}</h1>
       <div className="relative aspect-[3/4] w-full sm:aspect-[16/9] lg:aspect-[2/1]">
@@ -133,38 +159,20 @@ export function HeroCarousel({ banners }: { banners: Banner[] }) {
       </div>
 
       {count > 1 ? (
-        <>
-          <button
-            type="button"
-            aria-label={t("previousBanner")}
-            onClick={() => go(-1)}
-            className="glass-strong absolute left-4 top-1/2 grid size-11 -translate-y-1/2 place-items-center rounded-full text-primary transition hover:text-brand"
-          >
-            <ChevronLeft className="size-5" />
-          </button>
-          <button
-            type="button"
-            aria-label={t("nextBanner")}
-            onClick={() => go(1)}
-            className="glass-strong absolute right-4 top-1/2 grid size-11 -translate-y-1/2 place-items-center rounded-full text-primary transition hover:text-brand"
-          >
-            <ChevronRight className="size-5" />
-          </button>
-          <div className="absolute bottom-4 left-1/2 flex -translate-x-1/2 gap-2">
-            {banners.map((b, i) => (
-              <button
-                key={b.id}
-                type="button"
-                aria-label={`${t("goToBanner")} ${i + 1}`}
-                aria-current={i === index}
-                onClick={() => setIndex(i)}
-                className={`h-2 rounded-full transition-all ${
-                  i === index ? "w-6 bg-primary-foreground" : "w-2 bg-primary-foreground/50"
-                }`}
-              />
-            ))}
-          </div>
-        </>
+        <div className="absolute bottom-4 left-1/2 flex -translate-x-1/2 gap-2">
+          {banners.map((b, i) => (
+            <button
+              key={b.id}
+              type="button"
+              aria-label={`${t("goToBanner")} ${i + 1}`}
+              aria-current={i === index}
+              onClick={() => setIndex(i)}
+              className={`h-2 rounded-full transition-all ${
+                i === index ? "w-6 bg-primary-foreground" : "w-2 bg-primary-foreground/50"
+              }`}
+            />
+          ))}
+        </div>
       ) : null}
     </section>
   );
