@@ -19,7 +19,7 @@ function SeoDashboard() {
     queryFn: async () => {
       const [products, categories] = await Promise.all([
         supabase.from("products")
-          .select("id,name,slug,meta_title,meta_description,images,is_published")
+          .select("id,name,slug,category_id,meta_title,meta_description,images,is_published")
           .eq("is_published", true)
           .order("name"),
         supabase.from("categories")
@@ -33,11 +33,7 @@ function SeoDashboard() {
       const categoryRows = categories.data ?? [];
       const counts = new Map<string, number>();
       for (const product of rows) {
-        const { data: relation } = await supabase.from("products")
-          .select("category_id")
-          .eq("id", product.id)
-          .maybeSingle();
-        if (relation?.category_id) counts.set(relation.category_id, (counts.get(relation.category_id) ?? 0) + 1);
+        if (product.category_id) counts.set(product.category_id, (counts.get(product.category_id) ?? 0) + 1);
       }
       return {
         products: rows,
