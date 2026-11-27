@@ -52,7 +52,7 @@ export const Route = createFileRoute("/shop/product/$slug")({
       ? salePrice
       : regularPrice;
     const cleanSeoText = (value: string | null | undefined) =>
-      (value ?? "").replace(/<[^>]*>/g, " ").replace(/[\*_\x60]/g, " ").replace(/\s+/g, " ").trim();
+      (value ?? "").replace(/<[^>]*>/g, " ").replace(/[*_\x60]/g, " ").replace(/\s+/g, " ").trim();
     const fitMetaDescription = (value: string) => {
       const normalized = cleanSeoText(value);
       if (normalized.length <= 160) return normalized;
