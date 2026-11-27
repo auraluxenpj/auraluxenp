@@ -63,7 +63,7 @@ export const Route = createFileRoute("/")({
     scripts: (() => {
       const business = loaderData?.business;
       if (!business?.address || !business.phone) return [];
-      const hours = business.storeHours?.match(/(\\d{1,2}:\\d{2})\\s*[–-]\\s*(\\d{1,2}:\\d{2})/);
+      const hours = business.storeHours?.match(/(\d{1,2}:\d{2})\s*[–-]\s*(\d{1,2}:\d{2})/);
       const sameAs = [business.instagram, business.facebook, business.tiktok].filter(
         (value): value is string => Boolean(value),
       );
