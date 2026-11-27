@@ -24,15 +24,24 @@ export const Route = createFileRoute("/sitemap.xml")({
         try {
           const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
           const db = supabaseAdmin as any;
-          const { data: products, error: productsError } = await db.from("products")
-            .select("slug,updated_at")
-            .eq("is_published", true)
-            .not("slug", "is", null)
-            .order("updated_at", { ascending: false })
-            .limit(5000);
+          const [{ data: products, error: productsError }, { data: categories, error: categoriesError }] =
+            await Promise.all([
+              db.from("products")
+                .select("slug,category_id,updated_at")
+                .eq("is_published", true)
+                .not("slug", "is", null)
+                .order("updated_at", { ascending: false })
+                .limit(5000),
+              db.from("categories")
+                .select("slug,id,updated_at")
+                .eq("is_active", true)
+                .not("slug", "is", null)
+                .order("updated_at", { ascending: false })
+                .limit(500),
+            ]);
 
-          if (productsError) {
-            console.error("[sitemap] Supabase query failed", productsError);
+          if (productsError || categoriesError) {
+            console.error("[sitemap] Supabase query failed", productsError ?? categoriesError);
             return new Response("Sitemap temporarily unavailable", {
               status: 503,
               headers: { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "no-store" },
@@ -42,9 +51,29 @@ export const Route = createFileRoute("/sitemap.xml")({
           const entries = new Map<string, string | null>();
           for (const path of ["/", "/shop", "/about", "/contact", "/stylist", "/track"]) entries.set(path, null);
 
+          const categoryProductCounts = new Map<string, number>();
+          const categoryLastmod = new Map<string, string>();
           for (const product of products ?? []) {
             if (typeof product.slug !== "string" || !/^[a-zA-Z0-9-]+$/.test(product.slug)) continue;
             entries.set(`/shop/product/${encodeURIComponent(product.slug)}`, validLastmod(product.updated_at));
+            if (product.category_id) {
+              categoryProductCounts.set(product.category_id, (categoryProductCounts.get(product.category_id) ?? 0) + 1);
+              if (!categoryLastmod.has(product.category_id) && validLastmod(product.updated_at)) {
+                categoryLastmod.set(product.category_id, validLastmod(product.updated_at)!);
+              }
+            }
+          }
+
+          for (const category of categories ?? []) {
+            if (
+              typeof category.slug !== "string" ||
+              !/^[a-zA-Z0-9-]+$/.test(category.slug) ||
+              (categoryProductCounts.get(category.id) ?? 0) === 0
+            ) continue;
+            entries.set(
+              `/collections/${encodeURIComponent(category.slug)}`,
+              categoryLastmod.get(category.id) ?? validLastmod(category.updated_at),
+            );
           }
 
           const urls = [...entries.entries()].map(([path, lastmod]) => {
