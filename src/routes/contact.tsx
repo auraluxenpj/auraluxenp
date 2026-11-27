@@ -56,6 +56,16 @@ function Contact() {
         </p>
       </div>
 
+      <section className="mt-6 max-w-3xl">
+        <h2 className="font-display text-2xl">Product and store enquiries</h2>
+        <p className="mt-3 text-sm leading-7 text-muted-foreground">
+          Contact Auraluxe about product details, available sizes or colours, current prices, online orders and visiting the Nepalgunj store. If you have a particular item in mind, share its product name or website link so the team can identify it more easily.
+        </p>
+        <p className="mt-2 text-sm leading-7 text-muted-foreground">
+          Store address, contact information and opening hours are shown on this page. Use the directions link for navigation, or send a message through the form to continue in WhatsApp.
+        </p>
+      </section>
+
       <section className="mt-6 grid gap-6 lg:grid-cols-12">
         <form
           className="glass-strong rounded-3xl p-6 sm:p-8 lg:col-span-7"
