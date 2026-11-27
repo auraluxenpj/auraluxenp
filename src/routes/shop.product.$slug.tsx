@@ -25,12 +25,9 @@ import { getPublicProductSeo } from "@/lib/seo.functions";
 const SITE_ORIGIN = "https://www.auraluxe.com.np";
 
 function safeJsonLd(value: unknown): string {
-  return JSON.stringify(value)
-    .replace(/</g, "\\u003c")
-    .replace(/>/g, "\\u003e")
-    .replace(/&/g, "\\u0026")
-    .replace(/\\u2028/g, "\\\\u2028")
-    .replace(/\\u2029/g, "\\\\u2029");
+  // Escape the HTML-significant less-than character so product text cannot
+  // terminate the JSON-LD script element.
+  return JSON.stringify(value).replace(/</g, "\\u003c");
 }
 
 export const Route = createFileRoute("/shop/product/$slug")({
@@ -61,7 +58,8 @@ export const Route = createFileRoute("/shop/product/$slug")({
     ).slice(0, 300);
     const title = product.meta_title?.trim() || `${product.name} | Auraluxe Nepalgunj`;
     const images = (product.images ?? []).filter(
-      (image): image is string => typeof image === "string" && /^https?:\\/\\//i.test(image),
+      (image): image is string =>
+        typeof image === "string" && (image.startsWith("https://") || image.startsWith("http://")),
     );
     const availability = Number(product.stock) > 0
       ? "https://schema.org/InStock"
