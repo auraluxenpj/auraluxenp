@@ -12,7 +12,7 @@ export const Route = createFileRoute("/contact")({
       {
         name: "description",
         content:
-          "Call, WhatsApp, email or visit the Auraluxe store in Nepalgunj. Store hours, map and social links.",
+          "Visit Auraluxe, a women's fashion store on Rani Talab Road near Tribhuvan Chowk, Nepalgunj. Find our address, opening hours and contact details.",
       },
       { property: "og:title", content: "Contact Auraluxe — Nepalgunj Store" },
       {
@@ -34,6 +34,13 @@ function Contact() {
   const s = useSettings();
   const { items } = useCart();
   const [form, setForm] = useState({ name: "", phone: "", message: "" });
+  const mapQuery = s["address"]?.trim();
+  const mapEmbedUrl = mapQuery
+    ? `https://www.google.com/maps?q=${encodeURIComponent(mapQuery)}&output=embed`
+    : s["map_embed"];
+  const directionsUrl = mapQuery
+    ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(mapQuery)}`
+    : null;
 
   const field =
     "w-full rounded-2xl border border-border bg-input px-5 py-3 text-sm outline-none placeholder:text-muted-foreground";
@@ -42,7 +49,10 @@ function Contact() {
     <SiteLayout>
       <div className="mt-10">
         <p className="eyebrow">We'd love to hear from you</p>
-        <h1 className="mt-2 font-display text-5xl">Contact Auraluxe</h1>
+        <h1 className="mt-2 font-display text-5xl">Visit Auraluxe in Nepalgunj</h1>
+        <p className="mt-3 max-w-2xl text-sm leading-7 text-muted-foreground">
+          Find our ladies' fashion store near Tribhuvan Chowk. Visit us to explore kurtis, sarees, dresses and accessories, or contact the team before your visit.
+        </p>
       </div>
 
       <section className="mt-6 grid gap-6 lg:grid-cols-12">
@@ -104,6 +114,16 @@ function Contact() {
             <p className="mt-3 text-[15px]">{s["phone"]}</p>
             <p className="text-[15px]">{s["email"]}</p>
             <p className="mt-3 text-sm text-muted-foreground">{s["store_hours"]}</p>
+            {directionsUrl ? (
+              <a
+                href={directionsUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="mt-4 inline-flex rounded-full bg-primary px-5 py-3 text-[11px] uppercase tracking-[0.15em] text-primary-foreground"
+              >
+                Get directions on Google Maps
+              </a>
+            ) : null}
             <div className="mt-4 flex flex-wrap gap-3 text-[12px] uppercase tracking-[0.15em]">
               {s["instagram"] ? (
                 <a className="text-brand" href={s["instagram"]} target="_blank" rel="noreferrer">
@@ -122,10 +142,10 @@ function Contact() {
               ) : null}
             </div>
           </div>
-          {s["map_embed"] ? (
+          {mapEmbedUrl ? (
             <iframe
-              title="Auraluxe store location"
-              src={s["map_embed"]}
+              title="Auraluxe store location near Tribhuvan Chowk, Nepalgunj"
+              src={mapEmbedUrl}
               loading="lazy"
               className="h-72 w-full rounded-3xl border border-border"
             />

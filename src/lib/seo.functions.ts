@@ -121,3 +121,54 @@ export const getPublicCollectionSeo = createServerFn({ method: "GET" })
       products: products as import("@/lib/data").StorefrontProduct[],
     };
   });
+
+
+export type PublicLocalBusinessSeo = {
+  address: string | null;
+  phone: string | null;
+  email: string | null;
+  storeHours: string | null;
+  instagram: string | null;
+  facebook: string | null;
+  tiktok: string | null;
+};
+
+export const getPublicLocalBusinessSeo = createServerFn({ method: "GET" })
+  .handler(async (): Promise<PublicLocalBusinessSeo> => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const keys = ["address", "phone", "email", "store_hours", "instagram", "facebook", "tiktok"];
+    const { data, error } = await (supabaseAdmin as any)
+      .from("site_settings")
+      .select("key,value")
+      .in("key", keys);
+
+    if (error) {
+      console.error("[seo] Local business details lookup failed", error);
+      return {
+        address: null,
+        phone: null,
+        email: null,
+        storeHours: null,
+        instagram: null,
+        facebook: null,
+        tiktok: null,
+      };
+    }
+
+    const values = new Map<string, string>(
+      (data ?? []).filter((row: { key?: unknown; value?: unknown }) =>
+        typeof row.key === "string" && typeof row.value === "string"
+      ).map((row: { key: string; value: string }) => [row.key, row.value.trim()]),
+    );
+    const read = (key: string) => values.get(key) || null;
+
+    return {
+      address: read("address"),
+      phone: read("phone"),
+      email: read("email"),
+      storeHours: read("store_hours"),
+      instagram: read("instagram"),
+      facebook: read("facebook"),
+      tiktok: read("tiktok"),
+    };
+  });

@@ -17,7 +17,7 @@ function SeoDashboard() {
   const { data, isLoading, error } = useQuery({
     queryKey: ["admin", "seo-readiness"],
     queryFn: async () => {
-      const [products, categories] = await Promise.all([
+      const [products, categories, storeDetails] = await Promise.all([
         supabase.from("products")
           .select("id,name,slug,category_id,meta_title,meta_description,images,is_published")
           .eq("is_published", true)
@@ -26,9 +26,13 @@ function SeoDashboard() {
           .select("id,name,slug,description,is_active")
           .eq("is_active", true)
           .order("sort_order"),
+        supabase.from("site_settings")
+          .select("key,value")
+          .in("key", ["address", "phone", "email", "store_hours", "instagram", "facebook", "tiktok"]),
       ]);
       if (products.error) throw products.error;
       if (categories.error) throw categories.error;
+      if (storeDetails.error) throw storeDetails.error;
       const rows = products.data ?? [];
       const categoryRows = categories.data ?? [];
       const counts = new Map<string, number>();
@@ -38,12 +42,17 @@ function SeoDashboard() {
       return {
         products: rows,
         categories: categoryRows.map((category) => ({ ...category, productCount: counts.get(category.id) ?? 0 })),
+        storeDetails: Object.fromEntries((storeDetails.data ?? []).map((row) => [row.key, row.value])),
       };
     },
   });
 
   const products = data?.products ?? [];
   const categories = data?.categories ?? [];
+  const storeDetails = data?.storeDetails ?? {};
+  const directionsUrl = storeDetails["address"]
+    ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(storeDetails["address"])}`
+    : null;
   const withTitle = products.filter((product) => Boolean(product.meta_title?.trim())).length;
   const withDescription = products.filter((product) => Boolean(product.meta_description?.trim())).length;
   const withImage = products.filter((product) => (product.images ?? []).some((image) => Boolean(image?.trim()))).length;
@@ -83,6 +92,32 @@ function SeoDashboard() {
                 {"detail" in stat ? <p className="mt-1 text-xs text-muted-foreground">{stat.detail}</p> : null}
               </div>
             ))}
+          </section>
+
+          <section className="rounded-2xl border border-border bg-card p-5">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <h2 className="font-display text-xl">Local business information</h2>
+                <p className="mt-1 text-sm text-muted-foreground">Public store details used by the website and local business structured data.</p>
+              </div>
+              {directionsUrl ? <a href={directionsUrl} target="_blank" rel="noreferrer" className="text-xs uppercase tracking-[.14em] text-primary underline underline-offset-4">Check map pin</a> : null}
+            </div>
+            <dl className="mt-4 grid gap-4 text-sm sm:grid-cols-2">
+              {[
+                ["Store address", storeDetails["address"]],
+                ["Phone", storeDetails["phone"]],
+                ["Email", storeDetails["email"]],
+                ["Opening hours", storeDetails["store_hours"]],
+              ].map(([label, value]) => (
+                <div key={label}>
+                  <dt className="text-xs uppercase tracking-[.12em] text-muted-foreground">{label}</dt>
+                  <dd className="mt-1 font-medium">{value || "Missing — update site settings"}</dd>
+                </div>
+              ))}
+            </dl>
+            <p className="mt-4 text-xs text-muted-foreground">
+              Social profiles: {["instagram", "facebook", "tiktok"].filter((key) => Boolean(storeDetails[key])).length} of 3 configured
+            </p>
           </section>
 
           <section className="rounded-2xl border border-border bg-card p-5">
