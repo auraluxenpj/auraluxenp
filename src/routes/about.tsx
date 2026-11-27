@@ -82,6 +82,19 @@ function About() {
           </p>
         </div>
       </section>
+
+      <section className="mx-auto mt-10 max-w-4xl">
+        <p className="eyebrow">Auraluxe Nepalgunj</p>
+        <h2 className="mt-2 font-display text-3xl">Women’s clothing and accessories, thoughtfully brought together</h2>
+        <div className="mt-4 space-y-4 text-sm leading-7 text-muted-foreground">
+          <p>
+            Auraluxe is a women’s fashion store in Nepalgunj, Nepal. The collection brings together traditional clothing and contemporary styling, with pieces selected for everyday wear, celebrations and special occasions.
+          </p>
+          <p>
+            Browse the current range of kurti sets, sarees, dresses, party wear, winter styles, bags and accessories online. Product pages show the available photos, descriptions, prices and size or colour details where provided. You can also visit the Nepalgunj store or contact the team for help with a product enquiry.
+          </p>
+        </div>
+      </section>
     </SiteLayout>
   );
 }
