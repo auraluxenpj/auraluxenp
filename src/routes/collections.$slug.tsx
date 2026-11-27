@@ -55,7 +55,7 @@ const COLLECTION_COPY: Record<string, { description: string; descriptionNe: stri
 };
 
 function fitMetaDescription(value: string): string {
-  const normalized = value.replace(/\\s+/g, " ").trim();
+  const normalized = value.replace(/\s+/g, " ").trim();
   if (normalized.length <= 160) return normalized;
   const candidate = normalized.slice(0, 159);
   const boundary = candidate.lastIndexOf(" ");
