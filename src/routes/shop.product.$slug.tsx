@@ -55,7 +55,7 @@ export const Route = createFileRoute("/shop/product/$slug")({
       product.meta_description?.trim() ||
       product.description?.trim() ||
       `Shop ${product.name} at Auraluxe Nepalgunj. View product details, price and availability.`
-    ).slice(0, 300);
+    ).slice(0, 160);
     const title = product.meta_title?.trim() || `${product.name} | Auraluxe Nepalgunj`;
     const images = (product.images ?? []).filter(
       (image): image is string =>
