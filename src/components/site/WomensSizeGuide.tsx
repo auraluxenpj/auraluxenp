@@ -1,6 +1,8 @@
 import { WOMENS_SIZE_GUIDE, WOMENS_SIZE_SOURCE } from "@/lib/womens-size-guide";
 
-export function WomensSizeGuide({ customChart }: { customChart?: string | null }) {
+export function WomensSizeGuide({ customChart, showGeneralChart = true }: { customChart?: string | null; showGeneralChart?: boolean }) {
+  if (!customChart && !showGeneralChart) return null;
+
   return (
     <details className="mt-5 border-t border-border pt-4">
       <summary className="cursor-pointer text-sm font-medium">Women’s size chart</summary>
@@ -10,7 +12,7 @@ export function WomensSizeGuide({ customChart }: { customChart?: string | null }
           <p className="mt-2 whitespace-pre-line text-sm text-muted-foreground">{customChart}</p>
         </div>
       ) : null}
-      <div className="mt-4">
+      {showGeneralChart ? <div className="mt-4">
         <p className="text-sm font-medium">General body measurements · inches</p>
         <div className="mt-3 overflow-x-auto">
           <table className="w-full text-left text-xs sm:text-sm">
@@ -30,7 +32,7 @@ export function WomensSizeGuide({ customChart }: { customChart?: string | null }
         </div>
         <p className="mt-3 text-xs leading-relaxed text-muted-foreground">Measure around the fullest part of your bust and hips, and your natural waist. These are general reference measurements, not verified AURALUXE garment measurements. Fit varies by brand and style; use the product-specific chart when available. For 3XL–10XL or an exact fit, confirm measurements with us before ordering.</p>
         <a href={WOMENS_SIZE_SOURCE} target="_blank" rel="noreferrer" className="mt-2 inline-block text-xs text-primary underline">Source: BIBA women’s body-size guide</a>
-      </div>
+      </div> : null}
     </details>
   );
 }
