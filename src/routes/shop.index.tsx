@@ -331,16 +331,6 @@ function Shop() {
               {item.label}
             </button>
           ))}
-          {activeCategories.map((c) => (
-              <button
-                key={c.id}
-                type="button"
-                onClick={() => update({ category: c.slug })}
-                className={`rounded-full px-4 py-2 text-[12px] uppercase tracking-[0.15em] ${search.category === c.slug ? "bg-primary text-primary-foreground" : "glass text-foreground/70"}`}
-              >
-                {categoryLabel(c.slug, c.name, language, c.name_ne)}
-              </button>
-            ))}
         </div>
 
         <div className="mt-4 flex flex-wrap items-center gap-3">
