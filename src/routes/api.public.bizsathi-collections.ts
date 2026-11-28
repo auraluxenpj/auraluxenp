@@ -40,12 +40,13 @@ export const Route = createFileRoute('/api/public/bizsathi-collections')({
         if (!authorized(request)) return json({ error: 'Unauthorized' }, 401);
         try {
           const { supabaseAdmin } = await import('@/integrations/supabase/client.server');
+          const db = supabaseAdmin as any;
           const [collections, products] = await Promise.all([
-            supabaseAdmin.from('storefront_collections').select('*').order('sort_order', { ascending: true }),
-            supabaseAdmin.from('products').select('id,name,sku,stock,is_published,images').eq('is_published', true).gt('stock', 0).order('name'),
+            db.from('storefront_collections').select('*').order('sort_order', { ascending: true }),
+            db.from('products').select('id,name,sku,stock,is_published,images').eq('is_published', true).gt('stock', 0).order('name'),
           ]);
           if (collections.error || products.error) return json({ error: 'Could not load collections' }, 503);
-          const assignments = await supabaseAdmin.from('storefront_collection_products').select('collection_id,product_id,sort_order').order('sort_order');
+          const assignments = await db.from('storefront_collection_products').select('collection_id,product_id,sort_order').order('sort_order');
           if (assignments.error) return json({ error: 'Could not load product assignments' }, 503);
           return json({ collections: (collections.data ?? []).map(c => ({
             ...c,
@@ -70,7 +71,8 @@ export const Route = createFileRoute('/api/public/bizsathi-collections')({
             ids.add(c.id); slugs.add(c.slug);
           }
           const { supabaseAdmin } = await import('@/integrations/supabase/client.server');
-          const { data, error } = await supabaseAdmin.rpc('replace_storefront_collections', { _collections: parsed.collections });
+          const db = supabaseAdmin as any;
+          const { data, error } = await db.rpc('replace_storefront_collections', { _collections: parsed.collections });
           if (error) {
             console.error('[bizsathi-collections] save failed', error.message);
             return json({ error: 'Could not save collections' }, 503);
