@@ -196,9 +196,17 @@ function CollectionPage() {
           </div>
           <Link to="/shop" className="text-xs uppercase tracking-[.15em] text-primary underline underline-offset-4">Browse all products</Link>
         </div>
-        <div className="grid grid-cols-2 gap-2.5 sm:gap-5 lg:grid-cols-3">
-          {products.map((product) => <ProductCard key={product.id} product={product} />)}
-        </div>
+        {products.length > 0 ? (
+          <div className="grid grid-cols-2 gap-2.5 sm:gap-5 lg:grid-cols-3">
+            {products.map((product) => <ProductCard key={product.id} product={product} />)}
+          </div>
+        ) : (
+          <div className="rounded-2xl border border-[#e9dfd5] bg-[#fffdf9] px-6 py-12 text-center">
+            <h3 className="font-display text-2xl text-[#422d2a]">This collection is being refreshed</h3>
+            <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-stone-600">There are no published pieces in this collection right now. Explore the full Auraluxe selection instead.</p>
+            <Link to="/shop" className="mt-5 inline-flex rounded-full bg-primary px-6 py-3 text-xs uppercase tracking-[.16em] text-primary-foreground">Browse all products</Link>
+          </div>
+        )}
       </section>
     </SiteLayout>
   );
