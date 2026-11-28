@@ -26,7 +26,7 @@ export const Route = createFileRoute("/")({
   // If any fetch fails we fall back to the normal client-side loading.
   loader: async () => {
     const safe = <T,>(p: Promise<T>) => p.catch(() => undefined);
-    const [products, categories, banners, business] = await Promise.all([
+    const [products, collections, categories, banners, business] = await Promise.all([
       safe(fetchProducts()),
       safe(fetchStorefrontCollections()),
       safe(fetchCategories()),
