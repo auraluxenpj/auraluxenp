@@ -8,7 +8,7 @@ import { productImages } from "@/lib/data";
 const SITE_ORIGIN = "https://www.auraluxe.com.np";
 const COLLECTION_COPY: Record<string, { description: string; descriptionNe: string; metaDescription: string }> = {
   "party-wear": {
-    description: "Explore embroidered suits, coordinated ethnic sets and statement outfits for celebrations at Auraluxe Nepalgunj. Browse the current edit for weddings, festive gatherings and special occasions, with product details and prices shown on each piece.",
+    description: "Discover embroidered suits and coordinated ethnic sets for weddings, festivities and special occasions. Explore available styles, sizes and prices at Auraluxe Nepalgunj.",
     descriptionNe: "औरलक्स नेपालगञ्जमा उत्सव, विवाह तथा विशेष अवसरका लागि कढाइ गरिएका सूट, मिल्दो एथनिक सेट र आकर्षक पहिरनहरू हेर्नुहोस्। प्रत्येक उत्पादनको विवरण र मूल्य उपलब्ध छ।",
     metaDescription: "Shop embroidered party suits, ethnic sets and occasion outfits at Auraluxe Nepalgunj. Explore current styles, details and prices.",
   },
@@ -168,7 +168,7 @@ function CollectionPage() {
 
   return (
     <SiteLayout>
-      <section className="mt-8 sm:mt-12">
+      <section className="mt-5 sm:mt-10">
         <nav aria-label="Breadcrumb" className="flex flex-wrap gap-2 text-[10px] uppercase tracking-[.16em] text-stone-500">
           <Link to="/" className="hover:text-primary">Home</Link>
           <span>/</span>
@@ -176,22 +176,18 @@ function CollectionPage() {
           <span>/</span>
           <span aria-current="page" className="text-primary">{name}</span>
         </nav>
-        <div className="mt-6 grid gap-6 md:grid-cols-[minmax(0,1fr)_minmax(260px,.72fr)] md:items-center">
+        <div className="mt-4 grid gap-4 md:mt-6 md:grid-cols-[minmax(0,1fr)_minmax(260px,.72fr)] md:items-center md:gap-6">
           <div>
             <p className="auraluxe-kicker">Auraluxe Nepalgunj</p>
-            <h1 className="mt-3 font-display text-4xl leading-tight text-[#422d2a] sm:text-6xl">{name} Collection</h1>
-            <p className="mt-4 max-w-2xl text-sm leading-7 text-stone-600 sm:text-base">{description}</p>
-            <p className="mt-4 text-xs uppercase tracking-[.15em] text-stone-500">
-              {products.length} {products.length === 1 ? "published piece" : "published pieces"}
-            </p>
-          </div>
+            <h1 className="mt-2 font-display text-4xl leading-[.98] text-[#422d2a] sm:mt-3 sm:text-6xl">{name} Collection</h1>
+            <p className="mt-3 line-clamp-3 max-w-2xl text-sm leading-6 text-stone-600 sm:mt-4 sm:line-clamp-none sm:text-base sm:leading-7">{description}</p>\n</div>
           {heroImage ? (
-            <img src={heroImage} alt={`${name} collection at Auraluxe`} width={900} height={700} fetchPriority="high" className="aspect-[5/4] w-full rounded-sm bg-[#eee5dc] object-cover" />
+            <img src={heroImage} alt={`${name} collection at Auraluxe`} width={900} height={700} fetchPriority="high" className="mx-auto aspect-[4/5] max-h-[560px] w-full rounded-sm bg-[#eee5dc] object-contain md:aspect-[4/5]" />
           ) : null}
         </div>
       </section>
 
-      <section className="mt-10 sm:mt-14" aria-labelledby="collection-products">
+      <section className="mt-8 sm:mt-12" aria-labelledby="collection-products">
         <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
           <div>
             <p className="auraluxe-kicker">Explore the edit</p>
@@ -199,7 +195,7 @@ function CollectionPage() {
           </div>
           <Link to="/shop" className="text-xs uppercase tracking-[.15em] text-primary underline underline-offset-4">Browse all products</Link>
         </div>
-        <div className="grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-3">
+        <div className="grid grid-cols-2 gap-2.5 sm:gap-5 lg:grid-cols-3">
           {products.map((product) => <ProductCard key={product.id} product={product} />)}
         </div>
       </section>
