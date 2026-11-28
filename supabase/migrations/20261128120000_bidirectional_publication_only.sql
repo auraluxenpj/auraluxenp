@@ -38,6 +38,7 @@ DROP TRIGGER IF EXISTS auraluxe_bizsathi_publication_outbox ON public.products;
 CREATE TRIGGER auraluxe_bizsathi_publication_outbox
 AFTER UPDATE OF is_published ON public.products
 FOR EACH ROW EXECUTE FUNCTION public.enqueue_bizsathi_publication_from_product();
+REVOKE ALL ON FUNCTION public.enqueue_bizsathi_publication_from_product() FROM PUBLIC, anon, authenticated;
 
 CREATE OR REPLACE FUNCTION public.claim_bizsathi_catalogue_outbox(_lease uuid, _limit integer DEFAULT 50)
 RETURNS SETOF public.bizsathi_catalogue_outbox
