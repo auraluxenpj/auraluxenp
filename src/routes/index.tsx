@@ -1,5 +1,4 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
   bannerIsLive,
@@ -7,7 +6,6 @@ import {
   fetchCategories,
   fetchProducts,
   fetchTestimonials,
-  hasDiscount,
   productImage,
   productImages,
   type Banner,
@@ -149,115 +147,6 @@ function SectionHeading({ eyebrow, title }: { eyebrow: string; title: string }) 
   );
 }
 
-function Rail({ products }: { products: StorefrontProduct[] }) {
-  if (products.length === 0) return null;
-  return (
-    <section className="mt-6 grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-3">
-      {products.map((p) => (
-        <ProductCard key={p.id} product={p} />
-      ))}
-    </section>
-  );
-}
-
-// Category tile whose picture comes from the in-stock products of that category
-// and gently cycles through them (only while the tile is on screen).
-function CategoryTile({
-  name,
-  slug,
-  images,
-  offset,
-}: {
-  name: string;
-  slug: string;
-  images: string[];
-  offset: number;
-}) {
-  const count = images.length;
-  const imagesKey = images.join("|");
-  const boxRef = useRef<HTMLDivElement>(null);
-  const activeRef = useRef(0);
-  const [active, setActive] = useState(0);
-  const [started, setStarted] = useState(false);
-  const [inView, setInView] = useState(false);
-
-  useEffect(() => {
-    const el = boxRef.current;
-    if (!el || typeof IntersectionObserver === "undefined") {
-      setInView(true);
-      return;
-    }
-    const io = new IntersectionObserver(([entry]) => setInView(entry?.isIntersecting ?? false));
-    io.observe(el);
-    return () => io.disconnect();
-  }, []);
-
-  useEffect(() => {
-    if (count < 2 || !inView) return;
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-    let interval: number | undefined;
-    const startTimer = window.setTimeout(() => {
-      setStarted(true);
-      interval = window.setInterval(() => {
-        const next = (activeRef.current + 1) % count;
-        const src = images[next];
-        if (!src) return;
-        const img = new Image();
-        img.onload = () => {
-          activeRef.current = next;
-          setActive(next);
-        };
-        img.src = src;
-      }, 5000);
-    }, 2000 + offset * 700);
-    return () => {
-      window.clearTimeout(startTimer);
-      if (interval) window.clearInterval(interval);
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [count, imagesKey, offset, inView]);
-
-  const shown = count > 0 ? active % count : 0;
-  const visible = started ? images : images.slice(0, 1);
-
-  return (
-    <Link
-      to="/collections/$slug"
-      params={{ slug }}
-      className="group glass relative overflow-hidden rounded-3xl transition hover:-translate-y-1"
-    >
-      <div ref={boxRef} className="relative aspect-[4/5] w-full overflow-hidden bg-muted">
-        {count > 0 ? (
-          visible.map((src, i) => (
-            <img
-              key={src}
-              src={src}
-              alt={i === shown ? name : ""}
-              aria-hidden={i !== shown}
-              loading="lazy"
-              width={768}
-              height={960}
-              className={`absolute inset-0 h-full w-full object-cover transition-[opacity,transform] duration-700 group-hover:scale-105 motion-reduce:transition-none motion-reduce:group-hover:scale-100 ${
-                i === shown ? "opacity-100" : "opacity-0"
-              }`}
-            />
-          ))
-        ) : (
-          <div className="grid h-full w-full place-items-center bg-gradient-to-br from-brand/20 via-secondary to-accent/30">
-            <span className="font-display text-2xl text-primary">{name}</span>
-          </div>
-        )}
-      </div>
-      <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-ink/70 to-transparent p-4 pt-10">
-        <div className="flex items-center justify-between">
-          <span className="font-display text-lg text-primary-foreground drop-shadow">{name}</span>
-          <span className="text-primary-foreground/90 transition group-hover:translate-x-1">→</span>
-        </div>
-      </div>
-    </Link>
-  );
-}
-
 function Home() {
   const settings = useSettings();
   const { items } = useCart();
@@ -299,25 +188,6 @@ function Home() {
     return photoPriority || String(b.created_at ?? "").localeCompare(String(a.created_at ?? ""));
   });
 
-  // Each product appears in only ONE section (in page order), so nothing repeats
-  const used = new Set<string>();
-  const pick = (list: StorefrontProduct[], n = 3) => {
-    const fresh = list.filter((p) => !used.has(p.id)).slice(0, n);
-    fresh.forEach((p) => used.add(p.id));
-    return fresh;
-  };
-
-  // New arrivals: flagged ones first, then topped up with the newest in-stock products
-  const newCollection = pick([
-    ...newestFirst.filter((p) => p.is_new),
-    ...newestFirst.filter((p) => !p.is_new),
-  ]);
-  const trending = pick(inStock.filter((p) => p.is_featured));
-  const bestSellers = pick(inStock.filter((p) => p.is_bestseller));
-  const offers = pick(
-    inStock.filter(hasDiscount),
-  );
-
   // Hero: admin banners if you have any, otherwise your newest in-stock products
   const productSlides: Banner[] = newestFirst.slice(0, 4).map((p, i) => ({
     ...FALLBACK_HERO,
@@ -333,16 +203,12 @@ function Home() {
   const heroBanners =
     heroSlides.length > 0 ? heroSlides : productSlides.length > 0 ? productSlides : [defaultHero];
 
-  const activeCategories = categories.filter((c) => c.is_active).slice(0, 8);
-  // The category's uploaded image is authoritative. If absent, use genuine
-  // uploaded photos from products in that category, never a shared dummy photo.
-  const categoryImages = (categoryId: string, uploadedImage: string | null | undefined): string[] => {
-    const own = newestFirst
-      .filter((p) => p.category_id === categoryId)
-      .flatMap((p) => productImages(p));
-    const unique = Array.from(new Set(own)).slice(0, 3);
-    return uploadedImage ? [uploadedImage, ...unique.filter((image) => image !== uploadedImage)].slice(0, 3) : unique;
-  };
+  const activeCategoryIds = new Set(products.map((product) => product.category_id).filter((id): id is string => Boolean(id)));
+  const activeCategories = categories.filter((category) => category.is_active && activeCategoryIds.has(category.id));
+  const allProducts = [...products].sort((a, b) => {
+    const photoPriority = Number(productImages(b).length > 0) - Number(productImages(a).length > 0);
+    return photoPriority || String(b.created_at ?? "").localeCompare(String(a.created_at ?? ""));
+  });
 
   return (
     <SiteLayout>
@@ -355,56 +221,65 @@ function Home() {
         <HeroCarousel banners={heroBanners} />
       )}
 
-      {/* Placeholder while categories load, so the page below doesn't jump */}
+      {/* Name-only category navigation */}
       {categoriesLoading ? (
         <>
           <SectionHeading eyebrow={t("findFit")} title={t("shopByCategory")} />
-          <section className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-4" aria-hidden="true">
-            {Array.from({ length: 8 }).map((_, i) => (
-              <div key={i} className="aspect-[4/5] w-full animate-pulse rounded-3xl bg-muted" />
+          <div className="mt-6 flex flex-wrap gap-2" aria-hidden="true">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div key={i} className="h-11 w-24 animate-pulse rounded-full bg-muted" />
             ))}
-          </section>
+          </div>
         </>
-      ) : null}
-
-      {/* Shop by category */}
-      {activeCategories.length > 0 ? (
+      ) : activeCategories.length > 0 ? (
         <>
           <SectionHeading eyebrow={t("findFit")} title={t("shopByCategory")} />
-          <section className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-4">
-            {activeCategories.map((c, i) => (
-              <CategoryTile
-                key={c.id}
-                name={categoryLabel(c.slug, c.name, language, c.name_ne)}
-                slug={c.slug}
-                images={categoryImages(c.id, c.image_url)}
-                offset={i}
-              />
+          <nav className="mt-6 flex flex-wrap gap-2" aria-label={t("shopByCategory")}>
+            {activeCategories.map((category) => (
+              <Link
+                key={category.id}
+                to="/collections/$slug"
+                params={{ slug: category.slug }}
+                className="inline-flex min-h-11 items-center justify-center rounded-full border border-[#e5d8cd] bg-[#fffdf9] px-5 py-2.5 text-sm text-[#422d2a] transition hover:border-[#762b3b] hover:bg-[#762b3b] hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#762b3b]"
+              >
+                {categoryLabel(category.slug, category.name, language, category.name_ne)}
+              </Link>
             ))}
-          </section>
+          </nav>
         </>
       ) : null}
 
-      {productsLoading ? (
-        <>
-          <SectionHeading eyebrow={t("justLanded")} title={t("newArrivalsTitle")} />
-          <section
-            className="mt-6 grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-3"
-            aria-hidden="true"
-          >
-            {Array.from({ length: 3 }).map((_, i) => (
-              <div key={i} className="aspect-[3/4] w-full animate-pulse rounded-3xl bg-muted" />
+      {/* Product discovery immediately follows category navigation */}
+      <section className="mt-12" aria-labelledby="home-all-products">
+        <div className="mb-5 flex items-end justify-between gap-3 border-b border-[#e8ded5] pb-4">
+          <div>
+            <p className="auraluxe-kicker">{language === "ne" ? "नयाँ छनोट" : "Explore the collection"}</p>
+            <h2 id="home-all-products" className="mt-2 font-display text-3xl text-[#422d2a] sm:text-4xl">
+              {language === "ne" ? "सबै उत्पादनहरू" : "All Products"}
+            </h2>
+          </div>
+          <Link to="/shop" className="shrink-0 text-xs uppercase tracking-[.15em] text-[#762b3b] underline underline-offset-4">
+            {t("viewAll")}
+          </Link>
+        </div>
+        {productsLoading ? (
+          <div className="grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-4" aria-hidden="true">
+            {Array.from({ length: 8 }).map((_, i) => (
+              <div key={i} className="aspect-[3/4] w-full animate-pulse rounded-2xl bg-muted" />
             ))}
-          </section>
-        </>
-      ) : null}
-
-      {newCollection.length > 0 ? (
-        <>
-          <SectionHeading eyebrow={t("justLanded")} title={t("newArrivalsTitle")} />
-          <Rail products={newCollection} />
-        </>
-      ) : null}
+          </div>
+        ) : allProducts.length > 0 ? (
+          <div className="grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-4">
+            {allProducts.slice(0, 8).map((product) => (
+              <ProductCard key={product.id} product={product} />
+            ))}
+          </div>
+        ) : (
+          <p className="rounded-2xl border border-[#e9dfd5] bg-[#fffdf9] px-6 py-10 text-center text-sm text-stone-600">
+            {language === "ne" ? "हाल कुनै उत्पादन उपलब्ध छैन।" : "No products are available right now."}
+          </p>
+        )}
+      </section>
 
       {/* Promotional campaign banner */}
       {promo ? (
@@ -437,27 +312,6 @@ function Home() {
             </div>
           </div>
         </section>
-      ) : null}
-
-      {trending.length > 0 ? (
-        <>
-          <SectionHeading eyebrow={t("lovedNow")} title={t("trendingNow")} />
-          <Rail products={trending} />
-        </>
-      ) : null}
-
-      {bestSellers.length > 0 ? (
-        <>
-          <SectionHeading eyebrow={t("mostWanted")} title={t("bestSellers")} />
-          <Rail products={bestSellers} />
-        </>
-      ) : null}
-
-      {offers.length > 0 ? (
-        <>
-          <SectionHeading eyebrow={t("reducedThisWeek")} title={t("specialOffers")} />
-          <Rail products={offers} />
-        </>
       ) : null}
 
       {/* Editorial tiles */}
