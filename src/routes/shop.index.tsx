@@ -102,9 +102,22 @@ function Shop() {
   );
   const activeCategories = categories.filter((category) => category.is_active && publishedCategoryIds.has(category.id));
   const categoryId = categories.find((c) => c.slug === search.category)?.id;
+  const complementaryCategoryIds = useMemo(
+    () => new Set(
+      activeCategories
+        .filter((category) => /bag|jutt|accessor|purse|handbag|wallet|clutch|complement/i.test(`${category.slug} ${category.name}`))
+        .map((category) => category.id),
+    ),
+    [activeCategories],
+  );
+  const selectedComplementaryCategory = Boolean(categoryId && complementaryCategoryIds.has(categoryId));
+
   const filtered = useMemo(() => {
-    // Never expose admin drafts or unpublished catalogue records on the public storefront.
-    let list = [...publishedProducts];
+    // Keep bags, juttis and accessories in their own "Complete the look" section
+    // on the all-products view. Selecting their category still shows them normally.
+    let list = publishedProducts.filter(
+      (product) => selectedComplementaryCategory || !complementaryCategoryIds.has(product.category_id ?? ""),
+    );
     if (search.category === "sale") {
       list = list.filter(hasDiscount);
     } else if (search.category === "new-arrivals") {
@@ -156,7 +169,7 @@ function Shop() {
         });
     }
     return list;
-  }, [publishedProducts, search, categoryId]);
+  }, [publishedProducts, search, categoryId, complementaryCategoryIds, selectedComplementaryCategory]);
 
   const [limit, setLimit] = useState(PER_PAGE);
   const sentinelRef = useRef<HTMLDivElement | null>(null);
@@ -195,23 +208,17 @@ function Shop() {
   const catalogueVisible = visible.filter((product, index) => index < 12 || !similarIds.has(product.id));
   const hasMore = visible.length < filtered.length;
 
-  // Complementary categories are deliberately separate from clothing
-  // alternatives and only appear when the current catalogue is exhausted.
+  // Keep complementary products available at the bottom of the main catalogue,
+  // without duplicating them when a shopper opens their own category.
   const complementaryRecommendations = useMemo(() => {
-    const complementaryCategoryIds = new Set(
-      activeCategories
-        .filter((category) => /bag|jutt|accessor/i.test(`${category.slug} ${category.name}`))
-        .map((category) => category.id),
-    );
-    const alreadyShown = new Set(filtered.map((product) => product.id));
+    if (selectedComplementaryCategory) return [];
     return publishedProducts
       .filter((product) =>
         complementaryCategoryIds.has(product.category_id ?? "") &&
-        !alreadyShown.has(product.id) &&
         product.stock > 0,
       )
       .slice(0, 4);
-  }, [activeCategories, filtered, publishedProducts]);
+  }, [complementaryCategoryIds, publishedProducts, selectedComplementaryCategory]);
 
   // Load the next batch automatically as the shopper scrolls
   useEffect(() => {
