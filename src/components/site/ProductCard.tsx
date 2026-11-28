@@ -59,7 +59,7 @@ export function ProductCard({
           decoding="async"
           width={1024}
           height={1280}
-          className="aspect-[4/5] w-full rounded-xl bg-muted object-cover sm:rounded-2xl"
+          className="aspect-[4/5] w-full rounded-xl bg-[#f8f5f1] object-contain p-1 sm:rounded-2xl sm:p-2"
         />
         {badge ? (
           <span className="absolute left-2 top-2 rounded-full bg-accent/90 px-2 py-0.5 text-[9px] uppercase tracking-[0.18em] text-accent-foreground backdrop-blur sm:left-3 sm:top-3 sm:px-3 sm:py-1 sm:text-[10px]">
