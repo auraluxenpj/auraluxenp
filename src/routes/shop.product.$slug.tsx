@@ -342,7 +342,7 @@ function ProductDetail() {
                   width={1024}
                   height={1280}
                   onClick={() => setZoomed(true)}
-                  className="aspect-[4/5] w-full shrink-0 cursor-zoom-in snap-center bg-muted object-cover"
+                  className="aspect-[4/5] w-full shrink-0 cursor-zoom-in snap-center bg-[#f8f5f1] object-contain p-2 sm:p-4"
                 />
               ))}
             </div>
@@ -384,7 +384,7 @@ function ProductDetail() {
                     loading="lazy"
                     width={256}
                     height={256}
-                    className={`aspect-square w-full rounded-2xl object-cover ${i === active ? "ring-2 ring-brand" : ""}`}
+                    className={`aspect-square w-full rounded-2xl bg-[#f8f5f1] object-contain p-1 ${i === active ? "ring-2 ring-brand" : ""}`}
                   />
                 </button>
               ))}
@@ -435,7 +435,7 @@ function ProductDetail() {
               : comboEmpty
                 ? t("soldOutColour")
                 : t("inStock")}
-            {product.sku ? ` · SKU ${product.sku}` : ""}
+
           </p>
 
           {product.sizes?.length ? (
@@ -578,7 +578,7 @@ function ProductDetail() {
           <a
             href={whatsappLink(
               settings["whatsapp"] ?? "",
-              whatsappProductMessage("Namaste! I would like to enquire about this product.", [{ productId: product.id, slug: product.slug, name: displayName + (product.sku ? " (SKU: " + product.sku + ")" : ""), image: images[0] ?? null, price, size: d.effectiveSize, color: d.effectiveColor, quantity: d.qty }]),
+              whatsappProductMessage("Namaste! I would like to enquire about this product.", [{ productId: product.id, slug: product.slug, name: displayName, image: images[0] ?? null, price, size: d.effectiveSize, color: d.effectiveColor, quantity: d.qty }]),
             )}
             target="_blank"
             rel="noreferrer"
