@@ -164,8 +164,6 @@ function CollectionPage() {
     category.description_ne || collectionCopy?.descriptionNe,
     language,
   );
-  const heroImage = category.image_url || products.flatMap(productImages)[0];
-
   return (
     <SiteLayout>
       <section className="mt-5 sm:mt-10">
@@ -176,15 +174,10 @@ function CollectionPage() {
           <span>/</span>
           <span aria-current="page" className="text-primary">{name}</span>
         </nav>
-        <div className="mt-4 grid gap-4 md:mt-6 md:grid-cols-[minmax(0,1fr)_minmax(260px,.72fr)] md:items-center md:gap-6">
-          <div>
-            <p className="auraluxe-kicker">Auraluxe Nepalgunj</p>
-            <h1 className="mt-2 font-display text-4xl leading-[.98] text-[#422d2a] sm:mt-3 sm:text-6xl">{name} Collection</h1>
-            <p className="mt-3 line-clamp-3 max-w-2xl text-sm leading-6 text-stone-600 sm:mt-4 sm:line-clamp-none sm:text-base sm:leading-7">{description}</p>
-          </div>
-          {heroImage ? (
-            <img src={heroImage} alt={`${name} collection at Auraluxe`} width={900} height={1125} fetchPriority="high" className="mx-auto aspect-[4/5] max-h-[560px] w-full rounded-sm bg-[#eee5dc] object-contain md:aspect-[4/5]" />
-          ) : null}
+        <div className="mt-4 max-w-3xl md:mt-6">
+          <p className="auraluxe-kicker">Auraluxe Nepalgunj</p>
+          <h1 className="mt-2 font-display text-4xl leading-[.98] text-[#422d2a] sm:mt-3 sm:text-6xl">{name} Collection</h1>
+          <p className="mt-3 text-sm leading-6 text-stone-600 sm:mt-4 sm:text-base sm:leading-7">{description}</p>
         </div>
       </section>
 
