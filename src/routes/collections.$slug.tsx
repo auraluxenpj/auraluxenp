@@ -132,7 +132,7 @@ export const Route = createFileRoute("/collections/$slug")({
       meta: [
         { title },
         { name: "description", content: description },
-        { name: "robots", content: "index,follow,max-image-preview:large" },
+        { name: "robots", content: products.length > 0 ? "index,follow,max-image-preview:large" : "noindex,follow" },
         { property: "og:title", content: title },
         { property: "og:description", content: description },
         { property: "og:type", content: "website" },
