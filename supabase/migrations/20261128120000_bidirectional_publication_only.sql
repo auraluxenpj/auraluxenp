@@ -95,6 +95,12 @@ BEGIN
   IF v_product_id IS NULL THEN
     RAISE EXCEPTION 'Publication event SKU or cross-system mapping does not match';
   END IF;
+  IF _published AND (
+    NOT EXISTS (SELECT 1 FROM public.product_variants pv WHERE pv.product_id=v_product_id AND pv.bizsathi_variant_id IS NOT NULL)
+    OR EXISTS (SELECT 1 FROM public.product_variants pv WHERE pv.product_id=v_product_id AND pv.bizsathi_variant_id IS NULL)
+  ) THEN
+    RAISE EXCEPTION 'Only products fully mapped to BizSathi may be published';
+  END IF;
   PERFORM set_config('app.catalogue_sync_origin','bizsathi',true);
   UPDATE public.products SET is_published=_published, updated_at=now() WHERE id=v_product_id;
   RETURN FOUND;
