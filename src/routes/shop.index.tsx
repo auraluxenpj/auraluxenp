@@ -127,11 +127,14 @@ function Shop() {
     }
     if (search.q) {
       const q = search.q.trim().toLowerCase();
-      list = list.filter(
-        (p) =>
-          (p.model_code ?? "").toLowerCase().includes(q) ||
-          (p.sku ?? "").toLowerCase().includes(q),
-      );
+      list = list.filter((p) => {
+        const category = categories.find((item) => item.id === p.category_id);
+        const searchable = [p.name, p.name_ne, p.fabric, p.fabric_ne, category?.name, category?.name_ne]
+          .filter((value): value is string => Boolean(value))
+          .join(" ")
+          .toLowerCase();
+        return searchable.includes(q);
+      });
     }
     if (search.size) list = list.filter((p) => (p.sizes ?? []).includes(search.size!));
     if (search.color) list = list.filter((p) => (p.colors ?? []).includes(search.color!));
@@ -169,7 +172,7 @@ function Shop() {
         });
     }
     return list;
-  }, [publishedProducts, search, categoryId, complementaryCategoryIds, selectedComplementaryCategory]);
+  }, [publishedProducts, search, categoryId, categories, complementaryCategoryIds, selectedComplementaryCategory]);
 
   const [limit, setLimit] = useState(PER_PAGE);
   const sentinelRef = useRef<HTMLDivElement | null>(null);
