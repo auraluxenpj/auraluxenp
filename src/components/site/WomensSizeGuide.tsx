@@ -5,7 +5,7 @@ export function WomensSizeGuide({ customChart, showGeneralChart = true }: { cust
 
   return (
     <details className="mt-5 border-t border-border pt-4">
-      <summary className="cursor-pointer text-sm font-medium">Women’s size chart</summary>
+      <summary className="cursor-pointer text-sm font-medium">{showGeneralChart ? "Women’s size chart" : "Product dimensions"}</summary>
       {customChart ? (
         <div className="mt-4">
           <p className="text-sm font-medium">Product-specific size chart</p>
