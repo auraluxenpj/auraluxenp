@@ -193,3 +193,36 @@ export function productImages(p: Pick<Product, "images">): string[] {
 export function productImage(p: Pick<Product, "images">): string {
   return productImages(p)[0] ?? DEFAULT_PRODUCT_PLACEHOLDER;
 }
+
+
+export type StorefrontCollection = {
+  id: string;
+  name: string;
+  description: string | null;
+  sort_order: number;
+  products: StorefrontProduct[];
+};
+
+/** Active storefront collections; RLS excludes expired collections and unavailable products. */
+export async function fetchStorefrontCollections(): Promise<StorefrontCollection[]> {
+  const client = supabase as unknown as { from: (table: string) => any };
+  const { data, error } = await client
+    .from("storefront_collections")
+    .select("id, name, description, sort_order, storefront_collection_products(sort_order, products(id, name, name_ne, slug, category_id, price, sale_price, stock, sizes, colors, images, fabric, fabric_ne, description, description_ne, is_new, is_featured, is_bestseller, is_published, created_at))")
+    .eq("is_active", true)
+    .order("sort_order", { ascending: true });
+  if (error) {
+    if (error.code === "42P01" || error.code === "PGRST205") return [];
+    throw error;
+  }
+  return (data ?? []).map((collection: any) => ({
+    id: collection.id,
+    name: collection.name,
+    description: collection.description,
+    sort_order: collection.sort_order,
+    products: (collection.storefront_collection_products ?? [])
+      .sort((a: any, b: any) => a.sort_order - b.sort_order)
+      .map((entry: any) => entry.products)
+      .filter((product: StorefrontProduct | null) => Boolean(product && product.is_published && Number(product.stock) > 0)),
+  })).filter((collection: StorefrontCollection) => collection.products.length > 0);
+}
