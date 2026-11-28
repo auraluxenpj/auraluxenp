@@ -256,52 +256,25 @@ function Shop() {
         </div>
       </div>
 
-      {/* Visual category discovery — temporary editorial imagery until the catalogue is fully photographed. */}
+      {/* Name-only category navigation */}
       {!search.category && activeCategories.length > 0 ? (
         <section className="mt-8" aria-label={t("shopCategory")}>
-          <div className="mb-4 flex items-end justify-between gap-3">
-            <div>
-              <p className="auraluxe-kicker">{t("exploreEdit")}</p>
-              <h2 className="mt-2 font-display text-2xl text-[#422d2a] sm:text-3xl">{t("shopCategory")}</h2>
-            </div>
-            <span className="text-[10px] uppercase tracking-[.16em] text-stone-500">{t("findLook")}</span>
+          <div className="mb-4">
+            <p className="auraluxe-kicker">{t("exploreEdit")}</p>
+            <h2 className="mt-2 font-display text-2xl text-[#422d2a] sm:text-3xl">{t("shopCategory")}</h2>
           </div>
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-            {activeCategories.map((c) => (
+          <nav className="flex flex-wrap gap-2" aria-label={t("shopCategory")}>
+            {activeCategories.map((category) => (
               <Link
-                key={c.id}
+                key={category.id}
                 to="/collections/$slug"
-                params={{ slug: c.slug }}
-                className="group relative aspect-[4/5] overflow-hidden rounded-sm bg-[#eee5dc]"
+                params={{ slug: category.slug }}
+                className="inline-flex min-h-11 items-center justify-center rounded-full border border-[#e5d8cd] bg-[#fffdf9] px-5 py-2.5 text-sm text-[#422d2a] transition hover:border-[#762b3b] hover:bg-[#762b3b] hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#762b3b]"
               >
-                {(() => {
-                  const uploadedProductImage = publishedProducts
-                    .filter((product) => product.category_id === c.id)
-                    .flatMap((product) => productImages(product))[0];
-                  const image = c.image_url || uploadedProductImage;
-                  return image ? (
-                    <img
-                      src={image}
-                      alt={categoryLabel(c.slug, c.name, language, c.name_ne)}
-                      loading="lazy"
-                      width={720}
-                      height={900}
-                      className="h-full w-full object-cover transition duration-700 group-hover:scale-105"
-                    />
-                  ) : (
-                    <div className="grid h-full w-full place-items-center bg-gradient-to-br from-[#f7eee7] via-[#efe1d5] to-[#e4c9b8]">
-                      <span className="font-display text-2xl text-[#762b3b]">{categoryLabel(c.slug, c.name, language, c.name_ne)}</span>
-                    </div>
-                  );
-                })()}
-                <div className="absolute inset-0 bg-gradient-to-t from-[#241713]/75 via-transparent to-transparent" />
-                <div className="absolute inset-x-0 bottom-0 flex items-end justify-between p-3 sm:p-4">
-                  <span className="font-display text-lg text-white sm:text-xl">{categoryLabel(c.slug, c.name, language, c.name_ne)}</span>
-                  <span className="text-sm text-white/90">↗</span>
-                </div>
+                {categoryLabel(category.slug, category.name, language, category.name_ne)}
               </Link>
             ))}
-          </div>
+          </nav>
         </section>
       ) : null}
 
