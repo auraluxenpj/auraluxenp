@@ -183,7 +183,7 @@ function CollectionPage() {
             <p className="mt-3 line-clamp-3 max-w-2xl text-sm leading-6 text-stone-600 sm:mt-4 sm:line-clamp-none sm:text-base sm:leading-7">{description}</p>
           </div>
           {heroImage ? (
-            <img src={heroImage} alt={`${name} collection at Auraluxe`} width={900} height={700} fetchPriority="high" className="mx-auto aspect-[4/5] max-h-[560px] w-full rounded-sm bg-[#eee5dc] object-contain md:aspect-[4/5]" />
+            <img src={heroImage} alt={`${name} collection at Auraluxe`} width={900} height={1125} fetchPriority="high" className="mx-auto aspect-[4/5] max-h-[560px] w-full rounded-sm bg-[#eee5dc] object-contain md:aspect-[4/5]" />
           ) : null}
         </div>
       </section>
