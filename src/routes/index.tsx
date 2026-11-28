@@ -5,6 +5,7 @@ import {
   fetchBanners,
   fetchCategories,
   fetchProducts,
+  fetchStorefrontCollections,
   fetchTestimonials,
   productImage,
   productImages,
@@ -25,13 +26,14 @@ export const Route = createFileRoute("/")({
   // If any fetch fails we fall back to the normal client-side loading.
   loader: async () => {
     const safe = <T,>(p: Promise<T>) => p.catch(() => undefined);
-    const [products, categories, banners, business] = await Promise.all([
+    const [products, collections, categories, banners, business] = await Promise.all([
       safe(fetchProducts()),
+      safe(fetchStorefrontCollections()),
       safe(fetchCategories()),
       safe(fetchBanners()),
       safe(getPublicLocalBusinessSeo()),
     ]);
-    return { products, categories, banners, business };
+    return { products, categories, banners, business, collections };
   },
   staleTime: 60_000,
   head: ({ loaderData }) => ({
@@ -158,6 +160,12 @@ function Home() {
     initialData: initial?.products,
     staleTime: 60_000,
   });
+  const { data: collections = [] } = useQuery({
+    queryKey: ["storefront-collections"],
+    queryFn: fetchStorefrontCollections,
+    initialData: initial?.collections,
+    staleTime: 60_000,
+  });
   const { data: categories = [], isLoading: categoriesLoading } = useQuery({
     queryKey: ["categories"],
     queryFn: fetchCategories,
@@ -249,6 +257,22 @@ function Home() {
         </>
       ) : null}
 
+      {/* Configurable seasonal and occasion collections, ordered by BizSathi */}
+      {collections.map((collection) => (
+        <section key={collection.id} className="mt-12" aria-labelledby={"collection-" + collection.id}>
+          <div className="mb-5 flex items-end justify-between gap-3 border-b border-[#e8ded5] pb-4">
+            <div>
+              <p className="auraluxe-kicker">Curated for the season</p>
+              <h2 id={"collection-" + collection.id} className="mt-2 font-display text-3xl text-[#422d2a] sm:text-4xl">{collection.name}</h2>
+              {collection.description ? <p className="mt-2 max-w-2xl text-sm text-stone-600">{collection.description}</p> : null}
+            </div>
+            <Link to="/shop" className="shrink-0 text-xs uppercase tracking-[.15em] text-[#762b3b] underline underline-offset-4">{t("viewAll")}</Link>
+          </div>
+          <div className="grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-4">
+            {collection.products.slice(0, 4).map((product) => <ProductCard key={product.id} product={product} />)}
+          </div>
+        </section>
+      ))}
       {/* Product discovery immediately follows category navigation */}
       <section className="mt-12" aria-labelledby="home-all-products">
         <div className="mb-5 flex items-end justify-between gap-3 border-b border-[#e8ded5] pb-4">
