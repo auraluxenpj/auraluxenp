@@ -105,7 +105,7 @@ export const getPublicCollectionSeo = createServerFn({ method: "GET" })
       console.error("[seo] Collection products lookup failed", productsError);
       throw new Error("Collection products are temporarily unavailable");
     }
-    if (!products?.length) return null;
+    
 
     return {
       category: {

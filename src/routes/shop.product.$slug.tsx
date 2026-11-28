@@ -609,7 +609,12 @@ function ProductDetail() {
               <small>{t("personalAssistance")}</small>
             </div>
           </div>
-          <WomensSizeGuide customChart={product.size_chart} />
+          {product.size_chart?.trim() || /(?:kurti|saree|dress|party|winter|plus|bottom|co-?ord|suit|clothing|ethnic|apparel|gown|lehenga|salwar|tunic)/i.test(initialProduct?.categories?.slug ?? "") ? (
+            <WomensSizeGuide
+              customChart={product.size_chart}
+              showGeneralChart={/(?:kurti|saree|dress|party|winter|plus|bottom|co-?ord|suit|clothing|ethnic|apparel|gown|lehenga|salwar|tunic)/i.test(initialProduct?.categories?.slug ?? "")}
+            />
+          ) : null}
         </div>
       </section>
 
